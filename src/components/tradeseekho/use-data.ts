@@ -3,7 +3,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import type {
   CategoryDTO, LessonListItemDTO, LessonDetailDTO, PublicQuizDTO,
-  QuizSubmitResult,
+  QuizSubmitResult, CertificateDTO,
 } from "@/lib/types"
 
 export interface LessonsBundle {
@@ -93,6 +93,13 @@ export function useAdSettings() {
     queryKey: ["ad-settings"],
     queryFn: () => j(fetch("/api/admin/ads").then((r) => r)),
     staleTime: 60_000,
+  })
+}
+
+export function useCertificates() {
+  return useQuery<{ certificates: CertificateDTO[] }>({
+    queryKey: ["certificates"],
+    queryFn: () => j(fetch("/api/certificates").then((r) => r)),
   })
 }
 

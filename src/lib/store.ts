@@ -49,6 +49,9 @@ interface AppState {
   bookmarksOpen: boolean
   setBookmarksOpen: (v: boolean) => void
 
+  certOpen: boolean
+  setCertOpen: (v: boolean) => void
+
   showAdmin: boolean
   setShowAdmin: (v: boolean) => void
 
@@ -102,6 +105,9 @@ export const useStore = create<AppState>()(
 
       bookmarksOpen: false,
       setBookmarksOpen: (v) => set({ bookmarksOpen: v }),
+
+      certOpen: false,
+      setCertOpen: (v) => set({ certOpen: v }),
 
       showAdmin: false,
       setShowAdmin: (v) => set({ showAdmin: v }),

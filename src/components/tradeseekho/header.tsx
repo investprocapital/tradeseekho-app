@@ -1,7 +1,7 @@
 "use client"
 
 import { useTheme } from "next-themes"
-import { Moon, Sun, Bookmark, Shield, Languages, Check } from "lucide-react"
+import { Moon, Sun, Bookmark, Shield, Languages, Check, Award } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuLabel, DropdownMenuSeparator,
@@ -17,6 +17,7 @@ export function Header() {
   const setLang = useStore((s) => s.setLang)
   const setBookmarksOpen = useStore((s) => s.setBookmarksOpen)
   const bookmarksCount = useStore((s) => s.bookmarks.length)
+  const setCertOpen = useStore((s) => s.setCertOpen)
   const showAdmin = useStore((s) => s.showAdmin)
   const setShowAdmin = useStore((s) => s.setShowAdmin)
 
@@ -44,6 +45,16 @@ export function Header() {
         </button>
 
         <div className="flex-1" />
+
+        {/* Certificates */}
+        <Button
+          variant="ghost"
+          size="icon"
+          aria-label="Certificates"
+          onClick={() => setCertOpen(true)}
+        >
+          <Award className="h-5 w-5 text-gold" />
+        </Button>
 
         {/* Bookmarks */}
         <Button

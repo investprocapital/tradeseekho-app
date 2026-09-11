@@ -101,4 +101,21 @@ export interface QuizSubmitResult {
   explanations: LocalizedText[]
   nextLessonId: string | null
   unlockedNext: boolean
+  // AdMob interstitial cadence: show only every 2 newly-completed lessons.
+  showInterstitial: boolean
+  // If passing this lesson completed the whole level, a certificate is issued.
+  certificateId: string | null
+  certificateSlug: string | null
+}
+
+export interface CertificateDTO {
+  id: string
+  categorySlug: string
+  userName: string
+  lessonsPassed: number
+  totalLessons: number
+  scoreSum: number
+  scoreTotal: number
+  verificationId: string
+  issuedAt: string
 }

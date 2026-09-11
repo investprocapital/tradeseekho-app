@@ -113,14 +113,16 @@ model Question {
 // ---------- Users, progress, bookmarks ----------
 
 model User {
-  id        String     @id @default(cuid())
-  email     String?    // nullable for anonymous local learners
-  name      String?
-  role      String     @default("student") // student | admin
-  progress  Progress[]
-  bookmarks Bookmark[]
-  createdAt DateTime   @default(now())
-  updatedAt DateTime   @updatedAt
+  id              String     @id @default(cuid())
+  email           String?    // nullable for anonymous local learners
+  name            String?
+  role            String     @default("student") // student | admin
+  lessonsCompleted Int       @default(0) // cumulative count of lessons passed (for ad interstitial cadence)
+  progress        Progress[]
+  bookmarks       Bookmark[]
+  certificates    Certificate[]
+  createdAt       DateTime   @default(now())
+  updatedAt       DateTime   @updatedAt
 }
 
 model Progress {
@@ -148,6 +150,24 @@ model Bookmark {
   createdAt DateTime @default(now())
 
   @@unique([userId, lessonId])
+}
+
+// Certificate issued when a learner passes every lesson in a level (category).
+// verificationId is a short public code for shareable proof (also used by Flutter).
+model Certificate {
+  id             String   @id @default(cuid())
+  userId         String
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  categorySlug   String   // e.g. "beginner"
+  userName       String   @default("TradeSeekho Learner")
+  lessonsPassed  Int      // snapshot of how many lessons were in the level
+  totalLessons   Int
+  scoreSum       Int      // sum of best quiz scores across the level
+  scoreTotal     Int      // sum of total questions across the level
+  verificationId String   @unique // short public code, e.g. "TS-AB12CD"
+  issuedAt       DateTime @default(now())
+
+  @@unique([userId, categorySlug])
 }
 
 // ---------- App configuration (singletons) ----------

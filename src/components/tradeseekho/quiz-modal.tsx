@@ -5,9 +5,9 @@ import { motion, AnimatePresence } from "framer-motion"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Progress } from "@/components/ui/progress"
-import { Check, X, Trophy, RefreshCw, ArrowRight, Sparkles, Megaphone } from "lucide-react"
+import { Check, X, Trophy, RefreshCw, ArrowRight, Sparkles, Megaphone, Award } from "lucide-react"
 import { useStore, useT } from "@/lib/store"
-import { useSubmitQuiz, useAdSettings } from "./use-data"
+import { useSubmitQuiz } from "./use-data"
 import { usePick } from "./localize"
 import type { LessonDetailDTO, PublicQuizDTO, QuizSubmitResult } from "@/lib/types"
 import { toast } from "sonner"
@@ -19,7 +19,7 @@ export function QuizContent({ lesson, quiz }: { lesson: LessonDetailDTO; quiz: P
   const urduFont = lang === "ur" || lang === "ar"
   const openLesson = useStore((s) => s.openLesson)
   const closeQuiz = useStore((s) => s.closeQuiz)
-  const { data: ads } = useAdSettings()
+  const setCertOpen = useStore((s) => s.setCertOpen)
   const submit = useSubmitQuiz()
 
   const [answers, setAnswers] = useState<Record<string, number>>({})
@@ -35,10 +35,14 @@ export function QuizContent({ lesson, quiz }: { lesson: LessonDetailDTO; quiz: P
     const arr = quiz.questions.map((q) => answers[q.id])
     const res = await submit.mutateAsync({ lessonId: quiz.lessonId, answers: arr })
     setResult(res)
-    if (ads?.interstitialEnabled) {
+    // AdMob interstitial cadence is decided server-side (every 2 completed lessons)
+    if (res.showInterstitial) {
       setShowAd(true)
     } else {
       toast(res.passed ? t("toast.quizPassed") : t("toast.quizFailed"))
+    }
+    if (res.certificateId) {
+      toast.success("🏆 Certificate earned!", { description: `You completed the ${res.certificateSlug} level.` })
     }
   }
 
@@ -147,6 +151,21 @@ export function QuizContent({ lesson, quiz }: { lesson: LessonDetailDTO; quiz: P
         {result ? (
           <>
             <ScoreBanner result={result} urduFont={urduFont} />
+            {result.certificateId && (
+              <button
+                onClick={() => { closeQuiz(); setCertOpen(true) }}
+                className="mt-3 flex w-full items-center gap-3 rounded-xl border-2 border-gold/50 bg-gradient-to-r from-gold/15 to-brand-muted/30 p-3 text-start transition hover:from-gold/25"
+              >
+                <span className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-gold text-gold-foreground shadow">
+                  <Award className="h-5 w-5" />
+                </span>
+                <div className="min-w-0 flex-1">
+                  <div className="text-sm font-extrabold text-foreground">🏆 Certificate earned!</div>
+                  <div className="text-xs text-muted-foreground">You completed the {result.certificateSlug} level — tap to view.</div>
+                </div>
+                <ArrowRight className="h-4 w-4 text-gold-foreground rtl:rotate-180" />
+              </button>
+            )}
             <div className="mt-3 flex gap-2">
               <Button variant="outline" className="h-11 flex-1 gap-2 font-bold" onClick={onRetry}>
                 <RefreshCw className="h-4 w-4" /> {t("action.retryQuiz")}

@@ -120,3 +120,24 @@ Work Log:
 
 Stage Summary:
 - Hydration mismatch fully resolved. The page is stable on first paint (SSR + initial client render identical) and persisted user prefs apply cleanly after mount.
+
+---
+Task ID: 12
+Agent: main (orchestrator)
+Task: Backend Phase-1 extensions (Certificate + interstitial-after-2-lessons) + Flutter Phase-2 reference client.
+
+Work Log:
+- Prisma: added Certificate model (userId, categorySlug, userName, score snapshot, unique verificationId "TS-XXXXXX", @@unique([userId, categorySlug])) + User.lessonsCompleted counter. db push + regenerate.
+- Quiz submit (/api/quiz/submit): on FIRST pass of a lesson, increment user.lessonsCompleted; showInterstitial = interstitialEnabled && isFirstPass && lessonsCompleted % 2 === 0 (AdMob interstitial every 2 completed lessons, decided server-side). On passing the final lesson of a level (all siblings passed), upsert a Certificate (idempotent per user+level) and return certificateId + certificateSlug. QuizSubmitResult extended with showInterstitial + certificateId + certificateSlug.
+- New routes: GET /api/certificates (list learner's certs), GET /api/certificates/[verificationId] (public verify by code).
+- Web: CertificateSheet (gold-themed printable card: name, level, score %, correct count, date, verification ID + copy), header Award button, certificate-earned banner inside the quiz footer (tap → opens sheet), interstitial now gated on result.showInterstitial. useCertificates hook added.
+- Fixed a stale-Prisma-client issue: after adding the User.lessonsCompleted field, the running dev server had the old client cached → user.update() threw PrismaClientValidationError. Fixed by regenerating + restarting the dev server (via `node node_modules/next/dist/bin/next dev`). NOTE: in this sandbox, backgrounded dev-server processes do NOT persist across separate Bash tool calls (killed on shell exit); the working pattern is start-server + tests in a SINGLE command.
+- Verified via curl (clean reset → L1/L2/L3): L1 passed+unlocked+no-interstitial+no-cert; L2 passed+unlocked+**interstitial:True** (every 2 lessons); L3 passed+no-next+**certificate issued** (beginner level complete). Certificates list endpoint returns 1 cert with verificationId.
+- Verified in browser (combined server+agent-browser command): certificate sheet opens from the header Award button and shows the "No certificates yet" empty state.
+- Flutter Phase-2 reference client (flutter_app/, ~14 Dart files + pubspec): main.dart (Hive + AdMob init, theme, locale/RTL, home route); config/{api_config.dart, theme.dart}; l10n/strings.dart (EN/UR/HI/AR + RTL); models/models.dart (mirrors API DTOs incl. QuizSubmitResult.showInterstitial/certificateId, Certificate); services/{api_client.dart, cache_service.dart (Hive offline cache), ad_service.dart (banner + interstitial after-2-lessons), auth_service.dart (Clerk stub)}; providers/providers.dart (Riverpod: lessons, lesson detail, certificates, locale); screens/{home, lessons_list, lesson_detail (non-selectable text), quiz, certificate}. This is SOURCE to run on the developer's own machine (`flutter pub get && flutter run`) — it CANNOT compile/preview in this Next.js-only sandbox.
+- `bun run lint`: 0 errors (web). Flutter Dart files are not linted here (no Flutter SDK in this sandbox).
+
+Stage Summary:
+- Backend Phase 1 complete + 2 new features (Certificate, interstitial cadence) verified.
+- Flutter Phase 2 reference client delivered as runnable source (not verifiable in this sandbox).
+- Production swap-ins documented in code: Neon = datasource change; Clerk = replace AuthService stub + wire X-User-Id header; AdMob = real unit IDs via --dart-define; Vercel = deploy Next.js app.
