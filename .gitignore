@@ -30,8 +30,19 @@ yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
 
-# env files (can opt-in for committing if needed)
+# env files (keep real secrets out, but commit the template)
 .env*
+!.env.example
+
+# Flutter build output
+flutter_app/build/
+flutter_app/.dart_tool/
+flutter_app/.flutter-plugins
+flutter_app/.flutter-plugins-dependencies
+
+# local SQLite database (do not commit; Neon is used in prod)
+/db/*.db
+/db/*.db-journal
 
 # vercel
 .vercel
