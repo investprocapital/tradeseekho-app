@@ -54,6 +54,10 @@ interface AppState {
 
   adminTab: AdminTab
   setAdminTab: (t: AdminTab) => void
+
+  // Whether the persisted store has rehydrated from localStorage (client only).
+  // Used to gate UI that depends on persisted state so SSR + initial client render match.
+  hasHydrated: boolean
 }
 
 export const useStore = create<AppState>()(
@@ -104,10 +108,17 @@ export const useStore = create<AppState>()(
 
       adminTab: "dashboard",
       setAdminTab: (t) => set({ adminTab: t }),
+
+      hasHydrated: false,
     }),
     {
       name: "tradeseekho-store",
       storage: createJSONStorage(() => localStorage),
+      // CRITICAL: do NOT auto-rehydrate during the initial client render.
+      // The server renders with the defaults above; skipHydration ensures the
+      // client's first render uses the SAME defaults → no hydration mismatch.
+      // We rehydrate manually in <Providers/> after mount.
+      skipHydration: true,
       // Only persist user-facing prefs + data, not ephemeral view state
       partialize: (s) => ({
         lang: s.lang,

@@ -104,3 +104,19 @@ Work Log:
 Stage Summary:
 - All core learner + admin flows browser-verified. Two critical bugs found via self-verification and fixed (data-fetch Promise unwrapping; Radix nested-overlay conflict resolved by inlining the quiz in the reader Sheet).
 - TradeSeekho v1.0 (web + admin + API) is production-ready for the demo milestone: 6 multilingual lessons across 3 levels, quizzes with pass-to-unlock, secure answer hiding, non-selectable lesson text, 4 languages (EN/UR/HI/AR) with RTL, dark mode, bookmarks, AdMob banner + interstitial, full admin CMS.
+
+---
+Task ID: 11
+Agent: main (orchestrator)
+Task: Fix React hydration mismatch (theme toggle + zustand/persist localStorage divergence).
+
+Work Log:
+- Root cause: (1) Header theme toggle rendered Sun/Moon conditionally on `useTheme().theme`, which is undefined on SSR but resolves to the persisted value during client hydration → server rendered Moon, client rendered Sun → mismatch. (2) zustand `persist` rehydrated from localStorage synchronously during the client's first render, so persisted state (lang, onboardingSeen, bookmarks, adminAuthed) diverged from the SSR defaults → latent mismatches.
+- FIX 1 — Header theme toggle: replaced the `theme === "dark" ? <Sun> : <Moon>` + framer-motion AnimatePresence with the shadcn dual-icon CSS pattern (both Sun + Moon always rendered; `dark:` variants toggle visibility/rotation). Rendered DOM is now identical on server and client. Removed unused framer-motion import.
+- FIX 2 — Store: added `skipHydration: true` to the persist config so the client's first render uses the same defaults as SSR (no divergence). Added a `hasHydrated` boolean to the store.
+- FIX 3 — Providers: added a mount `useEffect` that calls `useStore.persist.rehydrate()` and then `useStore.setState({ hasHydrated: true })`. Persisted values apply on the next paint (post-hydration) — no mismatch, just a clean update.
+- FIX 4 — Onboarding: gated behind `hasHydrated` so it never renders during SSR / pre-rehydrate (avoids both a mismatch and a flash for returning users who already saw it).
+- Verified with agent-browser: persisted `theme=dark + lang=ur + onboardingSeen=true`, reloaded → zero hydration errors in `agent-browser errors` AND `console` (filtered out the known non-blocking Radix DialogTitle accessibility warning). Page correctly ended up dark + RTL Urdu + no onboarding flash.
+
+Stage Summary:
+- Hydration mismatch fully resolved. The page is stable on first paint (SSR + initial client render identical) and persisted user prefs apply cleanly after mount.

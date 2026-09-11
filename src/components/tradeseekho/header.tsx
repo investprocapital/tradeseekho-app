@@ -2,7 +2,6 @@
 
 import { useTheme } from "next-themes"
 import { Moon, Sun, Bookmark, Shield, Languages, Check } from "lucide-react"
-import { motion, AnimatePresence } from "framer-motion"
 import { Button } from "@/components/ui/button"
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuLabel, DropdownMenuSeparator,
@@ -93,24 +92,16 @@ export function Header() {
           </DropdownMenuContent>
         </DropdownMenu>
 
-        {/* Dark mode */}
+        {/* Dark mode — dual icons with CSS so SSR + initial client render match (no hydration mismatch) */}
         <Button
           variant="ghost"
           size="icon"
+          className="relative"
           aria-label="Toggle theme"
           onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
         >
-          <AnimatePresence mode="wait" initial={false}>
-            {theme === "dark" ? (
-              <motion.span key="sun" initial={{ rotate: -90, opacity: 0 }} animate={{ rotate: 0, opacity: 1 }} exit={{ rotate: 90, opacity: 0 }}>
-                <Sun className="h-5 w-5" />
-              </motion.span>
-            ) : (
-              <motion.span key="moon" initial={{ rotate: 90, opacity: 0 }} animate={{ rotate: 0, opacity: 1 }} exit={{ rotate: -90, opacity: 0 }}>
-                <Moon className="h-5 w-5" />
-              </motion.span>
-            )}
-          </AnimatePresence>
+          <Sun className="h-5 w-5 rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
+          <Moon className="absolute h-5 w-5 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
         </Button>
 
         {/* Admin */}

@@ -17,11 +17,14 @@ export function Onboarding() {
   const lang = useStore((s) => s.lang)
   const urduFont = lang === "ur" || lang === "ar"
   const seen = useStore((s) => s.onboardingSeen)
+  const hasHydrated = useStore((s) => s.hasHydrated)
   const setSeen = useStore((s) => s.setOnboardingSeen)
   const [i, setI] = useState(0)
   const last = i === SLIDES.length - 1
 
-  if (seen) return null
+  // Never render during SSR / before the persisted store rehydrates — avoids
+  // both a hydration mismatch and a flash for returning users.
+  if (!hasHydrated || seen) return null
 
   const close = () => setSeen(true)
   const next = () => (last ? close() : setI((v) => v + 1))

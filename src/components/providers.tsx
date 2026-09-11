@@ -24,6 +24,21 @@ export function Providers({ children }: { children: React.ReactNode }) {
         },
       }),
   )
+
+  // Rehydrate the persisted store AFTER mount. Combined with skipHydration:true
+  // in the store, this guarantees the server render and the client's initial
+  // render use identical defaults → no hydration mismatch. Persisted values
+  // (lang, onboarding, bookmarks, adminAuthed) then apply on the next paint.
+  useEffect(() => {
+    const result = useStore.persist.rehydrate() as unknown as Promise<void> | void
+    const markHydrated = () => useStore.setState({ hasHydrated: true })
+    if (result && typeof (result as Promise<void>).then === "function") {
+      ;(result as Promise<void>).then(markHydrated, markHydrated)
+    } else {
+      markHydrated()
+    }
+  }, [])
+
   return (
     <ThemeProvider attribute="class" defaultTheme="light" enableSystem={false} disableTransitionOnChange>
       <QueryClientProvider client={qc}>
