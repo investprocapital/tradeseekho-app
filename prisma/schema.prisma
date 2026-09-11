@@ -1,0 +1,171 @@
+// TradeSeekho v1.0 - Forex & Crypto Learning Platform
+// Prisma schema (SQLite for local dev; portable to Neon Postgres for production)
+// Multi-language content: English / Urdu / Hindi / Arabic (Urdu + Arabic are RTL)
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// ---------- Learning content ----------
+
+model Category {
+  id            String   @id @default(cuid())
+  slug          String   @unique // beginner | intermediate | advanced
+  nameEn        String
+  nameUr        String
+  nameHi        String
+  nameAr        String
+  descriptionEn String?
+  descriptionUr String?
+  descriptionHi String?
+  descriptionAr String?
+  icon          String?  // lucide icon name
+  color         String?  // brand accent hex
+  order         Int      @default(0)
+  lessons       Lesson[]
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+model Lesson {
+  id          String   @id @default(cuid())
+  categoryId  String
+  category    Category @relation(fields: [categoryId], references: [id])
+  titleEn     String
+  titleUr     String
+  titleHi     String
+  titleAr     String
+  summaryEn   String?
+  summaryUr   String?
+  summaryHi   String?
+  summaryAr   String?
+  contentEn   String   // markdown-ish rich text
+  contentUr   String
+  contentHi   String
+  contentAr   String
+  imageUrl    String?
+  durationMin Int      @default(5)
+  order       Int      @default(0)
+  isPublished Boolean  @default(false)
+  isFree      Boolean  @default(true)
+  quiz        Quiz?
+  progress    Progress[]
+  bookmarks   Bookmark[]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([categoryId])
+}
+
+model Quiz {
+  id        String    @id @default(cuid())
+  lessonId  String    @unique
+  lesson    Lesson    @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+  passMark  Int       @default(3) // out of total; need >= passMark to unlock next lesson
+  questions Question[]
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+}
+
+// SQLite disallows scalar lists, so MCQ options are stored as 4 option columns.
+// option3/option4 nullable so True/False questions can omit them.
+model Question {
+  id             String   @id @default(cuid())
+  quizId         String
+  quiz           Quiz     @relation(fields: [quizId], references: [id], onDelete: Cascade)
+  type           String   @default("MCQ") // MCQ | TF
+  promptEn       String
+  promptUr       String
+  promptHi       String
+  promptAr       String
+  option1En      String
+  option1Ur      String
+  option1Hi      String
+  option1Ar      String
+  option2En      String
+  option2Ur      String
+  option2Hi      String
+  option2Ar      String
+  option3En      String?
+  option3Ur      String?
+  option3Hi      String?
+  option3Ar      String?
+  option4En      String?
+  option4Ur      String?
+  option4Hi      String?
+  option4Ar      String?
+  correctIndex   Int      // 0-based index of the correct option
+  explanationEn  String?
+  explanationUr  String?
+  explanationHi  String?
+  explanationAr  String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@index([quizId])
+}
+
+// ---------- Users, progress, bookmarks ----------
+
+model User {
+  id        String     @id @default(cuid())
+  email     String?    // nullable for anonymous local learners
+  name      String?
+  role      String     @default("student") // student | admin
+  progress  Progress[]
+  bookmarks Bookmark[]
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+}
+
+model Progress {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  lessonId  String
+  lesson    Lesson   @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+  completed Boolean  @default(false)
+  score     Int      @default(0)
+  total     Int      @default(0)
+  passed    Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, lessonId])
+}
+
+model Bookmark {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  lessonId  String
+  lesson    Lesson   @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@unique([userId, lessonId])
+}
+
+// ---------- App configuration (singletons) ----------
+
+model AdSettings {
+  id                   String   @id @default("singleton")
+  bannerEnabled        Boolean  @default(true)
+  interstitialEnabled  Boolean  @default(true)
+  bannerUnitId         String   @default("ca-app-pub-DEMO/BANNER")
+  interstitialUnitId   String   @default("ca-app-pub-DEMO/INTERSTITIAL")
+  updatedAt            DateTime @updatedAt
+}
+
+model AppStats {
+  id             String  @id @default("singleton")
+  totalDownloads Int     @default(0)
+  activeUsers    Int     @default(0)
+  totalLessons   Int     @default(0)
+  totalQuizzes   Int     @default(0)
+  updatedAt      DateTime @updatedAt
+}

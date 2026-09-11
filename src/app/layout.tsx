@@ -1,0 +1,81 @@
+import type { Metadata, Viewport } from "next";
+import { Poppins, Noto_Nastaliq_Urdu } from "next/font/google";
+import "./globals.css";
+import { Toaster } from "@/components/ui/toaster";
+import { Toaster as SonnerToaster } from "@/components/ui/sonner";
+import { Providers } from "@/components/providers";
+
+const poppins = Poppins({
+  variable: "--font-poppins",
+  subsets: ["latin"],
+  weight: ["300", "400", "500", "600", "700", "800"],
+  display: "swap",
+});
+
+const notoNastaliq = Noto_Nastaliq_Urdu({
+  variable: "--font-noto-nastaliq",
+  subsets: ["arabic"],
+  weight: ["400", "500", "600", "700"],
+  display: "swap",
+});
+
+export const metadata: Metadata = {
+  metadataBase: new URL("https://tradeseekho.com"),
+  title: {
+    default: "TradeSeekho — Learn Forex & Crypto in Urdu, English, Hindi & Arabic",
+    template: "%s · TradeSeekho",
+  },
+  description:
+    "TradeSeekho is a free Forex & Crypto learning platform. Structured lessons, instant quizzes, and real trading skills — in Urdu, English, Hindi and Arabic. Beginner to advanced.",
+  keywords: [
+    "Forex", "Forex trading", "Crypto", "Cryptocurrency", "Learn Forex Urdu",
+    "Forex Pakistan", "Forex India", "Forex Arabic", "Babypips alternative",
+    "Trading course", "Pips", "Candlestick", "Risk management",
+  ],
+  authors: [{ name: "TradeSeekho" }],
+  creator: "TradeSeekho",
+  icons: {
+    icon: "https://z-cdn.chatglm.cn/z-ai/static/logo.svg",
+  },
+  openGraph: {
+    type: "website",
+    locale: "en_US",
+    alternateLocale: ["ur_PK", "hi_IN", "ar_AR"],
+    title: "TradeSeekho — Learn Forex & Crypto",
+    description: "Structured Forex & Crypto lessons with quizzes. Urdu, English, Hindi & Arabic.",
+    siteName: "TradeSeekho",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "TradeSeekho — Learn Forex & Crypto",
+    description: "Structured Forex & Crypto lessons with quizzes. Urdu, English, Hindi & Arabic.",
+  },
+  robots: { index: true, follow: true },
+};
+
+export const viewport: Viewport = {
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#ffffff" },
+    { media: "(prefers-color-scheme: dark)", color: "#0b1410" },
+  ],
+  width: "device-width",
+  initialScale: 1,
+};
+
+export default function RootLayout({
+  children,
+}: Readonly<{ children: React.ReactNode }>) {
+  return (
+    <html lang="en" suppressHydrationWarning>
+      <body
+        className={`${poppins.variable} ${notoNastaliq.variable} antialiased bg-background text-foreground`}
+      >
+        <Providers>
+          {children}
+          <Toaster />
+          <SonnerToaster richColors position="top-center" />
+        </Providers>
+      </body>
+    </html>
+  );
+}

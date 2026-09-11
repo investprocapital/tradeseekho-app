@@ -1,0 +1,224 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-poppins), var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-geist-mono);
+  --font-urdu: var(--font-noto-nastaliq), var(--font-poppins), serif;
+
+  /* Brand */
+  --color-brand: var(--brand);
+  --color-brand-foreground: var(--brand-foreground);
+  --color-brand-muted: var(--brand-muted);
+  --color-gold: var(--gold);
+  --color-gold-foreground: var(--gold-foreground);
+
+  --color-sidebar-ring: var(--sidebar-ring);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar: var(--sidebar);
+  --color-chart-5: var(--chart-5);
+  --color-chart-4: var(--chart-4);
+  --color-chart-3: var(--chart-3);
+  --color-chart-2: var(--chart-2);
+  --color-chart-1: var(--chart-1);
+  --color-ring: var(--ring);
+  --color-input: var(--input);
+  --color-border: var(--border);
+  --color-destructive: var(--destructive);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent: var(--accent);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-muted: var(--muted);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-secondary: var(--secondary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary: var(--primary);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-popover: var(--popover);
+  --color-card-foreground: var(--card-foreground);
+  --color-card: var(--card);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+}
+
+:root {
+  --radius: 0.875rem;
+
+  /* Brand colors (TradeSeekho) */
+  --brand: #00c853;
+  --brand-foreground: #ffffff;
+  --brand-muted: #e6f7ec;
+  --gold: #ffc107;
+  --gold-foreground: #1a1400;
+
+  --background: #ffffff;
+  --foreground: #15241c;
+  --card: #ffffff;
+  --card-foreground: #15241c;
+  --popover: #ffffff;
+  --popover-foreground: #15241c;
+  --primary: #00c853;
+  --primary-foreground: #ffffff;
+  --secondary: #f4f7f4;
+  --secondary-foreground: #1f2a23;
+  --muted: #f3f6f3;
+  --muted-foreground: #5c6b62;
+  --accent: #fff6d6;
+  --accent-foreground: #5a4500;
+  --destructive: #e53935;
+  --border: #e6ece7;
+  --input: #e6ece7;
+  --ring: #00c853;
+  --chart-1: #00c853;
+  --chart-2: #ffc107;
+  --chart-3: #00bfa5;
+  --chart-4: #ef6c00;
+  --chart-5: #43a047;
+  --sidebar: #ffffff;
+  --sidebar-foreground: #15241c;
+  --sidebar-primary: #00c853;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #f3f6f3;
+  --sidebar-accent-foreground: #1f2a23;
+  --sidebar-border: #e6ece7;
+  --sidebar-ring: #00c853;
+}
+
+.dark {
+  --brand: #1ed86a;
+  --brand-foreground: #04130b;
+  --brand-muted: #0f2a1a;
+  --gold: #ffca3a;
+  --gold-foreground: #1a1400;
+
+  --background: #0b1410;
+  --foreground: #eaf3ec;
+  --card: #121d16;
+  --card-foreground: #eaf3ec;
+  --popover: #121d16;
+  --popover-foreground: #eaf3ec;
+  --primary: #1ed86a;
+  --primary-foreground: #04130b;
+  --secondary: #16241b;
+  --secondary-foreground: #eaf3ec;
+  --muted: #16241b;
+  --muted-foreground: #9fb3a6;
+  --accent: #2a2310;
+  --accent-foreground: #ffe9a8;
+  --destructive: #ff6b6b;
+  --border: #1f3027;
+  --input: #1f3027;
+  --ring: #1ed86a;
+  --chart-1: #1ed86a;
+  --chart-2: #ffca3a;
+  --chart-3: #2dd4bf;
+  --chart-4: #ffb74d;
+  --chart-5: #66bb6a;
+  --sidebar: #0f1812;
+  --sidebar-foreground: #eaf3ec;
+  --sidebar-primary: #1ed86a;
+  --sidebar-primary-foreground: #04130b;
+  --sidebar-accent: #16241b;
+  --sidebar-accent-foreground: #eaf3ec;
+  --sidebar-border: #1f3027;
+  --sidebar-ring: #1ed86a;
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground;
+    font-feature-settings: "rlig" 1, "calt" 1;
+  }
+  html {
+    scroll-behavior: smooth;
+  }
+  /* RTL: mirror padding helpers gracefully */
+  [dir="rtl"] body {
+    text-align: right;
+  }
+}
+
+/* Urdu / Arabic typography */
+.font-urdu {
+  font-family: var(--font-urdu);
+  line-height: 2.1;
+}
+[dir="rtl"] .prose-tradeseekho {
+  text-align: right;
+}
+
+/* Security: lesson content must be read-only — no selection, no copy */
+.no-select {
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+  -webkit-tap-highlight-color: transparent;
+}
+.no-select img {
+  -webkit-user-drag: none;
+  user-drag: none;
+  pointer-events: none;
+}
+
+/* Light, branded scrollbar for scrollable lesson lists */
+.ts-scroll::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+.ts-scroll::-webkit-scrollbar-thumb {
+  background: color-mix(in oklch, var(--brand) 35%, transparent);
+  border-radius: 999px;
+}
+.ts-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+/* Subtle gradient backdrop used on hero */
+.hero-grid {
+  background-image:
+    radial-gradient(circle at 1px 1px, color-mix(in oklch, var(--brand) 22%, transparent) 1px, transparent 0);
+  background-size: 22px 22px;
+}
+
+/* Branded card sheen on hover */
+.ts-card-sheen {
+  position: relative;
+  overflow: hidden;
+}
+.ts-card-sheen::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(120deg, transparent 30%, color-mix(in oklch, var(--gold) 28%, transparent) 50%, transparent 70%);
+  opacity: 0;
+  transition: opacity 0.4s ease;
+  pointer-events: none;
+}
+.ts-card-sheen:hover::after {
+  opacity: 1;
+}
+
+/* Tiny candlestick chart svg accent */
+@keyframes ts-float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-6px); }
+}
+.ts-float {
+  animation: ts-float 6s ease-in-out infinite;
+}
