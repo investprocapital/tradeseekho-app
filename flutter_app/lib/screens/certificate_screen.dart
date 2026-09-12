@@ -70,7 +70,7 @@ class _CertCard extends StatelessWidget {
             const Spacer(),
             Chip(
               label: Text('Passed ${cert.lessonsPassed}/${cert.totalLessons}'),
-              backgroundColor: Theme.of(context).colorScheme.primary.withValues(alpha: 0.12),
+              backgroundColor: Theme.of(context).colorScheme.primary.withOpacity( 0.12),
               side: BorderSide.none,
             ),
           ]),

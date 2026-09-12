@@ -116,7 +116,7 @@ class _Hero extends StatelessWidget {
 
   Widget _chip(String label) => Chip(
         label: Text(label, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
-        backgroundColor: Theme.of(context).colorScheme.primary.withValues(alpha: 0.12),
+        backgroundColor: Theme.of(context).colorScheme.primary.withOpacity( 0.12),
         side: BorderSide.none,
       );
 }

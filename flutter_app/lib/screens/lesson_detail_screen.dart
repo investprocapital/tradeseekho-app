@@ -128,7 +128,7 @@ class LessonDetailScreen extends ConsumerWidget {
           margin: const EdgeInsets.only(top: 8, bottom: 8),
           padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
-            color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.08),
+            color: Theme.of(context).colorScheme.primary.withOpacity( 0.08),
             borderRadius: const BorderRadius.only(topRight: Radius.circular(8), bottomRight: Radius.circular(8)),
             border: Border(left: BorderSide(color: Theme.of(context).colorScheme.primary, width: 3)),
           ),

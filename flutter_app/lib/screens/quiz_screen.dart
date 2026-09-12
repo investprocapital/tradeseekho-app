@@ -119,7 +119,7 @@ class _QuizScreenState extends ConsumerState<QuizScreen> {
                         border: Border.all(
                           color: selected ? Theme.of(context).colorScheme.primary : Theme.of(context).dividerColor,
                         ),
-                        color: selected ? Theme.of(context).colorScheme.primary.withValues(alpha: 0.08) : null,
+                        color: selected ? Theme.of(context).colorScheme.primary.withOpacity( 0.08) : null,
                       ),
                       child: Row(children: [
                         Container(width: 20, height: 20, alignment: Alignment.center,
@@ -158,7 +158,7 @@ class _QuizScreenState extends ConsumerState<QuizScreen> {
         Container(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: r.passed ? Theme.of(context).colorScheme.primary.withValues(alpha: 0.12) : const Color(0x1AFFC107),
+            color: r.passed ? Theme.of(context).colorScheme.primary.withOpacity( 0.12) : const Color(0x1AFFC107),
             borderRadius: BorderRadius.circular(12),
           ),
           child: Row(children: [
@@ -222,7 +222,7 @@ class _QuizScreenState extends ConsumerState<QuizScreen> {
                   const SizedBox(height: 6),
                   Container(
                     padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(color: Theme.of(context).dividerColor.withValues(alpha: 0.3), borderRadius: BorderRadius.circular(8)),
+                    decoration: BoxDecoration(color: Theme.of(context).dividerColor.withOpacity( 0.3), borderRadius: BorderRadius.circular(8)),
                     child: Text(r.explanations[i].pick(lang), style: TextStyle(fontSize: 13, color: Theme.of(context).hintColor)),
                   ),
                 ],

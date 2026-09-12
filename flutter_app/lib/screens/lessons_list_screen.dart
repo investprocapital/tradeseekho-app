@@ -81,7 +81,7 @@ class _LessonListCard extends StatelessWidget {
                   color: (lesson.categoryColor != null
                           ? Color(int.parse('FF${lesson.categoryColor!.replaceFirst('#', '')}', radix: 16))
                           : Theme.of(context).colorScheme.primary)
-                      .withValues(alpha: 0.15),
+                      .withOpacity( 0.15),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Text('${lesson.orderInCategory}',

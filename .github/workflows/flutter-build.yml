@@ -32,6 +32,12 @@ jobs:
       - name: Flutter doctor
         run: flutter doctor -v
 
+      - name: Generate Android/iOS platform scaffolding
+        # The repo ships lib/ + pubspec.yaml only (no android/ ios/ Gradle scaffold,
+        # since it was authored in an AI sandbox without Flutter). Generate it in-place
+        # on the runner; existing lib/*.dart and pubspec.yaml are preserved.
+        run: flutter create --project-name tradeseekho --platforms android,ios --no-pub .
+
       - name: Install dependencies
         run: flutter pub get
 
@@ -61,6 +67,8 @@ jobs:
         with:
           flutter-version: "3.22.3"
           channel: stable
+      - name: Generate web scaffolding
+        run: flutter create --project-name tradeseekho --platforms web --no-pub .
       - run: flutter pub get
       - run: flutter build web --web-renderer canvaskit || true
       - uses: actions/upload-artifact@v4
