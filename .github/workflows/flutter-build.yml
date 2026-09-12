@@ -53,6 +53,34 @@ jobs:
             echo "patched settings.gradle:"; grep -n "kotlin" android/settings.gradle || true
           fi
 
+      - name: Inject AdMob APPLICATION_ID into AndroidManifest
+        # google_mobile_ads REQUIRES com.google.android.gms.ads.APPLICATION_ID meta-data in
+        # AndroidManifest.xml, otherwise MobileAds.initialize() CRASHES the app on launch.
+        # `flutter create` does NOT add it. We inject Google's official test App ID here.
+        # (Replace with your real AdMob App ID via repo variable ADMOB_APP_ID when ready.)
+        run: |
+          python3 - <<'PY'
+          import os, re
+          p = "android/app/src/main/AndroidManifest.xml"
+          s = open(p).read()
+          app_id = os.environ.get("ADMOB_APP_ID", "ca-app-pub-3940256099942544~3347511713")  # Google's test App ID
+          meta = f'        <meta-data android:name="com.google.android.gms.ads.APPLICATION_ID" android:value="{app_id}" />\n'
+          if "com.google.android.gms.ads.APPLICATION_ID" not in s:
+              s = s.replace("</application>", meta + "    </application>")
+              open(p, "w").write(s)
+              print(f"injected AdMob APPLICATION_ID = {app_id}")
+          else:
+              print("AdMob APPLICATION_ID already present")
+          # allow cleartext http (dev API on 10.0.2.2) so http calls don't get blocked
+          if "android:usesCleartextTraffic" not in s:
+              s2 = open(p).read()
+              s2 = re.sub(r'(<application\b)', '<application android:usesCleartextTraffic="true"', s2, count=1)
+              open(p, "w").write(s2)
+              print("enabled usesCleartextTraffic")
+          PY
+        env:
+          ADMOB_APP_ID: ${{ vars.ADMOB_APP_ID }}
+
       - name: Install dependencies
         run: flutter pub get
 
@@ -60,7 +88,11 @@ jobs:
         run: flutter analyze || true
 
       - name: Build debug APK
-        run: flutter build apk --debug --no-tree-shake-icons
+        # Default API_BASE_URL (10.0.2.2:3000) targets the Android EMULATOR reaching
+        # the host's Next.js API. For REAL-device builds, set a GitHub repo variable
+        # named API_BASE_URL = https://your-vercel-app.vercel.app — this dart-define
+        # injects it. (Repo → Settings → Secrets and variables → Actions → Variables.)
+        run: flutter build apk --debug --no-tree-shake-icons ${{ vars.API_BASE_URL && format('--dart-define=API_BASE_URL={0}', vars.API_BASE_URL) || '' }}
 
       - name: Upload debug APK
         uses: actions/upload-artifact@v4

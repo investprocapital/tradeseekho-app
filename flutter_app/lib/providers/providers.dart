@@ -50,8 +50,12 @@ class LessonsNotifier extends StateNotifier<LessonsState> {
       final bundle = await ApiClient.fetchLessons(category: _category);
       CacheService.cacheLessons(_category, bundle.categories, bundle.lessons);
       state = LessonsState(categories: bundle.categories, lessons: bundle.lessons);
-    } on ApiException catch (e) {
-      state = state.copyWith(loading: false, error: e.toString());
+    } catch (e) {
+      // network error, cleartext blocked, DNS, etc. — never crash, show graceful state
+      state = state.copyWith(
+        loading: false,
+        error: 'Could not reach the server. Pull to retry.',
+      );
     }
   }
 
@@ -85,7 +89,7 @@ class LessonDetailNotifier extends StateNotifier<LessonDetailState> {
       final r = await ApiClient.fetchLesson(id);
       CacheService.cacheLesson(r.lesson, r.quiz);
       state = LessonDetailState(lesson: r.lesson, quiz: r.quiz, loading: false);
-    } on ApiException catch (_) {
+    } catch (_) {
       state = const LessonDetailState(loading: false);
     }
   }
@@ -98,5 +102,9 @@ final lessonDetailProvider =
 
 // Certificates
 final certificatesProvider = FutureProvider<List<Certificate>>((ref) async {
-  return ApiClient.fetchCertificates();
+  try {
+    return ApiClient.fetchCertificates();
+  } catch (_) {
+    return <Certificate>[];
+  }
 });
