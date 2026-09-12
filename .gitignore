@@ -1,7 +1,5 @@
-# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
-
-# dependencies
-node_modules
+# ── dependencies ──
+node_modules/
 /.pnp
 .pnp.*
 .yarn/*
@@ -10,56 +8,63 @@ node_modules
 !.yarn/releases
 !.yarn/versions
 
-# testing
-/coverage
+# ── testing ──
+/coverage/
 
-# next.js
+# ── next.js ──
 /.next/
 /out/
+/build/
 
-# production
-/build
-
-# misc
+# ── misc ──
 .DS_Store
 *.pem
-
-# debug
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
 
-# env files (keep real secrets out, but commit the template)
+# ── env files (commit only the template) ──
 .env*
 !.env.example
 
-# Flutter build output
+# ── local SQLite database (Neon in prod) ──
+/db/*.db
+/db/*.db-journal
+
+# ── Flutter build output ──
 flutter_app/build/
 flutter_app/.dart_tool/
 flutter_app/.flutter-plugins
 flutter_app/.flutter-plugins-dependencies
 
-# local SQLite database (do not commit; Neon is used in prod)
-/db/*.db
-/db/*.db-journal
+# ── Vercel ──
+.vercel/
 
-# vercel
-.vercel
-
-
-# typescript
+# ── TypeScript ──
 *.tsbuildinfo
 next-env.d.ts
-local-*
-.claude
-.z-ai-config
+
+# ── logs ──
 *.log
 dev.log
 dev.out.log
-test
-prompt
-
 server.log
-# Skills directory
-/skills/public/tradeseekho-source.tar.gz
+
+# ── delivery archive (bundled separately for download) ──
+public/tradeseekho-source.tar.gz
+
+# ── sandbox-internal (NOT part of TradeSeekho) ──
+/skills/
+/mini-services/
+/upload/
+/examples/
+/tests/
+/download/
+/worklog.md
+/local-*
+/.claude/
+/.z-ai-config/
+/.zscripts/
+/Caddyfile
+/prompt
