@@ -38,6 +38,21 @@ jobs:
         # on the runner; existing lib/*.dart and pubspec.yaml are preserved.
         run: flutter create --project-name tradeseekho --platforms android,ios --no-pub .
 
+      - name: Bump Kotlin to 1.9.24 (play-services-ads 23.4 needs Kotlin 1.9+)
+        # google_mobile_ads -> play-services-ads 23.4.0 is compiled with Kotlin 1.9
+        # metadata, but the Flutter 3.22 template pins Kotlin 1.7.1 -> compileDebugKotlin fails.
+        run: |
+          # Kotlin DSL (Flutter 3.16+ default): id("org.jetbrains.kotlin.android") version "1.7.x"
+          if [ -f android/settings.gradle.kts ]; then
+            sed -i -E 's#(kotlin\.android"\) version ")[0-9.]+#\11.9.24#' android/settings.gradle.kts
+            echo "patched settings.gradle.kts:"; grep -n "kotlin" android/settings.gradle.kts || true
+          fi
+          # Groovy fallback: id "org.jetbrains.kotlin.android" version "1.7.x"
+          if [ -f android/settings.gradle ]; then
+            sed -i -E 's#(kotlin\.android" version ")[0-9.]+#\11.9.24#' android/settings.gradle
+            echo "patched settings.gradle:"; grep -n "kotlin" android/settings.gradle || true
+          fi
+
       - name: Install dependencies
         run: flutter pub get
 
