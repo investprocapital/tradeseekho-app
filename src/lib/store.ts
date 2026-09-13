@@ -52,6 +52,9 @@ interface AppState {
   certOpen: boolean
   setCertOpen: (v: boolean) => void
 
+  loginOpen: boolean
+  setLoginOpen: (v: boolean) => void
+
   showAdmin: boolean
   setShowAdmin: (v: boolean) => void
 
@@ -108,6 +111,9 @@ export const useStore = create<AppState>()(
 
       certOpen: false,
       setCertOpen: (v) => set({ certOpen: v }),
+
+      loginOpen: false,
+      setLoginOpen: (v) => set({ loginOpen: v }),
 
       showAdmin: false,
       setShowAdmin: (v) => set({ showAdmin: v }),

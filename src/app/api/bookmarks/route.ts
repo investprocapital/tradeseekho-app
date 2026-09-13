@@ -1,13 +1,13 @@
 import { NextResponse } from "next/server"
 import { db } from "@/lib/db"
+import { getCurrentUserId } from "@/lib/auth"
 import type { LessonListItemDTO } from "@/lib/types"
 
 export const dynamic = "force-dynamic"
 
-const userId = "local-learner"
-
-// GET bookmarks for the local learner (full lesson DTOs, published only)
+// GET bookmarks for the signed-in user (full lesson DTOs, published only)
 export async function GET() {
+  const userId = await getCurrentUserId()
   const bookmarks = await db.bookmark.findMany({
     where: { userId },
     include: { lesson: { include: { category: true, quiz: true } } },
@@ -50,6 +50,7 @@ export async function GET() {
 
 // POST add a bookmark { lessonId }
 export async function POST(req: Request) {
+  const userId = await getCurrentUserId()
   const { lessonId } = await req.json()
   if (!lessonId) return NextResponse.json({ error: "bad_body" }, { status: 400 })
   await db.bookmark.upsert({
@@ -62,6 +63,7 @@ export async function POST(req: Request) {
 
 // DELETE remove a bookmark ?lessonId=
 export async function DELETE(req: Request) {
+  const userId = await getCurrentUserId()
   const { searchParams } = new URL(req.url)
   const lessonId = searchParams.get("lessonId")
   if (!lessonId) return NextResponse.json({ error: "bad_body" }, { status: 400 })

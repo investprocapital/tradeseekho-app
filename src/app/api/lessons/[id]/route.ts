@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server"
 import { db } from "@/lib/db"
+import { getCurrentUserId } from "@/lib/auth"
 import type { LessonDetailDTO, PublicQuizDTO } from "@/lib/types"
 
 export const dynamic = "force-dynamic"
@@ -10,7 +11,7 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> },
 ) {
   const { id } = await params
-  const userId = "local-learner"
+  const userId = await getCurrentUserId()
 
   const lesson = await db.lesson.findUnique({
     where: { id },

@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server"
 import { db } from "@/lib/db"
+import { getCurrentUserId } from "@/lib/auth"
 import type { QuizSubmitResult } from "@/lib/types"
 
 export const dynamic = "force-dynamic"
@@ -10,7 +11,7 @@ export const dynamic = "force-dynamic"
 // gates the AdMob interstitial to "every 2 completed lessons", and issues a
 // Certificate when the learner passes the final lesson of a level.
 export async function POST(req: Request) {
-  const userId = "local-learner"
+  const userId = await getCurrentUserId()
   let body: { lessonId?: string; answers?: number[] }
   try {
     body = await req.json()

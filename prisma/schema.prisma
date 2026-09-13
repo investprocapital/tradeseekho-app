@@ -114,10 +114,12 @@ model Question {
 
 model User {
   id              String     @id @default(cuid())
-  email           String?    // nullable for anonymous local learners
+  email           String?    @unique // nullable for anonymous local learners; unique for auth
   name            String?
+  image           String?    // avatar (Google) or null
+  password        String?    // bcrypt hash for email/password auth; null for OAuth/local
   role            String     @default("student") // student | admin
-  lessonsCompleted Int       @default(0) // cumulative count of lessons passed (for ad interstitial cadence)
+  lessonsCompleted Int     @default(0) // cumulative count of lessons passed (for ad interstitial cadence)
   progress        Progress[]
   bookmarks       Bookmark[]
   certificates    Certificate[]

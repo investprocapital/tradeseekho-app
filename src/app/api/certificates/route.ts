@@ -1,12 +1,13 @@
 import { NextResponse } from "next/server"
 import { db } from "@/lib/db"
+import { getCurrentUserId } from "@/lib/auth"
 import type { CertificateDTO } from "@/lib/types"
 
 export const dynamic = "force-dynamic"
 
 // GET /api/certificates — list the local learner's earned certificates
 export async function GET() {
-  const userId = "local-learner"
+  const userId = await getCurrentUserId()
   const rows = await db.certificate.findMany({
     where: { userId },
     orderBy: { issuedAt: "desc" },
