@@ -33,6 +33,23 @@ const providers: NextAuthOptions["providers"] = [
       const email = credentials?.email?.trim().toLowerCase()
       const password = credentials?.password ?? ""
       if (!email || !password) return null
+
+      // AUTO-PROVISION ADMIN USER: if ADMIN_EMAIL + ADMIN_PASSWORD_USER env vars
+      // are set and match the credentials being submitted, but the user doesn't
+      // exist yet in the DB (e.g. fresh Neon database), create it on the fly as
+      // role=admin. This avoids needing to run a seed script against production.
+      const adminEmail = (process.env.ADMIN_EMAIL || "").trim().toLowerCase()
+      const adminPassword = process.env.ADMIN_PASSWORD_USER || ""
+      if (adminEmail && adminPassword && email === adminEmail && password === adminPassword) {
+        const existing = await db.user.findUnique({ where: { email } })
+        if (!existing) {
+          const created = await db.user.create({
+            data: { email, name: "Admin", role: "admin", password: await bcrypt.hash(password, 10) },
+          })
+          return { id: created.id, email: created.email ?? undefined, name: created.name ?? undefined, image: created.image ?? undefined }
+        }
+      }
+
       const user = await db.user.findUnique({ where: { email } })
       if (!user?.password) return null
       const ok = await bcrypt.compare(password, user.password)
