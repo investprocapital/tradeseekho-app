@@ -32,10 +32,14 @@ export default function Home() {
   const bottomTab = useStore((s) => s.bottomTab)
   const openLesson = useStore((s) => s.openLesson)
   const setBottomTab = useStore((s) => s.setBottomTab)
+  const setActiveCategory = useStore((s) => s.setActiveCategory)
   const { data, isLoading } = useLessonsBundle("all")
 
   const lessons = data?.lessons ?? []
   const categories = data?.categories ?? []
+  // Filter by selected category when on lessons tab; show all on home
+  const visibleLessons = activeCategory === "all" ? lessons : lessons.filter((l) => l.categorySlug === activeCategory)
+  const activeCategoryName = categories.find((c) => c.slug === activeCategory)?.name[lang] || categories.find((c) => c.slug === activeCategory)?.name.en || "All Lessons"
   const completedCount = lessons.filter((l) => l.passed).length
   const totalLessons = lessons.length
 
@@ -73,7 +77,7 @@ export default function Home() {
                   </>
                 ) : (
                   categories.map((c, i) => (
-                    <LevelBox key={c.id} category={c} index={i} lessons={lessons.filter((l) => l.categoryId === c.id)} onOpen={(lessonId) => { setBottomTab("lessons"); openLesson(lessonId) }} />
+                    <LevelBox key={c.id} category={c} index={i} lessons={lessons.filter((l) => l.categoryId === c.id)} onOpen={() => { setActiveCategory(c.slug); setBottomTab("lessons") }} />
                   ))
                 )}
               </div>
@@ -87,12 +91,12 @@ export default function Home() {
               <section className="mt-6">
                 <div className="mb-2 flex items-center justify-between px-1">
                   <h2 className="text-base font-extrabold tracking-tight text-foreground">
-                    {lang === "ur" || lang === "ar" ? "تمام اسباق" : lang === "hi" ? "सभी पाठ" : "All Lessons"}
+                    {activeCategory === "all" ? (lang === "ur" || lang === "ar" ? "تمام اسباق" : lang === "hi" ? "सभी पाठ" : "All Lessons") : activeCategoryName}
                   </h2>
-                  <button onClick={() => setBottomTab("home")} className="text-xs font-bold text-brand">← Levels</button>
+                  <button onClick={() => { setBottomTab("home"); setActiveCategory("all") }} className="text-xs font-bold text-brand">← Levels</button>
                 </div>
                 <div className="grid gap-2.5">
-                  {lessons.map((l) => (
+                  {visibleLessons.map((l) => (
                     <button
                       key={l.id}
                       onClick={() => openLesson(l.id)}
@@ -152,21 +156,20 @@ function LevelBox({
   category: CategoryDTO
   index: number
   lessons: { id: string; passed: boolean; orderInCategory: number; title: { en: string; ur: string; hi: string; ar: string } }[]
-  onOpen: (lessonId: string) => void
+  onOpen: () => void
 }) {
   const lang = useStore((s) => s.lang)
   const Icon = LEVEL_ICONS[category.icon || ""] || BookOpen
   const total = lessons.length
   const done = lessons.filter((l) => l.passed).length
   const pct = total ? Math.round((done / total) * 100) : 0
-  const firstLesson = lessons.sort((a, b) => a.orderInCategory - b.orderInCategory)[0]
 
   return (
     <motion.button
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3, delay: index * 0.06 }}
-      onClick={() => firstLesson && onOpen(firstLesson.id)}
+      onClick={onOpen}
       className="group relative flex items-center gap-3 overflow-hidden rounded-2xl border-2 p-3 text-start transition-all hover:-translate-y-0.5"
       style={{ borderColor: `${category.color || "#00c853"}40`, background: `linear-gradient(135deg, ${category.color || "#00c853"}10, transparent)` }}
     >

@@ -138,16 +138,16 @@ export function Header() {
             <DropdownMenuContent align="end" className="w-56">
               <DropdownMenuLabel className="truncate">{user.email}</DropdownMenuLabel>
               <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={() => setEditProfileOpen(true)} className="gap-2">
+              <DropdownMenuItem onSelect={() => setEditProfileOpen(true)} className="gap-2">
                 <Edit3 className="h-4 w-4" /> Edit profile
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => setLeaderboardOpen(true)} className="gap-2">
+              <DropdownMenuItem onSelect={() => setLeaderboardOpen(true)} className="gap-2">
                 <Trophy className="h-4 w-4" /> Leaderboard
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => setCertOpen(true)} className="gap-2">
+              <DropdownMenuItem onSelect={() => setCertOpen(true)} className="gap-2">
                 <Award className="h-4 w-4" /> Certificates
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => signOut({ callbackUrl: "/" })} className="gap-2 text-destructive focus:text-destructive">
+              <DropdownMenuItem onSelect={() => signOut({ callbackUrl: "/" })} className="gap-2 text-destructive focus:text-destructive">
                 <LogOut className="h-4 w-4" /> Sign out
               </DropdownMenuItem>
             </DropdownMenuContent>
