@@ -34,29 +34,48 @@ export function Header() {
   return (
     <header className="sticky top-0 z-40 w-full border-b border-border/70 bg-background/85 backdrop-blur supports-[backdrop-filter]:bg-background/70">
       <div className="mx-auto flex h-16 w-full max-w-6xl items-center gap-1 px-3 sm:gap-2 sm:px-4">
-        {/* Home (logo = Home button) */}
+        {/* Home button (circular green logo with gold notification dot) */}
         <button
           onClick={() => setShowAdmin(false)}
-          className="flex shrink-0 items-center gap-2 rounded-xl px-1.5 py-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
+          className="relative shrink-0 rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
           aria-label={t("nav.home")}
         >
-          <span className="relative inline-flex h-9 w-9 items-center justify-center rounded-xl bg-brand text-brand-foreground shadow-sm shadow-brand/30">
-            <span className="text-lg font-extrabold leading-none">₸</span>
-            <span className="absolute -right-1 -top-1 h-3 w-3 rounded-full bg-gold ring-2 ring-background" />
+          <span className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-brand text-white shadow-sm shadow-brand/30">
+            <span className="text-lg font-extrabold leading-none">T</span>
           </span>
-          <span className="hidden flex-col leading-tight sm:flex">
-            <span className="text-base font-extrabold tracking-tight text-foreground">
-              Trade<span className="text-brand">Seekho</span>
-            </span>
-            <span className="text-[10px] font-medium uppercase tracking-[0.18em] text-muted-foreground">
-              Forex · Crypto
-            </span>
+          <span className="pointer-events-none absolute -right-0.5 -top-0.5 h-3 w-3 rounded-full bg-gold ring-2 ring-background" />
+        </button>
+
+        {/* Brand text (desktop) */}
+        <button onClick={() => setShowAdmin(false)} className="hidden flex-col leading-tight sm:flex" aria-label={t("nav.home")}>
+          <span className="text-base font-extrabold tracking-tight text-foreground">
+            Trade<span className="text-brand">Seekho</span>
+          </span>
+          <span className="text-[10px] font-medium uppercase tracking-[0.18em] text-muted-foreground">
+            Forex · Crypto
           </span>
         </button>
 
-        {/* Edit Profile (desktop) */}
-        <Button variant="ghost" size="sm" className="hidden gap-1.5 lg:flex" onClick={() => setEditProfileOpen(true)}>
-          <Edit3 className="h-4 w-4" /> <span className="hidden xl:inline">Edit Profile</span>
+        {/* Edit Profile (avatar with edit icon — opens Edit Profile dialog) */}
+        <Button
+          variant="ghost"
+          size="sm"
+          className="group relative ml-1 h-10 gap-2 rounded-full px-1"
+          onClick={() => setEditProfileOpen(true)}
+          aria-label="Edit Profile"
+        >
+          <span className="relative inline-block">
+            <Avatar className="h-8 w-8 border border-border">
+              <AvatarImage src={(user as { image?: string })?.image ?? undefined} alt="" />
+              <AvatarFallback className="bg-brand text-xs font-bold text-brand-foreground">
+                {initial}
+              </AvatarFallback>
+            </Avatar>
+            <span className="pointer-events-none absolute -bottom-0.5 -right-0.5 inline-flex h-4 w-4 items-center justify-center rounded-full bg-brand text-white ring-2 ring-background transition group-hover:scale-110">
+              <Edit3 className="h-2.5 w-2.5" />
+            </span>
+          </span>
+          <span className="hidden lg:inline text-xs font-bold">Edit Profile</span>
         </Button>
 
         <div className="flex-1" />
@@ -66,10 +85,10 @@ export function Header() {
           <Search className="h-5 w-5" />
         </Button>
 
-        {/* Notifications */}
+        {/* Notifications — dot is pointer-events-none so it never blocks the click */}
         <Button variant="ghost" size="icon" className="relative" aria-label="Notifications" onClick={() => setNotificationsOpen(true)}>
           <Bell className="h-5 w-5" />
-          <span className="absolute right-1.5 top-1.5 h-2 w-2 rounded-full bg-gold ring-2 ring-background" />
+          <span className="pointer-events-none absolute right-1.5 top-1.5 h-2 w-2 rounded-full bg-gold ring-2 ring-background" />
         </Button>
 
         {/* Leaderboard (desktop) */}
@@ -81,7 +100,7 @@ export function Header() {
         <Button variant="ghost" size="icon" className="relative" aria-label="Saved / Wishlist" onClick={() => setBookmarksOpen(true)}>
           <Bookmark className="h-5 w-5" />
           {bookmarksCount > 0 && (
-            <span className="absolute -right-0.5 -top-0.5 inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-gold px-1 text-[9px] font-bold text-gold-foreground">
+            <span className="pointer-events-none absolute -right-0.5 -top-0.5 inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-gold px-1 text-[9px] font-bold text-gold-foreground">
               {bookmarksCount}
             </span>
           )}

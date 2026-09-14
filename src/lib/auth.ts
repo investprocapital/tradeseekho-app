@@ -62,16 +62,20 @@ export const authOptions: NextAuthOptions = {
       return true
     },
     async jwt({ token, user }) {
-      // On first sign-in, resolve the DB user id by email (works for Google + Credentials).
+      // On first sign-in, resolve the DB user id + image by email (works for Google + Credentials).
       if (user?.email) {
         const dbUser = await db.user.findUnique({ where: { email: user.email } })
-        if (dbUser) token.uid = dbUser.id
+        if (dbUser) {
+          token.uid = dbUser.id
+          token.image = dbUser.image
+        }
       }
       return token
     },
     async session({ session, token }) {
-      if (session.user && token.uid) {
+      if (session.user) {
         ;(session.user as { id?: string }).id = token.uid as string
+        ;(session.user as { image?: string | null }).image = (token.image as string | null) ?? null
       }
       return session
     },

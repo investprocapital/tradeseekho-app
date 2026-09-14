@@ -1,13 +1,14 @@
 "use client"
 
-import { useState } from "react"
+import { useRef, useState } from "react"
 import { useSession } from "next-auth/react"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Separator } from "@/components/ui/separator"
-import { User, Lock, Loader2, AlertCircle } from "lucide-react"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { User, Lock, Loader2, AlertCircle, Camera, Upload } from "lucide-react"
 import { useStore } from "@/lib/store"
 import { useUpdateProfile } from "./use-data"
 import { toast } from "sonner"
@@ -15,14 +16,38 @@ import { toast } from "sonner"
 export function EditProfileDialog() {
   const open = useStore((s) => s.editProfileOpen)
   const setOpen = useStore((s) => s.setEditProfileOpen)
-  const { data: session } = useSession()
+  const { data: session, update: updateSession } = useSession()
   const user = session?.user
   const [name, setName] = useState(user?.name ?? "")
   const [cur, setCur] = useState("")
   const [next, setNext] = useState("")
   const [busy, setBusy] = useState(false)
   const [err, setErr] = useState<string | null>(null)
+  const [avatarUrl, setAvatarUrl] = useState((user as { image?: string } | undefined)?.image ?? null)
+  const [avatarBusy, setAvatarBusy] = useState(false)
+  const fileRef = useRef<HTMLInputElement>(null)
   const mut = useUpdateProfile()
+
+  const onAvatar = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const f = e.target.files?.[0]
+    if (!f) return
+    setAvatarBusy(true)
+    try {
+      const fd = new FormData()
+      fd.append("file", f)
+      const res = await fetch("/api/auth/avatar", { method: "POST", body: fd })
+      const j = await res.json()
+      if (!res.ok) throw new Error(j.error || "upload_failed")
+      setAvatarUrl(j.image)
+      await updateSession() // refresh session so header avatar updates
+      toast.success("Profile photo updated")
+    } catch {
+      toast.error("Could not upload photo")
+    } finally {
+      setAvatarBusy(false)
+      if (fileRef.current) fileRef.current.value = ""
+    }
+  }
 
   const save = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -67,6 +92,43 @@ export function EditProfileDialog() {
           </div>
         ) : (
           <form onSubmit={save} className="space-y-4 p-5">
+            {/* Avatar upload */}
+            <div className="flex items-center gap-4">
+              <button
+                type="button"
+                onClick={() => fileRef.current?.click()}
+                className="group relative shrink-0"
+                aria-label="Upload profile photo"
+              >
+                <Avatar className="h-16 w-16 border-2 border-border">
+                  <AvatarImage src={avatarUrl ?? undefined} alt="" />
+                  <AvatarFallback className="bg-brand text-xl font-bold text-brand-foreground">
+                    {(name || user.email || "U").charAt(0).toUpperCase()}
+                  </AvatarFallback>
+                </Avatar>
+                <span className="absolute -bottom-1 -right-1 inline-flex h-6 w-6 items-center justify-center rounded-full bg-brand text-white shadow ring-2 ring-background transition group-hover:scale-110">
+                  {avatarBusy ? <Loader2 className="h-3 w-3 animate-spin" /> : <Camera className="h-3 w-3" />}
+                </span>
+                <input
+                  ref={fileRef}
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={onAvatar}
+                  disabled={avatarBusy}
+                />
+              </button>
+              <div className="min-w-0 flex-1">
+                <p className="text-sm font-bold">Profile photo</p>
+                <p className="text-[11px] text-muted-foreground">Tap the avatar to upload (JPG/PNG, max 2MB).</p>
+                <Button type="button" variant="outline" size="sm" className="mt-1.5 h-8 gap-1.5 text-xs" onClick={() => fileRef.current?.click()} disabled={avatarBusy}>
+                  <Upload className="h-3.5 w-3.5" /> {avatarBusy ? "Uploading…" : "Upload"}
+                </Button>
+              </div>
+            </div>
+
+            <Separator />
+
             <div className="space-y-1.5">
               <Label htmlFor="name">Name</Label>
               <div className="relative">
