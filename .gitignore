@@ -68,3 +68,4 @@ public/tradeseekho-source.tar.gz
 /.zscripts/
 /Caddyfile
 /prompt
+.vercel
