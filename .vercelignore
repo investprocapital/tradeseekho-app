@@ -1,0 +1,20 @@
+# Exclude non-Next.js folders from Vercel deployments so uploads/builds are fast.
+# These are part of the monorepo but NOT needed by the Next.js web app.
+skills/
+flutter_app/
+examples/
+tests/
+download/
+upload/
+mini-services/
+worklog.md
+*.tar.gz
+.dev/
+.zscripts/
+.claude/
+.z-ai-config/
+Caddyfile
+dev.log
+server.log
+prisma/reset-learner.ts
+prisma/_check-admin.ts
