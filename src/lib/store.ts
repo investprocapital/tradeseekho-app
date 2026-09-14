@@ -13,6 +13,8 @@ export interface LessonProgress {
 
 export type AdminTab = "dashboard" | "lessons" | "quizzes" | "ads" | "pro"
 
+export type BottomTab = "home" | "lessons" | "quiz" | "profile"
+
 interface AppState {
   // Language + onboarding (persisted)
   lang: Lang
@@ -78,6 +80,10 @@ interface AppState {
 
   adminTab: AdminTab
   setAdminTab: (t: AdminTab) => void
+
+  // Bottom navigation (mobile-app feel)
+  bottomTab: BottomTab
+  setBottomTab: (t: BottomTab) => void
 
   // Whether the persisted store has rehydrated from localStorage (client only).
   // Used to gate UI that depends on persisted state so SSR + initial client render match.
@@ -156,6 +162,9 @@ export const useStore = create<AppState>()(
 
       adminTab: "dashboard",
       setAdminTab: (t) => set({ adminTab: t }),
+
+      bottomTab: "home",
+      setBottomTab: (t) => set({ bottomTab: t }),
 
       hasHydrated: false,
     }),

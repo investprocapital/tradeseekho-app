@@ -25,6 +25,7 @@ export const metadata: Metadata = {
     default: "TradeSeekho — Learn Forex & Crypto in Urdu, English, Hindi & Arabic",
     template: "%s · TradeSeekho",
   },
+  manifest: "/manifest.json",
   description:
     "TradeSeekho is a free Forex & Crypto learning platform. Structured lessons, instant quizzes, and real trading skills — in Urdu, English, Hindi and Arabic. Beginner to advanced.",
   keywords: [

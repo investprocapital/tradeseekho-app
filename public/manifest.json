@@ -1,0 +1,20 @@
+{
+  "name": "TradeSeekho — Learn Forex & Crypto",
+  "short_name": "TradeSeekho",
+  "description": "Structured Forex & Crypto lessons with quizzes. Urdu, English, Hindi & Arabic.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0b1410",
+  "theme_color": "#00c853",
+  "categories": ["education", "finance"],
+  "icons": [
+    {
+      "src": "https://z-cdn.chatglm.cn/z-ai/static/logo.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
