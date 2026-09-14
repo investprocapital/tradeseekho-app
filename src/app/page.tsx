@@ -99,7 +99,7 @@ export default function Home() {
                   {visibleLessons.map((l) => (
                     <button
                       key={l.id}
-                      onClick={() => openLesson(l.id)}
+                      onClick={() => { console.log("[DEBUG] lesson click", l.id); openLesson(l.id); setTimeout(() => console.log("[DEBUG] after openLesson, activeLessonId:", useStore.getState().activeLessonId), 100) }}
                       className="flex items-center gap-3 rounded-xl border border-border bg-card p-3 text-start transition hover:border-brand/50"
                     >
                       <span className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-white" style={{ background: l.categoryColor || "var(--brand)" }}>
