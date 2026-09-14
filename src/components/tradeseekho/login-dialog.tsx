@@ -16,6 +16,7 @@ export function LoginDialog() {
   const urduFont = lang === "ur" || lang === "ar"
   const loginOpen = useStore((s) => s.loginOpen)
   const setLoginOpen = useStore((s) => s.setLoginOpen)
+  const setShowAdmin = useStore((s) => s.setShowAdmin)
 
   const [mode, setMode] = useState<"signin" | "signup">("signin")
   const [email, setEmail] = useState("")
@@ -51,7 +52,18 @@ export function LoginDialog() {
       }
       setBusy(false)
       setLoginOpen(false)
-      // reload to refresh server-rendered session + scoped data
+      // Check the session role. If admin → open the admin panel directly
+      // (instead of reload). Otherwise reload to refresh scoped data.
+      try {
+        const sres = await fetch("/api/auth/session").then((x) => x.json())
+        const role = (sres?.user as { role?: string } | undefined)?.role
+        if (role === "admin") {
+          setShowAdmin(true)
+          return
+        }
+      } catch {
+        // ignore — fall back to reload
+      }
       window.location.reload()
     } catch {
       setErr("Something went wrong. Try again.")
