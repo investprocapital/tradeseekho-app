@@ -64,9 +64,9 @@ function LessonCard({ lesson, index, totalInCategory }: { lesson: LessonListItem
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true, margin: "-40px" }}
       transition={{ duration: 0.35, delay: Math.min(index * 0.05, 0.3) }}
-      onClick={() => !locked && openLesson(lesson.id)}
+      onClick={() => openLesson(lesson.id)}
       className={`ts-card-sheen group relative flex cursor-pointer flex-col overflow-hidden rounded-2xl border bg-card transition-all hover:-translate-y-1 hover:shadow-xl hover:shadow-brand/10 ${
-        locked ? "opacity-70" : "border-border hover:border-brand/50"
+        locked ? "opacity-80 border-border hover:border-brand/40" : "border-border hover:border-brand/50"
       }`}
     >
       {/* Thumbnail */}
@@ -102,9 +102,9 @@ function LessonCard({ lesson, index, totalInCategory }: { lesson: LessonListItem
           <Bookmark className={`h-4 w-4 ${isBookmarked ? "fill-gold text-gold" : "text-muted-foreground"}`} />
         </button>
         {locked && (
-          <div className="absolute inset-0 flex items-center justify-center bg-background/60 backdrop-blur-[2px]">
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-foreground/90 px-3 py-1 text-xs font-bold text-background">
-              <Lock className="h-3.5 w-3.5" /> {t("lesson.locked")}
+          <div className="pointer-events-none absolute inset-0 flex items-end justify-start bg-gradient-to-t from-background/80 via-background/10 to-transparent p-2">
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-foreground/90 px-2.5 py-1 text-[10px] font-bold text-background">
+              <Lock className="h-3 w-3" /> {t("lesson.locked")}
             </span>
           </div>
         )}

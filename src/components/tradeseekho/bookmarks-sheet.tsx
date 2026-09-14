@@ -29,10 +29,10 @@ export function BookmarksSheet() {
       <SheetContent side="start" className="flex w-full flex-col gap-0 p-0 sm:max-w-md">
         <SheetHeader className="border-b border-border p-5">
           <SheetTitle className="flex items-center gap-2 text-xl font-extrabold">
-            <Bookmark className="h-5 w-5 fill-gold text-gold" /> {t("nav.bookmarks")}
+            <Bookmark className="h-5 w-5 fill-gold text-gold" /> Saved / Wishlist
           </SheetTitle>
           <SheetDescription>
-            {list.length} {t("home.featuredTitle").toLowerCase()}
+            {list.length} saved lesson{list.length === 1 ? "" : "s"}
           </SheetDescription>
         </SheetHeader>
         <ScrollArea className="ts-scroll flex-1">

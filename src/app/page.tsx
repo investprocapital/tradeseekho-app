@@ -15,6 +15,11 @@ import { LessonReader } from "@/components/tradeseekho/lesson-reader"
 import { BookmarksSheet } from "@/components/tradeseekho/bookmarks-sheet"
 import { CertificateSheet } from "@/components/tradeseekho/certificate-sheet"
 import { LoginDialog } from "@/components/tradeseekho/login-dialog"
+import { LeaderboardSheet } from "@/components/tradeseekho/leaderboard-sheet"
+import { SettingsSheet } from "@/components/tradeseekho/settings-sheet"
+import { NotificationsSheet } from "@/components/tradeseekho/notifications-sheet"
+import { SearchDialog } from "@/components/tradeseekho/search-dialog"
+import { EditProfileDialog } from "@/components/tradeseekho/edit-profile-dialog"
 import { AdminPanel } from "@/components/tradeseekho/admin-panel"
 import { Skeleton } from "@/components/ui/skeleton"
 
@@ -114,6 +119,11 @@ export default function Home() {
       <BookmarksSheet />
       <CertificateSheet />
       <LoginDialog />
+      <LeaderboardSheet />
+      <SettingsSheet />
+      <NotificationsSheet />
+      <SearchDialog />
+      <EditProfileDialog />
     </div>
   )
 }

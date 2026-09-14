@@ -103,3 +103,59 @@ export function useCertificates() {
   })
 }
 
+export interface LeaderboardRow {
+  rank: number
+  userId: string
+  name: string
+  image: string | null
+  lessonsPassed: number
+  scoreSum: number
+  scoreTotal: number
+  streak: number
+  isMe: boolean
+}
+
+export function useLeaderboard() {
+  return useQuery<{ leaderboard: LeaderboardRow[]; totalLearners: number }>({
+    queryKey: ["leaderboard"],
+    queryFn: () => j(fetch("/api/leaderboard").then((r) => r)),
+  })
+}
+
+export interface AppNotification {
+  id: string
+  type: "welcome" | "quiz_passed" | "new_lesson" | "signal"
+  title: string
+  body: string
+  createdAt: string
+}
+
+export function useNotifications() {
+  return useQuery<{ notifications: AppNotification[] }>({
+    queryKey: ["notifications"],
+    queryFn: () => j(fetch("/api/notifications").then((r) => r)),
+  })
+}
+
+export function useUpdateProfile() {
+  const qc = useQueryClient()
+  return useMutation<
+    { ok: boolean },
+    Error,
+    { name?: string; currentPassword?: string; newPassword?: string }
+  >({
+    mutationFn: async (vars) => {
+      const res = await fetch("/api/auth/profile", {
+        method: "PUT",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify(vars),
+      })
+      return j(res)
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["leaderboard"] })
+      qc.invalidateQueries({ queryKey: ["notifications"] })
+    },
+  })
+}
+

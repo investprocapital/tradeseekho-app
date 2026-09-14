@@ -55,6 +55,21 @@ interface AppState {
   loginOpen: boolean
   setLoginOpen: (v: boolean) => void
 
+  leaderboardOpen: boolean
+  setLeaderboardOpen: (v: boolean) => void
+
+  settingsOpen: boolean
+  setSettingsOpen: (v: boolean) => void
+
+  notificationsOpen: boolean
+  setNotificationsOpen: (v: boolean) => void
+
+  searchOpen: boolean
+  setSearchOpen: (v: boolean) => void
+
+  editProfileOpen: boolean
+  setEditProfileOpen: (v: boolean) => void
+
   showAdmin: boolean
   setShowAdmin: (v: boolean) => void
 
@@ -114,6 +129,21 @@ export const useStore = create<AppState>()(
 
       loginOpen: false,
       setLoginOpen: (v) => set({ loginOpen: v }),
+
+      leaderboardOpen: false,
+      setLeaderboardOpen: (v) => set({ leaderboardOpen: v }),
+
+      settingsOpen: false,
+      setSettingsOpen: (v) => set({ settingsOpen: v }),
+
+      notificationsOpen: false,
+      setNotificationsOpen: (v) => set({ notificationsOpen: v }),
+
+      searchOpen: false,
+      setSearchOpen: (v) => set({ searchOpen: v }),
+
+      editProfileOpen: false,
+      setEditProfileOpen: (v) => set({ editProfileOpen: v }),
 
       showAdmin: false,
       setShowAdmin: (v) => set({ showAdmin: v }),

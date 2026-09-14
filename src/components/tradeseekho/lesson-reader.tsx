@@ -162,14 +162,20 @@ export function LessonReader() {
             {/* Footer CTA */}
             <div className="border-t border-border bg-background p-4">
               {quiz ? (
-                <Button
-                  className="h-12 w-full gap-2 bg-brand text-base font-bold text-brand-foreground shadow-lg shadow-brand/30 hover:bg-brand/90"
-                  onClick={() => openQuiz(lesson.id)}
-                >
-                  <BarChart3 className="h-5 w-5" />
-                  {t("action.takeQuiz")}
-                  <ArrowRight className="h-4 w-4 rtl:rotate-180" />
-                </Button>
+                lesson.locked ? (
+                  <Button className="h-12 w-full gap-2 text-base font-bold" variant="secondary" disabled>
+                    <Lock className="h-5 w-5" /> {t("lesson.locked")} — {t("lesson.unlockHint")}
+                  </Button>
+                ) : (
+                  <Button
+                    className="h-12 w-full gap-2 bg-brand text-base font-bold text-brand-foreground shadow-lg shadow-brand/30 hover:bg-brand/90"
+                    onClick={() => openQuiz(lesson.id)}
+                  >
+                    <BarChart3 className="h-5 w-5" />
+                    {t("action.takeQuiz")}
+                    <ArrowRight className="h-4 w-4 rtl:rotate-180" />
+                  </Button>
+                )
               ) : lesson.nextLessonId ? (
                 <Button
                   className="h-12 w-full gap-2 text-base font-bold"
@@ -183,11 +189,6 @@ export function LessonReader() {
                 <Button className="h-12 w-full text-base font-bold" variant="secondary" onClick={closeLesson}>
                   {t("action.backToHome")}
                 </Button>
-              )}
-              {lesson.locked && (
-                <p className="mt-2 flex items-center justify-center gap-1.5 text-xs text-muted-foreground">
-                  <Lock className="h-3.5 w-3.5" /> {t("lesson.unlockHint")}
-                </p>
               )}
             </div>
             </>
