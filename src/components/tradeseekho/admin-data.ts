@@ -192,3 +192,55 @@ export function useSaveAds() {
     onSuccess: () => qc.invalidateQueries({ queryKey: ["admin-ads"] }),
   })
 }
+
+export interface AdminProRequest {
+  id: string
+  userId: string
+  method: string
+  amount: number
+  screenshotPath: string
+  note: string | null
+  status: string
+  reviewerNote: string | null
+  createdAt: string
+  reviewedAt: string | null
+  user: { id: string; name: string | null; email: string | null; image: string | null }
+}
+
+export function useAdminProRequests(status = "all") {
+  return useQuery<{ requests: AdminProRequest[] }>({
+    queryKey: ["admin-pro", status],
+    queryFn: () => j(fetch(`/api/admin/pro?status=${encodeURIComponent(status)}`).then((r) => r)),
+  })
+}
+
+export function useApproveProRequest() {
+  const qc = useQueryClient()
+  return useMutation<void, Error, { id: string; note?: string }>({
+    mutationFn: async ({ id, note }) => {
+      await fetch(`/api/admin/pro/${id}/approve`, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ note }),
+      })
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["admin-pro"] })
+      qc.invalidateQueries({ queryKey: ["admin-stats"] })
+    },
+  })
+}
+
+export function useRejectProRequest() {
+  const qc = useQueryClient()
+  return useMutation<void, Error, { id: string; note?: string }>({
+    mutationFn: async ({ id, note }) => {
+      await fetch(`/api/admin/pro/${id}/reject`, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ note }),
+      })
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["admin-pro"] }),
+  })
+}

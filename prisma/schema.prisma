@@ -119,12 +119,33 @@ model User {
   image           String?    // avatar (Google) or null
   password        String?    // bcrypt hash for email/password auth; null for OAuth/local
   role            String     @default("student") // student | admin
+  proStatus       String     @default("none") // none | pending | active (manual payment approval)
+  proExpiresAt    DateTime?  // optional expiry; null = lifetime
   lessonsCompleted Int     @default(0) // cumulative count of lessons passed (for ad interstitial cadence)
   progress        Progress[]
   bookmarks       Bookmark[]
   certificates    Certificate[]
+  proRequests     ProRequest[]
   createdAt       DateTime   @default(now())
   updatedAt       DateTime   @updatedAt
+}
+
+// Manual Pro payment request: user uploads a payment screenshot, admin approves.
+model ProRequest {
+  id             String   @id @default(cuid())
+  userId         String
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  method         String   // "JazzCash" | "Easypaisa"
+  amount         Int      @default(0) // PKR; optional info from user
+  screenshotPath String   // /uploads/pro/xxx.jpg
+  note           String?  // optional user note (txn id, etc.)
+  status         String   @default("pending") // pending | approved | rejected
+  reviewedAt     DateTime?
+  reviewerNote   String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@index([status])
 }
 
 model Progress {

@@ -159,3 +159,36 @@ export function useUpdateProfile() {
   })
 }
 
+export interface ProMe {
+  proStatus: "none" | "pending" | "active"
+  proExpiresAt: string | null
+  latestRequest: { id: string; method: string; status: string; createdAt: string; reviewerNote: string | null } | null
+}
+
+export function useProMe() {
+  return useQuery<ProMe>({
+    queryKey: ["pro-me"],
+    queryFn: () => j(fetch("/api/pro/me").then((r) => r)),
+  })
+}
+
+export function useSubmitProRequest() {
+  const qc = useQueryClient()
+  return useMutation<
+    { ok: boolean; requestId: string },
+    Error,
+    { method: string; amount?: number; note?: string; file: File }
+  >({
+    mutationFn: async (vars) => {
+      const fd = new FormData()
+      fd.append("method", vars.method)
+      if (vars.amount) fd.append("amount", String(vars.amount))
+      if (vars.note) fd.append("note", vars.note)
+      fd.append("file", vars.file)
+      const res = await fetch("/api/pro/request", { method: "POST", body: fd })
+      return j(res)
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["pro-me"] }),
+  })
+}
+

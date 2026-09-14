@@ -1,8 +1,8 @@
 "use client"
 
-import { Megaphone, Github, Heart } from "lucide-react"
+import { Megaphone, Github, Heart, Crown } from "lucide-react"
 import { useStore, useT } from "@/lib/store"
-import { useAdSettings } from "./use-data"
+import { useAdSettings, useProMe } from "./use-data"
 import { LANGS } from "@/lib/i18n"
 
 export function Footer() {
@@ -11,24 +11,44 @@ export function Footer() {
   const urduFont = lang === "ur" || lang === "ar"
   const { data: ads } = useAdSettings()
   const showBanner = ads?.bannerEnabled ?? true
+  const setProOpen = useStore((s) => s.setProOpen)
+  const { data: proMe } = useProMe()
+  const isPro = proMe?.proStatus === "active"
+  const isPending = proMe?.proStatus === "pending"
 
   return (
     <footer className="mt-auto border-t border-border bg-card">
-      {/* AdMob banner (when enabled) */}
+      {/* Pro CTA / status banner (replaces ad banner for simplicity; ad banner still toggled by admin) */}
       {showBanner && (
-        <div className="flex items-center justify-between gap-3 bg-foreground/[0.04] px-4 py-2.5">
+        <div className="flex items-center justify-between gap-3 bg-gradient-to-r from-gold/10 to-brand-muted/20 px-4 py-2.5">
           <div className="flex min-w-0 items-center gap-2.5">
             <span className="inline-flex h-8 w-8 items-center justify-center rounded-md bg-gold/20 text-gold">
-              <Megaphone className="h-4 w-4" />
+              <Crown className="h-4 w-4" />
             </span>
             <div className="min-w-0 leading-tight">
-              <p className="truncate text-xs font-bold text-foreground">TradeSeekho Pro — unlock all lessons</p>
-              <p className="truncate text-[10px] text-muted-foreground">{t("footer.ad")} · AdMob Banner</p>
+              {isPro ? (
+                <>
+                  <p className="truncate text-xs font-bold text-foreground">You're Pro 🎉 — unlimited access</p>
+                  <p className="truncate text-[10px] text-muted-foreground">Thanks for supporting TradeSeekho</p>
+                </>
+              ) : isPending ? (
+                <>
+                  <p className="truncate text-xs font-bold text-foreground">Pro payment under review ⏳</p>
+                  <p className="truncate text-[10px] text-muted-foreground">Activates within 24h of approval</p>
+                </>
+              ) : (
+                <>
+                  <p className="truncate text-xs font-bold text-foreground">TradeSeekho Pro — unlock all lessons</p>
+                  <p className="truncate text-[10px] text-muted-foreground">Manual payment • JazzCash / Easypaisa</p>
+                </>
+              )}
             </div>
           </div>
-          <button className="shrink-0 rounded-full bg-brand px-3 py-1 text-[11px] font-bold text-brand-foreground">
-            Get Pro
-          </button>
+          {!isPro && (
+            <button onClick={() => setProOpen(true)} className="shrink-0 rounded-full bg-brand px-3 py-1 text-[11px] font-bold text-brand-foreground">
+              {isPending ? "View" : "Get Pro"}
+            </button>
+          )}
         </div>
       )}
 

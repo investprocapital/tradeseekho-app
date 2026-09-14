@@ -20,6 +20,7 @@ import { SettingsSheet } from "@/components/tradeseekho/settings-sheet"
 import { NotificationsSheet } from "@/components/tradeseekho/notifications-sheet"
 import { SearchDialog } from "@/components/tradeseekho/search-dialog"
 import { EditProfileDialog } from "@/components/tradeseekho/edit-profile-dialog"
+import { ProDialog } from "@/components/tradeseekho/pro-dialog"
 import { AdminPanel } from "@/components/tradeseekho/admin-panel"
 import { Skeleton } from "@/components/ui/skeleton"
 
@@ -124,6 +125,7 @@ export default function Home() {
       <NotificationsSheet />
       <SearchDialog />
       <EditProfileDialog />
+      <ProDialog />
     </div>
   )
 }

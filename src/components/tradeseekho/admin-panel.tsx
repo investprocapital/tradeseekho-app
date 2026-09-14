@@ -5,6 +5,7 @@ import { motion } from "framer-motion"
 import {
   Download, Users, BookOpen, BarChart3, Shield, Lock, LogOut, Eye,
   Plus, Pencil, Trash2, Save, Send, Megaphone, Check, ChevronRight, ArrowLeft,
+  Crown, X,
 } from "lucide-react"
 import {
   Card, CardContent, CardHeader, CardTitle, CardDescription,
@@ -36,7 +37,9 @@ import {
   useAdminMe, useLogin, useLogout, useAdminLessons, useCategories,
   useAdminLessonDetail, useSaveLesson, useDeleteLesson, useSaveQuiz,
   useAdminQuiz, useAdminStats, useSaveStats, useAdminAds, useSaveAds,
+  useAdminProRequests, useApproveProRequest, useRejectProRequest,
 } from "./admin-data"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 
 const EMPTY_LOC: LocalizedText = { en: "", ur: "", hi: "", ar: "" }
 
@@ -110,12 +113,14 @@ export function AdminPanel() {
             <TabsTrigger value="lessons" className="gap-1.5"><BookOpen className="h-4 w-4" />{t("admin.manageLessons")}</TabsTrigger>
             <TabsTrigger value="quizzes" className="gap-1.5"><BarChart3 className="h-4 w-4" />{t("admin.manageQuizzes")}</TabsTrigger>
             <TabsTrigger value="ads" className="gap-1.5"><Megaphone className="h-4 w-4" />{t("admin.ads")}</TabsTrigger>
+            <TabsTrigger value="pro" className="gap-1.5"><Crown className="h-4 w-4" />Pro Requests</TabsTrigger>
           </TabsList>
         </ScrollArea>
         <TabsContent value="dashboard" className="mt-5"><DashboardTab /></TabsContent>
         <TabsContent value="lessons" className="mt-5"><LessonsTab /></TabsContent>
         <TabsContent value="quizzes" className="mt-5"><QuizzesTab /></TabsContent>
         <TabsContent value="ads" className="mt-5"><AdsTab /></TabsContent>
+        <TabsContent value="pro" className="mt-5"><ProRequestsTab /></TabsContent>
       </Tabs>
     </div>
   )
@@ -849,4 +854,115 @@ type AdminAdsForm = {
   interstitialEnabled: boolean
   bannerUnitId: string
   interstitialUnitId: string
+}
+
+/* ---------------- Pro Requests ---------------- */
+function ProRequestsTab() {
+  const t = useT()
+  const [status, setStatus] = useState<"pending" | "approved" | "rejected" | "all">("pending")
+  const { data, isLoading } = useAdminProRequests(status)
+  const approve = useApproveProRequest()
+  const reject = useRejectProRequest()
+  const [preview, setPreview] = useState<string | null>(null)
+  const list = data?.requests ?? []
+
+  const onApprove = async (id: string) => {
+    try { await approve.mutateAsync({ id }); toast.success("Pro approved — user is now Pro 🎉") }
+    catch { toast.error("Could not approve") }
+  }
+  const onReject = async (id: string) => {
+    if (!confirm("Reject this payment request? User's Pro will stay off.")) return
+    try { await reject.mutateAsync({ id }); toast.success("Request rejected") }
+    catch { toast.error("Could not reject") }
+  }
+
+  return (
+    <div>
+      <div className="mb-3 flex flex-wrap items-center gap-2">
+        {(["pending", "approved", "rejected", "all"] as const).map((s) => (
+          <button
+            key={s}
+            onClick={() => setStatus(s)}
+            className={`rounded-full px-3 py-1 text-xs font-bold capitalize transition ${
+              status === s ? "bg-brand text-brand-foreground" : "bg-muted text-muted-foreground hover:bg-muted/70"
+            }`}
+          >
+            {s}
+          </button>
+        ))}
+        <span className="ml-auto text-xs text-muted-foreground">{list.length} request{list.length === 1 ? "" : "s"}</span>
+      </div>
+
+      {isLoading ? (
+        <Card><CardContent className="p-10 text-center text-sm text-muted-foreground">{t("common.loading")}</CardContent></Card>
+      ) : list.length === 0 ? (
+        <Card><CardContent className="flex flex-col items-center gap-2 p-10 text-center">
+          <Crown className="h-10 w-10 text-muted-foreground/50" />
+          <p className="text-sm text-muted-foreground">No {status} Pro requests.</p>
+        </CardContent></Card>
+      ) : (
+        <div className="grid gap-3 sm:grid-cols-2">
+          {list.map((r) => {
+            const initial = (r.user.name || r.user.email || "U").charAt(0).toUpperCase()
+            return (
+              <Card key={r.id}>
+                <CardContent className="p-4">
+                  <div className="flex items-start gap-3">
+                    <Avatar className="h-10 w-10">
+                      <AvatarImage src={r.user.image ?? undefined} alt="" />
+                      <AvatarFallback className="bg-brand text-xs font-bold text-brand-foreground">{initial}</AvatarFallback>
+                    </Avatar>
+                    <div className="min-w-0 flex-1">
+                      <div className="truncate text-sm font-bold">{r.user.name || "Learner"}</div>
+                      <div className="truncate text-[11px] text-muted-foreground">{r.user.email}</div>
+                    </div>
+                    <Badge className={
+                      r.status === "approved" ? "bg-brand-muted text-brand"
+                      : r.status === "rejected" ? "bg-destructive/15 text-destructive"
+                      : "bg-gold/20 text-gold-foreground"
+                    }>{r.status}</Badge>
+                  </div>
+
+                  <div className="mt-3 grid grid-cols-2 gap-2 text-xs">
+                    <div><span className="text-muted-foreground">Method:</span> <span className="font-bold">{r.method}</span></div>
+                    <div><span className="text-muted-foreground">Amount:</span> <span className="font-bold">Rs {r.amount}</span></div>
+                    <div className="col-span-2"><span className="text-muted-foreground">Submitted:</span> <span className="font-bold">{new Date(r.createdAt).toLocaleString()}</span></div>
+                    {r.note && <div className="col-span-2 rounded bg-muted/50 p-2"><span className="font-semibold">Note:</span> {r.note}</div>}
+                    {r.reviewerNote && <div className="col-span-2 rounded bg-muted/50 p-2"><span className="font-semibold">Admin:</span> {r.reviewerNote}</div>}
+                  </div>
+
+                  <button
+                    onClick={() => setPreview(r.screenshotPath)}
+                    className="mt-3 block w-full overflow-hidden rounded-lg border border-border"
+                    aria-label="View screenshot"
+                  >
+                    <img src={r.screenshotPath} alt="payment screenshot" className="h-32 w-full object-cover" />
+                  </button>
+
+                  {r.status === "pending" && (
+                    <div className="mt-3 flex gap-2">
+                      <Button size="sm" className="flex-1 gap-1.5 bg-brand font-bold text-brand-foreground hover:bg-brand/90" onClick={() => onApprove(r.id)} disabled={approve.isPending}>
+                        <Check className="h-4 w-4" /> Approve
+                      </Button>
+                      <Button size="sm" variant="outline" className="flex-1 gap-1.5 text-destructive hover:text-destructive" onClick={() => onReject(r.id)} disabled={reject.isPending}>
+                        <X className="h-4 w-4" /> Reject
+                      </Button>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            )
+          })}
+        </div>
+      )}
+
+      {/* Screenshot preview lightbox */}
+      {preview && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-foreground/90 p-4" onClick={() => setPreview(null)}>
+          <button className="absolute right-4 top-4 text-background" aria-label="Close"><X className="h-6 w-6" /></button>
+          <img src={preview} alt="screenshot" className="max-h-[90vh] max-w-full rounded-lg" />
+        </div>
+      )}
+    </div>
+  )
 }

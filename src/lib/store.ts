@@ -11,7 +11,7 @@ export interface LessonProgress {
   completed: boolean
 }
 
-export type AdminTab = "dashboard" | "lessons" | "quizzes" | "ads"
+export type AdminTab = "dashboard" | "lessons" | "quizzes" | "ads" | "pro"
 
 interface AppState {
   // Language + onboarding (persisted)
@@ -69,6 +69,9 @@ interface AppState {
 
   editProfileOpen: boolean
   setEditProfileOpen: (v: boolean) => void
+
+  proOpen: boolean
+  setProOpen: (v: boolean) => void
 
   showAdmin: boolean
   setShowAdmin: (v: boolean) => void
@@ -144,6 +147,9 @@ export const useStore = create<AppState>()(
 
       editProfileOpen: false,
       setEditProfileOpen: (v) => set({ editProfileOpen: v }),
+
+      proOpen: false,
+      setProOpen: (v) => set({ proOpen: v }),
 
       showAdmin: false,
       setShowAdmin: (v) => set({ showAdmin: v }),
