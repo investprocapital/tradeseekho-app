@@ -14,6 +14,7 @@ import { useStore, useT } from "@/lib/store"
 import { useLessonDetail, useToggleBookmark } from "./use-data"
 import { usePick } from "./localize"
 import { QuizContent } from "./quiz-modal"
+import { AdBanner } from "./ad-banner"
 import { toast } from "sonner"
 
 export function LessonReader() {
@@ -156,6 +157,11 @@ export function LessonReader() {
                     <CheckCircle2 className="h-5 w-5" /> {t("quiz.passed")}
                   </div>
                 )}
+
+                {/* AdMob banner inside the reader (web + mobile + iOS) */}
+                <div className="mt-2">
+                  <AdBanner compact />
+                </div>
               </div>
             </ScrollArea>
 

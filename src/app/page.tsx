@@ -10,6 +10,7 @@ import { Hero } from "@/components/tradeseekho/hero"
 import { CategoryCards, SectionHeading } from "@/components/tradeseekho/category-cards"
 import { LessonGrid } from "@/components/tradeseekho/lesson-grid"
 import { Footer } from "@/components/tradeseekho/footer"
+import { AdBanner } from "@/components/tradeseekho/ad-banner"
 import { Onboarding } from "@/components/tradeseekho/onboarding"
 import { LessonReader } from "@/components/tradeseekho/lesson-reader"
 import { BookmarksSheet } from "@/components/tradeseekho/bookmarks-sheet"
@@ -75,6 +76,9 @@ export default function Home() {
             </section>
 
             {data && <CategoryCards categories={data.categories} />}
+
+            {/* AdMob-style banner ad on home (web + mobile + iOS) */}
+            <AdBanner />
 
             {isLoading ? (
               <section className="mx-auto max-w-6xl px-4 py-10">

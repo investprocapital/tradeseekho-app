@@ -64,11 +64,18 @@ function LessonCard({ lesson, index, totalInCategory }: { lesson: LessonListItem
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true, margin: "-40px" }}
       transition={{ duration: 0.35, delay: Math.min(index * 0.05, 0.3) }}
-      onClick={() => openLesson(lesson.id)}
-      className={`ts-card-sheen group relative flex cursor-pointer flex-col overflow-hidden rounded-2xl border bg-card transition-all hover:-translate-y-1 hover:shadow-xl hover:shadow-brand/10 ${
+      className={`ts-card-sheen group relative flex flex-col overflow-hidden rounded-2xl border bg-card transition-all hover:-translate-y-1 hover:shadow-xl hover:shadow-brand/10 ${
         locked ? "opacity-80 border-border hover:border-brand/40" : "border-border hover:border-brand/50"
       }`}
     >
+      {/* Full-card click target (covers the whole card, sits above content but
+          below the bookmark button so taps work on mobile + web) */}
+      <button
+        type="button"
+        onClick={() => openLesson(lesson.id)}
+        className="absolute inset-0 z-10 h-full w-full cursor-pointer"
+        aria-label={`${t("action.readLesson")}: ${pick(lesson.title)}`}
+      />
       {/* Thumbnail */}
       <div className="relative h-32 overflow-hidden">
         {lesson.imageUrl ? (
@@ -97,7 +104,7 @@ function LessonCard({ lesson, index, totalInCategory }: { lesson: LessonListItem
         <button
           onClick={onBookmark}
           aria-label={t("nav.bookmarks")}
-          className="absolute end-3 top-3 inline-flex h-8 w-8 items-center justify-center rounded-full bg-background/90 shadow transition hover:scale-110"
+          className="absolute end-3 top-3 z-20 inline-flex h-8 w-8 items-center justify-center rounded-full bg-background/90 shadow transition hover:scale-110"
         >
           <Bookmark className={`h-4 w-4 ${isBookmarked ? "fill-gold text-gold" : "text-muted-foreground"}`} />
         </button>
