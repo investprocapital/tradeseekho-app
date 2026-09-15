@@ -44,9 +44,17 @@ export function LoginDialog() {
         }
       }
       // sign in with the just-created (or existing) credentials
-      const r = await signIn("credentials", { email, password, redirect: false })
-      if (!r || r.error) {
-        setErr("Invalid email or password.")
+      let r: { error?: string | null; ok?: boolean; status?: number; url?: string | null } | undefined
+      try {
+        r = await signIn("credentials", { email, password, redirect: false })
+      } catch (e: any) {
+        // signIn can throw on network errors; show a friendly message
+        setErr("Network error. Check your connection and try again.")
+        setBusy(false)
+        return
+      }
+      if (!r || r.error || !r.ok) {
+        setErr(r?.error === "CredentialsSignin" ? "Invalid email or password." : (r?.error || "Login failed. Try again."))
         setBusy(false)
         return
       }
