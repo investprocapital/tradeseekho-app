@@ -16,7 +16,7 @@ import { toast } from "sonner"
 export function EditProfileDialog() {
   const open = useStore((s) => s.editProfileOpen)
   const setOpen = useStore((s) => s.setEditProfileOpen)
-  const { data: session, update: updateSession } = useSession()
+  const { data: session } = useSession()
   const user = session?.user
   const [name, setName] = useState(user?.name ?? "")
   const [cur, setCur] = useState("")
@@ -39,10 +39,13 @@ export function EditProfileDialog() {
       const j = await res.json()
       if (!res.ok) throw new Error(j.error || "upload_failed")
       setAvatarUrl(j.image)
-      await updateSession() // refresh session so header avatar updates
-      toast.success("Profile photo updated")
-    } catch {
-      toast.error("Could not upload photo")
+      toast.success("Profile photo updated — refreshing…")
+      // Full reload so the NextAuth JWT/session refreshes with the new image
+      // (updateSession alone doesn't reliably propagate the image to the header).
+      setTimeout(() => window.location.reload(), 800)
+    } catch (e2: any) {
+      const msg = e2?.message
+      toast.error(msg === "too_large" ? "Image too large (max 500KB). Use a smaller image." : msg === "unauthorized" ? "Please sign in first." : "Could not upload photo")
     } finally {
       setAvatarBusy(false)
       if (fileRef.current) fileRef.current.value = ""

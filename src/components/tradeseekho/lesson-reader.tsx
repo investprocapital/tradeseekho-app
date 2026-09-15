@@ -8,7 +8,7 @@ import { Badge } from "@/components/ui/badge"
 import { Progress } from "@/components/ui/progress"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Separator } from "@/components/ui/separator"
-import { Bookmark, X, ArrowRight, BarChart3, Lock, CheckCircle2 } from "lucide-react"
+import { Bookmark, X, ArrowRight, BarChart3, Lock, CheckCircle2, BookOpen } from "lucide-react"
 import { motion } from "framer-motion"
 import { useStore, useT } from "@/lib/store"
 import { useLessonDetail, useToggleBookmark } from "./use-data"
@@ -139,16 +139,28 @@ export function LessonReader() {
                     <img src={lesson.imageUrl} alt="" className="h-44 w-full object-cover no-select" draggable={false} />
                   </div>
                 )}
-                <motion.div
-                  initial={{ opacity: 0, y: 8 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.3 }}
-                  className="prose-tradeseekho text-[15px] leading-7"
-                >
-                  <ReactMarkdown components={mdComponents}>
-                    {pick(lesson.content)}
-                  </ReactMarkdown>
-                </motion.div>
+                {pick(lesson.content).trim() ? (
+                  <motion.div
+                    initial={{ opacity: 0, y: 8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.3 }}
+                    className="prose-tradeseekho text-[15px] leading-7"
+                  >
+                    <ReactMarkdown components={mdComponents}>
+                      {pick(lesson.content)}
+                    </ReactMarkdown>
+                  </motion.div>
+                ) : (
+                  <div className="flex flex-col items-center justify-center gap-3 py-16 text-center">
+                    <span className="inline-flex h-16 w-16 items-center justify-center rounded-full bg-brand-muted text-brand">
+                      <BookOpen className="h-8 w-8" />
+                    </span>
+                    <h3 className="text-lg font-extrabold">Coming Soon</h3>
+                    <p className="max-w-xs text-sm text-muted-foreground">
+                      This lesson's content is being prepared. Check back soon — our team is writing it!
+                    </p>
+                  </div>
+                )}
 
                 <Separator className="my-6" />
 

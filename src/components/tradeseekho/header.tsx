@@ -147,7 +147,7 @@ export function Header() {
               <DropdownMenuItem onSelect={(e) => { e.preventDefault(); setCertOpen(true) }} className="gap-2">
                 <Award className="h-4 w-4" /> Certificates
               </DropdownMenuItem>
-              <DropdownMenuItem onSelect={() => signOut({ callbackUrl: "/" })} className="gap-2 text-destructive focus:text-destructive">
+              <DropdownMenuItem onSelect={() => signOut({ callbackUrl: "/", redirect: true })} className="gap-2 text-destructive focus:text-destructive">
                 <LogOut className="h-4 w-4" /> Sign out
               </DropdownMenuItem>
             </DropdownMenuContent>
