@@ -58,7 +58,13 @@ export function EditProfileDialog() {
       if (name.trim() && name.trim() !== (user?.name ?? "")) payload.name = name.trim()
       if (next) { payload.newPassword = next; payload.currentPassword = cur || undefined }
       if (Object.keys(payload).length === 0) {
-        setErr("Nothing to change.")
+        // If photo was already uploaded, just close — no error needed
+        if (avatarUrl && avatarUrl !== (user as { image?: string })?.image) {
+          setOpen(false)
+          toast.success("Profile photo updated")
+          return
+        }
+        setErr("No changes to save. Edit your name or password above, or upload a new photo.")
         setBusy(false)
         return
       }
