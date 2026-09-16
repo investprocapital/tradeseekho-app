@@ -93,12 +93,14 @@ export const authOptions: NextAuthOptions = {
       return true
     },
     async jwt({ token, user }) {
-      // On first sign-in, resolve the DB user id + image + role by email (works for Google + Credentials).
+      // On first sign-in, resolve the DB user id + role by email.
+      // NOTE: we do NOT put the image in the JWT — if it's a base64 data URL
+      // (avatar upload), it bloats the cookie → Vercel 494 REQUEST_HEADER_TOO_LARGE.
+      // The client fetches the avatar separately via useSession + /api/auth/session.
       if (user?.email) {
         const dbUser = await db.user.findUnique({ where: { email: user.email } })
         if (dbUser) {
           token.uid = dbUser.id
-          token.image = dbUser.image
           token.role = dbUser.role
         }
       }
@@ -107,8 +109,9 @@ export const authOptions: NextAuthOptions = {
     async session({ session, token }) {
       if (session.user) {
         ;(session.user as { id?: string }).id = token.uid as string
-        ;(session.user as { image?: string | null }).image = (token.image as string | null) ?? null
         ;(session.user as { role?: string }).role = (token.role as string) ?? "student"
+        // Don't set image here — it can be a huge base64 data URL that bloats
+        // the session cookie. Client reads it from /api/auth/me instead.
       }
       return session
     },

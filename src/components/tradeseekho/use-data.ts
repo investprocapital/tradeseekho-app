@@ -96,6 +96,26 @@ export function useAdSettings() {
   })
 }
 
+export interface CurrentUser {
+  id: string
+  email: string | null
+  name: string | null
+  image: string | null
+  role: string
+  proStatus: string
+}
+
+// Fetches the signed-in user's profile (including avatar) from /api/auth/me.
+// The avatar is NOT in the NextAuth session cookie (to avoid cookie bloat →
+// Vercel 494 error). This hook is the source of truth for the header avatar.
+export function useCurrentUser() {
+  return useQuery<{ user: CurrentUser | null }>({
+    queryKey: ["current-user"],
+    queryFn: () => j(fetch("/api/auth/me").then((r) => r)),
+    staleTime: 30_000,
+  })
+}
+
 export function useCertificates() {
   return useQuery<{ certificates: CertificateDTO[] }>({
     queryKey: ["certificates"],

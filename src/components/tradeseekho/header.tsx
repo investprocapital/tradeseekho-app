@@ -12,12 +12,17 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { useStore, useT } from "@/lib/store"
+import { useCurrentUser } from "./use-data"
 
 export function Header() {
   const t = useT()
   const { theme, setTheme } = useTheme()
   const { data: session, status } = useSession()
+  // Fetch the avatar separately (NOT from the session cookie — avoids 494 error)
+  const { data: meData } = useCurrentUser()
   const user = session?.user
+  const userImage = meData?.user?.image ?? null
+  const userRole = meData?.user?.role ?? (user as { role?: string })?.role ?? "student"
   const initial = (user?.name || user?.email || "U").charAt(0).toUpperCase()
 
   const setShowAdmin = useStore((s) => s.setShowAdmin)
@@ -64,7 +69,7 @@ export function Header() {
         >
           <span className="relative inline-block">
             <Avatar className="h-7 w-7 border border-border">
-              <AvatarImage src={(user as { image?: string })?.image ?? undefined} alt="" />
+              <AvatarImage src={userImage ?? undefined} alt="" />
               <AvatarFallback className="bg-brand text-[10px] font-bold text-brand-foreground">
                 {initial}
               </AvatarFallback>
@@ -130,7 +135,7 @@ export function Header() {
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" size="sm" className="gap-1.5 px-1.5">
                 <Avatar className="h-7 w-7">
-                  <AvatarImage src={(user as { image?: string }).image ?? undefined} alt="" />
+                  <AvatarImage src={userImage ?? undefined} alt="" />
                   <AvatarFallback className="bg-brand text-[10px] font-bold text-brand-foreground">{initial}</AvatarFallback>
                 </Avatar>
               </Button>

@@ -10,7 +10,7 @@ import { Separator } from "@/components/ui/separator"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { User, Lock, Loader2, AlertCircle, Camera, Upload } from "lucide-react"
 import { useStore } from "@/lib/store"
-import { useUpdateProfile } from "./use-data"
+import { useUpdateProfile, useCurrentUser } from "./use-data"
 import { toast } from "sonner"
 
 export function EditProfileDialog() {
@@ -23,7 +23,9 @@ export function EditProfileDialog() {
   const [next, setNext] = useState("")
   const [busy, setBusy] = useState(false)
   const [err, setErr] = useState<string | null>(null)
-  const [avatarUrl, setAvatarUrl] = useState((user as { image?: string } | undefined)?.image ?? null)
+  // Use the hook to get the current avatar from DB (not from session cookie)
+  const { data: meData } = useCurrentUser()
+  const [avatarUrl, setAvatarUrl] = useState(meData?.user?.image ?? null)
   const [avatarBusy, setAvatarBusy] = useState(false)
   const fileRef = useRef<HTMLInputElement>(null)
   const mut = useUpdateProfile()
