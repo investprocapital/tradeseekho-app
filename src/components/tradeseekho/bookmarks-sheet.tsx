@@ -26,7 +26,7 @@ export function BookmarksSheet() {
 
   return (
     <Sheet open={bookmarksOpen} onOpenChange={setBookmarksOpen}>
-      <SheetContent side="right" className="flex w-full flex-col gap-0 p-0 sm:max-w-md">
+      <SheetContent side="right" className="flex h-full w-full flex-col gap-0 p-0 sm:max-w-md">
         <SheetHeader className="border-b border-border p-5">
           <SheetTitle className="flex items-center gap-2 text-xl font-extrabold">
             <Bookmark className="h-5 w-5 fill-gold text-gold" /> Saved / Wishlist
@@ -52,7 +52,7 @@ export function BookmarksSheet() {
                   <li key={l.id}>
                     <button
                       onClick={() => onOpen(l.id)}
-                      className="flex w-full items-center gap-3 rounded-xl border border-border bg-card p-3 text-start transition hover:border-brand/50 hover:bg-muted/40"
+                      className="flex h-full w-full items-center gap-3 rounded-xl border border-border bg-card p-3 text-start transition hover:border-brand/50 hover:bg-muted/40"
                     >
                       <span
                         className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-lg text-white"

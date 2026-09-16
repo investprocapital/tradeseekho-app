@@ -20,6 +20,7 @@ import { EditProfileDialog } from "@/components/tradeseekho/edit-profile-dialog"
 import { ProDialog } from "@/components/tradeseekho/pro-dialog"
 import { AdminPanel } from "@/components/tradeseekho/admin-panel"
 import { Skeleton } from "@/components/ui/skeleton"
+import { toast } from "sonner"
 import type { CategoryDTO, LessonListItemDTO } from "@/lib/types"
 import type { LucideIcon } from "lucide-react"
 
@@ -108,8 +109,8 @@ export default function Home() {
                 ) : visibleLessons.length === 0 ? (
                   <p className="py-8 text-center text-sm text-muted-foreground">No lessons yet.</p>
                 ) : (
-                  visibleLessons.map((l) => (
-                    <LessonRow key={l.id} lesson={l} lang={lang} isPro={isPro} onOpen={() => openLesson(l.id)} onPro={() => setProOpen(true)} />
+                  visibleLessons.map((l, i) => (
+                    <LessonRow key={l.id} lesson={l} lang={lang} isPro={isPro} seqLocked={i > 0 && !visibleLessons[i - 1].passed} onOpen={() => openLesson(l.id)} onPro={() => setProOpen(true)} />
                   ))
                 )}
               </div>
@@ -208,25 +209,33 @@ function LevelBox({
   )
 }
 
-function LessonRow({ lesson, lang, isPro, onOpen, onPro }: { lesson: LessonListItemDTO; lang: string; isPro: boolean; onOpen: () => void; onPro: () => void }) {
+function LessonRow({ lesson, lang, isPro, onOpen, onPro, seqLocked }: { lesson: LessonListItemDTO; lang: string; isPro: boolean; onOpen: () => void; onPro: () => void; seqLocked?: boolean }) {
   const proLocked = !lesson.isFree && !isPro
+  const isLocked = proLocked || seqLocked
   return (
     <button
-      onClick={() => proLocked ? onPro() : onOpen()}
-      className={`flex items-center gap-3 rounded-xl border border-border bg-card p-3 text-start transition ${proLocked ? "opacity-70" : "hover:border-brand/50"}`}
+      onClick={() => {
+        if (proLocked) { onPro(); return }
+        if (seqLocked) {
+          toast(lang === "ur" || lang === "ar" ? "براہ کرم پہلا سبق مکمل کریں" : lang === "hi" ? "कृपया पिछला पाठ पूर्ण करें" : "Please complete the previous lesson first")
+          return
+        }
+        onOpen()
+      }}
+      className={`flex items-center gap-3 rounded-xl border border-border bg-card p-3 text-start transition ${isLocked ? "opacity-60" : "hover:border-brand/50"}`}
     >
       <span className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-white" style={{ background: lesson.categoryColor || "var(--brand)" }}>
         <span className="text-xs font-extrabold">{lesson.orderInCategory}</span>
       </span>
       <div className="min-w-0 flex-1">
         <div className="truncate text-sm font-bold">{lesson.title[lang] || lesson.title.en}</div>
-        <div className="text-[11px] text-muted-foreground">{lesson.categorySlug} · {lesson.durationMin} min{!lesson.isFree && " · PRO"}</div>
+        <div className="text-[11px] text-muted-foreground">{lesson.categorySlug} · {lesson.durationMin} min{!lesson.isFree && " · PRO"}{seqLocked && " · Locked"}</div>
       </div>
       {proLocked ? (
         <span className="inline-flex items-center gap-1 rounded-full bg-gold/20 px-2 py-0.5 text-[10px] font-bold text-gold-foreground">
           <Crown className="h-3 w-3" /> PRO
         </span>
-      ) : lesson.passed ? <CheckCircle2 className="h-4 w-4 text-brand" /> : lesson.orderInCategory > 1 && !lesson.passed ? <Lock className="h-4 w-4 text-muted-foreground" /> : null}
+      ) : lesson.passed ? <CheckCircle2 className="h-4 w-4 text-brand" /> : seqLocked ? <Lock className="h-4 w-4 text-muted-foreground" /> : null}
     </button>
   )
 }

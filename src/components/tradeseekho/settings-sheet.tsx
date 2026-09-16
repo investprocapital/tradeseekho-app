@@ -21,7 +21,7 @@ export function SettingsSheet() {
 
   return (
     <Sheet open={open} onOpenChange={setOpen}>
-      <SheetContent side="right" className="flex w-full flex-col gap-0 p-0 sm:max-w-md">
+      <SheetContent side="right" className="flex h-full w-full flex-col gap-0 p-0 sm:max-w-md">
         <SheetHeader className="border-b border-border p-5">
           <SheetTitle className="flex items-center gap-2 text-xl font-extrabold">
             <Shield className="h-5 w-5 text-brand" /> Settings
@@ -114,7 +114,7 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 
 function Row({ icon: Icon, label, hint, onClick }: { icon: any; label: string; hint?: string; onClick?: () => void }) {
   return (
-    <button onClick={onClick} className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-start transition hover:bg-muted/40">
+    <button onClick={onClick} className="flex h-full w-full items-center gap-3 rounded-lg px-3 py-2.5 text-start transition hover:bg-muted/40">
       <Icon className="h-4 w-4 text-brand" />
       <div className="min-w-0 flex-1">
         <div className="text-sm font-bold">{label}</div>

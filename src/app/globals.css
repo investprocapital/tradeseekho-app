@@ -158,6 +158,7 @@
   line-height: 2.1;
 }
 [dir="rtl"] .prose-tradeseekho {
+  direction: rtl;
   text-align: right;
 }
 
@@ -221,4 +222,12 @@
 }
 .ts-float {
   animation: ts-float 6s ease-in-out infinite;
+}
+
+/* Fix: English words in Urdu/Arabic RTL text — isolate them so they render LTR */
+[dir="rtl"] .prose-tradeseekho code,
+[dir="rtl"] code {
+  unicode-bidi: isolate;
+  direction: ltr;
+  display: inline-block;
 }
