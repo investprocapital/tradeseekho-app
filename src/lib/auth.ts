@@ -96,7 +96,6 @@ export const authOptions: NextAuthOptions = {
       // On first sign-in, resolve the DB user id + role by email.
       // NOTE: we do NOT put the image in the JWT — if it's a base64 data URL
       // (avatar upload), it bloats the cookie → Vercel 494 REQUEST_HEADER_TOO_LARGE.
-      // The client fetches the avatar separately via useSession + /api/auth/session.
       if (user?.email) {
         const dbUser = await db.user.findUnique({ where: { email: user.email } })
         if (dbUser) {
@@ -104,14 +103,18 @@ export const authOptions: NextAuthOptions = {
           token.role = dbUser.role
         }
       }
+      // Explicitly remove picture — NextAuth auto-copies user.image → token.picture
+      // which bloats the JWT cookie with base64 data. The client fetches the avatar
+      // separately via /api/auth/me.
+      delete (token as { picture?: unknown }).picture
       return token
     },
     async session({ session, token }) {
       if (session.user) {
         ;(session.user as { id?: string }).id = token.uid as string
         ;(session.user as { role?: string }).role = (token.role as string) ?? "student"
-        // Don't set image here — it can be a huge base64 data URL that bloats
-        // the session cookie. Client reads it from /api/auth/me instead.
+        // Explicitly clear image from session — it can be a huge base64 data URL
+        ;(session.user as { image?: string | null }).image = null
       }
       return session
     },
