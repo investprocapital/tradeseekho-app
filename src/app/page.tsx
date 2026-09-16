@@ -1,7 +1,7 @@
 "use client"
 
 import { motion } from "framer-motion"
-import { Sprout, LineChart, Trophy, CheckCircle2, Award, BookOpen, Crown, ArrowRight, Lock } from "lucide-react"
+import { Sprout, LineChart, Trophy, CheckCircle2, Award, BookOpen, Crown, ArrowRight, Lock, BarChart3, ChevronRight } from "lucide-react"
 import { useStore } from "@/lib/store"
 import { useLessonsBundle, useProMe } from "@/components/tradeseekho/use-data"
 import { Header } from "@/components/tradeseekho/header"
@@ -20,7 +20,7 @@ import { EditProfileDialog } from "@/components/tradeseekho/edit-profile-dialog"
 import { ProDialog } from "@/components/tradeseekho/pro-dialog"
 import { AdminPanel } from "@/components/tradeseekho/admin-panel"
 import { Skeleton } from "@/components/ui/skeleton"
-import type { CategoryDTO } from "@/lib/types"
+import type { CategoryDTO, LessonListItemDTO } from "@/lib/types"
 import type { LucideIcon } from "lucide-react"
 
 const LEVEL_ICONS: Record<string, LucideIcon> = { Sprout, LineChart, Trophy }
@@ -40,11 +40,12 @@ export default function Home() {
 
   const lessons = data?.lessons ?? []
   const categories = data?.categories ?? []
-  // Filter by selected category when on lessons tab; show all on home
   const visibleLessons = activeCategory === "all" ? lessons : lessons.filter((l) => l.categorySlug === activeCategory)
   const activeCategoryName = categories.find((c) => c.slug === activeCategory)?.name[lang] || categories.find((c) => c.slug === activeCategory)?.name.en || "All Lessons"
   const completedCount = lessons.filter((l) => l.passed).length
   const totalLessons = lessons.length
+  // Lessons that have a quiz
+  const quizLessons = lessons.filter((l) => l.hasQuiz)
 
   return (
     <div className="flex min-h-screen flex-col bg-background">
@@ -53,31 +54,23 @@ export default function Home() {
       <main className="mx-auto w-full max-w-3xl flex-1 px-3 py-4 sm:px-4">
         {showAdmin ? (
           <AdminPanel />
-        ) : (
+        ) : bottomTab === "home" ? (
           <>
-            {/* Progress strip (compact, top) */}
-            <motion.div
-              initial={{ opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="mb-4 grid grid-cols-3 gap-2"
-            >
+            {/* Progress strip */}
+            <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="mb-4 grid grid-cols-3 gap-2">
               <ProgressMini icon={CheckCircle2} value={`${completedCount}/${totalLessons}`} label={lang === "ur" || lang === "ar" ? "مکمل" : lang === "hi" ? "पूर्ण" : "Passed"} color="var(--brand)" />
               <ProgressMini icon={Award} value={`${Math.round(totalLessons ? (completedCount / totalLessons) * 100 : 0)}%`} label={lang === "ur" || lang === "ar" ? "پیش رفت" : lang === "hi" ? "प्रगति" : "Progress"} color="var(--gold)" />
               <ProgressMini icon={BookOpen} value={`${totalLessons}`} label={lang === "ur" || lang === "ar" ? "اسباق" : lang === "hi" ? "पाठ" : "Lessons"} color="#00bfa5" />
             </motion.div>
 
-            {/* Choose Your Level — 3 boxes, top priority */}
+            {/* Choose Your Level */}
             <section className="mb-4">
               <h2 className="mb-2 px-1 text-base font-extrabold tracking-tight text-foreground">
                 {lang === "ur" || lang === "ar" ? "اپنا لیول منتخب کریں" : lang === "hi" ? "अपना स्तर चुनें" : "Choose Your Level"}
               </h2>
               <div className="grid gap-2.5">
                 {isLoading ? (
-                  <>
-                    <Skeleton className="h-20 rounded-2xl" />
-                    <Skeleton className="h-20 rounded-2xl" />
-                    <Skeleton className="h-20 rounded-2xl" />
-                  </>
+                  <><Skeleton className="h-20 rounded-2xl" /><Skeleton className="h-20 rounded-2xl" /><Skeleton className="h-20 rounded-2xl" /></>
                 ) : (
                   categories.map((c, i) => (
                     <LevelBox key={c.id} category={c} index={i} lessons={lessons.filter((l) => l.categoryId === c.id)} onOpen={() => { setActiveCategory(c.slug); setBottomTab("lessons") }} />
@@ -86,47 +79,66 @@ export default function Home() {
               </div>
             </section>
 
-            {/* Get Pro banner (compact) */}
             <AdBanner />
-
-            {/* Lessons tab content (shown when bottom tab = lessons) */}
-            {bottomTab === "lessons" && (
-              <section className="mt-6">
-                <div className="mb-2 flex items-center justify-between px-1">
-                  <h2 className="text-base font-extrabold tracking-tight text-foreground">
-                    {activeCategory === "all" ? (lang === "ur" || lang === "ar" ? "تمام اسباق" : lang === "hi" ? "सभी पाठ" : "All Lessons") : activeCategoryName}
-                  </h2>
-                  <button onClick={() => { setBottomTab("home"); setActiveCategory("all") }} className="text-xs font-bold text-brand">← Levels</button>
-                </div>
-                <div className="grid gap-2.5">
-                  {visibleLessons.map((l) => {
-                    const proLocked = !l.isFree && !isPro
-                    return (
-                    <button
-                      key={l.id}
-                      onClick={() => proLocked ? setProOpen(true) : openLesson(l.id)}
-                      className={`flex items-center gap-3 rounded-xl border border-border bg-card p-3 text-start transition ${proLocked ? "opacity-70" : "hover:border-brand/50"}`}
-                    >
-                      <span className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-white" style={{ background: l.categoryColor || "var(--brand)" }}>
-                        <span className="text-xs font-extrabold">{l.orderInCategory}</span>
-                      </span>
-                      <div className="min-w-0 flex-1">
-                        <div className="truncate text-sm font-bold">{l.title[lang] || l.title.en}</div>
-                        <div className="text-[11px] text-muted-foreground">{l.categorySlug} · {l.durationMin} min{!l.isFree && " · PRO"}</div>
-                      </div>
-                      {proLocked ? (
-                        <span className="inline-flex items-center gap-1 rounded-full bg-gold/20 px-2 py-0.5 text-[10px] font-bold text-gold-foreground">
-                          <Crown className="h-3 w-3" /> PRO
-                        </span>
-                      ) : l.passed ? <CheckCircle2 className="h-4 w-4 text-brand" /> : l.orderInCategory > 1 && !l.passed ? <Lock className="h-4 w-4 text-muted-foreground" /> : null}
-                    </button>
-                    )
-                  })}
-                </div>
-              </section>
-            )}
           </>
-        )}
+        ) : bottomTab === "lessons" ? (
+          <>
+            {/* Lessons list */}
+            <section className="mt-2">
+              <div className="mb-2 flex items-center justify-between px-1">
+                <h2 className="text-base font-extrabold tracking-tight text-foreground">
+                  {activeCategory === "all" ? (lang === "ur" || lang === "ar" ? "تمام اسباق" : lang === "hi" ? "सभी पाठ" : "All Lessons") : activeCategoryName}
+                </h2>
+                <button onClick={() => { setBottomTab("home"); setActiveCategory("all") }} className="text-xs font-bold text-brand">← Levels</button>
+              </div>
+              {/* Category filter chips */}
+              <div className="mb-3 flex flex-wrap gap-1.5">
+                <button onClick={() => setActiveCategory("all")} className={`rounded-full px-2.5 py-1 text-[11px] font-bold transition ${activeCategory === "all" ? "bg-brand text-brand-foreground" : "bg-muted text-muted-foreground"}`}>
+                  {lang === "ur" || lang === "ar" ? "سب" : "All"}
+                </button>
+                {categories.map((c) => (
+                  <button key={c.id} onClick={() => setActiveCategory(c.slug)} className={`rounded-full px-2.5 py-1 text-[11px] font-bold transition ${activeCategory === c.slug ? "bg-brand text-brand-foreground" : "bg-muted text-muted-foreground"}`}>
+                    {c.name[lang] || c.name.en}
+                  </button>
+                ))}
+              </div>
+              <div className="grid gap-2.5">
+                {isLoading ? (
+                  <><Skeleton className="h-14 rounded-xl" /><Skeleton className="h-14 rounded-xl" /><Skeleton className="h-14 rounded-xl" /></>
+                ) : visibleLessons.length === 0 ? (
+                  <p className="py-8 text-center text-sm text-muted-foreground">No lessons yet.</p>
+                ) : (
+                  visibleLessons.map((l) => (
+                    <LessonRow key={l.id} lesson={l} lang={lang} isPro={isPro} onOpen={() => openLesson(l.id)} onPro={() => setProOpen(true)} />
+                  ))
+                )}
+              </div>
+            </section>
+          </>
+        ) : bottomTab === "quiz" ? (
+          <>
+            {/* Quiz list — lessons that have quizzes */}
+            <section className="mt-2">
+              <h2 className="mb-2 px-1 text-base font-extrabold tracking-tight text-foreground">
+                {lang === "ur" || lang === "ar" ? "کئز" : lang === "hi" ? "प्रश्नोत्तरी" : "Quizzes"}
+              </h2>
+              <p className="mb-3 px-1 text-xs text-muted-foreground">
+                {lang === "ur" || lang === "ar" ? "کئز دیں اور اگلا سبق کھلیں۔ 3/5 پاس کرنا ضروری ہے۔" : "Take a quiz to unlock the next lesson. Pass 3/5 to continue."}
+              </p>
+              <div className="grid gap-2.5">
+                {isLoading ? (
+                  <><Skeleton className="h-14 rounded-xl" /><Skeleton className="h-14 rounded-xl" /></>
+                ) : quizLessons.length === 0 ? (
+                  <p className="py-8 text-center text-sm text-muted-foreground">No quizzes available yet.</p>
+                ) : (
+                  quizLessons.map((l) => (
+                    <QuizRow key={l.id} lesson={l} lang={lang} isPro={isPro} onOpen={() => openLesson(l.id)} onPro={() => setProOpen(true)} />
+                  ))
+                )}
+              </div>
+            </section>
+          </>
+        ) : null}
       </main>
 
       <Footer />
@@ -158,15 +170,9 @@ function ProgressMini({ icon: Icon, value, label, color }: { icon: any; value: s
 }
 
 function LevelBox({
-  category,
-  index,
-  lessons,
-  onOpen,
+  category, index, lessons, onOpen,
 }: {
-  category: CategoryDTO
-  index: number
-  lessons: { id: string; passed: boolean; orderInCategory: number; title: { en: string; ur: string; hi: string; ar: string } }[]
-  onOpen: () => void
+  category: CategoryDTO; index: number; lessons: { id: string; passed: boolean; orderInCategory: number; title: { en: string; ur: string; hi: string; ar: string } }[]; onOpen: () => void
 }) {
   const lang = useStore((s) => s.lang)
   const Icon = LEVEL_ICONS[category.icon || ""] || BookOpen
@@ -176,9 +182,7 @@ function LevelBox({
 
   return (
     <motion.button
-      initial={{ opacity: 0, y: 10 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.3, delay: index * 0.06 }}
+      initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3, delay: index * 0.06 }}
       onClick={onOpen}
       className="group relative flex items-center gap-3 overflow-hidden rounded-2xl border-2 p-3 text-start transition-all hover:-translate-y-0.5"
       style={{ borderColor: `${category.color || "#00c853"}40`, background: `linear-gradient(135deg, ${category.color || "#00c853"}10, transparent)` }}
@@ -192,7 +196,6 @@ function LevelBox({
           <span className="rounded-full bg-background/70 px-1.5 py-0.5 text-[10px] font-bold text-muted-foreground">{done}/{total}</span>
         </div>
         <p className={`mt-0.5 line-clamp-1 text-xs text-muted-foreground ${lang === "ur" || lang === "ar" ? "font-urdu" : ""}`}>{category.description[lang] || category.description.en}</p>
-        {/* progress bar */}
         <div className="mt-1.5 h-1 w-full overflow-hidden rounded-full bg-muted">
           <div className="h-full rounded-full transition-all" style={{ width: `${pct}%`, background: category.color || "var(--brand)" }} />
         </div>
@@ -202,5 +205,53 @@ function LevelBox({
         <ArrowRight className="h-3.5 w-3.5 rtl:rotate-180" />
       </span>
     </motion.button>
+  )
+}
+
+function LessonRow({ lesson, lang, isPro, onOpen, onPro }: { lesson: LessonListItemDTO; lang: string; isPro: boolean; onOpen: () => void; onPro: () => void }) {
+  const proLocked = !lesson.isFree && !isPro
+  return (
+    <button
+      onClick={() => proLocked ? onPro() : onOpen()}
+      className={`flex items-center gap-3 rounded-xl border border-border bg-card p-3 text-start transition ${proLocked ? "opacity-70" : "hover:border-brand/50"}`}
+    >
+      <span className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-white" style={{ background: lesson.categoryColor || "var(--brand)" }}>
+        <span className="text-xs font-extrabold">{lesson.orderInCategory}</span>
+      </span>
+      <div className="min-w-0 flex-1">
+        <div className="truncate text-sm font-bold">{lesson.title[lang] || lesson.title.en}</div>
+        <div className="text-[11px] text-muted-foreground">{lesson.categorySlug} · {lesson.durationMin} min{!lesson.isFree && " · PRO"}</div>
+      </div>
+      {proLocked ? (
+        <span className="inline-flex items-center gap-1 rounded-full bg-gold/20 px-2 py-0.5 text-[10px] font-bold text-gold-foreground">
+          <Crown className="h-3 w-3" /> PRO
+        </span>
+      ) : lesson.passed ? <CheckCircle2 className="h-4 w-4 text-brand" /> : lesson.orderInCategory > 1 && !lesson.passed ? <Lock className="h-4 w-4 text-muted-foreground" /> : null}
+    </button>
+  )
+}
+
+function QuizRow({ lesson, lang, isPro, onOpen, onPro }: { lesson: LessonListItemDTO; lang: string; isPro: boolean; onOpen: () => void; onPro: () => void }) {
+  const proLocked = !lesson.isFree && !isPro
+  return (
+    <button
+      onClick={() => proLocked ? onPro() : onOpen()}
+      className={`flex items-center gap-3 rounded-xl border border-border bg-card p-3 text-start transition ${proLocked ? "opacity-70" : "hover:border-brand/50"}`}
+    >
+      <span className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-white" style={{ background: lesson.categoryColor || "var(--brand)" }}>
+        <BarChart3 className="h-4 w-4" />
+      </span>
+      <div className="min-w-0 flex-1">
+        <div className="truncate text-sm font-bold">{lesson.title[lang] || lesson.title.en}</div>
+        <div className="text-[11px] text-muted-foreground">
+          {lesson.passed ? "✓ Passed" : proLocked ? "PRO" : lesson.orderInCategory > 1 && !lesson.passed ? "Locked" : "Ready"}
+        </div>
+      </div>
+      {proLocked ? (
+        <span className="inline-flex items-center gap-1 rounded-full bg-gold/20 px-2 py-0.5 text-[10px] font-bold text-gold-foreground">
+          <Crown className="h-3 w-3" /> PRO
+        </span>
+      ) : lesson.passed ? <CheckCircle2 className="h-4 w-4 text-brand" /> : lesson.orderInCategory > 1 && !lesson.passed ? <Lock className="h-4 w-4 text-muted-foreground" /> : <ChevronRight className="h-4 w-4 text-brand" />}
+    </button>
   )
 }
