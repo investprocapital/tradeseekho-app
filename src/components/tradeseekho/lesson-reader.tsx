@@ -67,7 +67,7 @@ export function LessonReader() {
   return (
     <Sheet open={open} onOpenChange={(v) => !v && closeLesson()}>
       <SheetContent
-        side="end"
+        side="right"
         className="flex w-full flex-col gap-0 p-0 sm:max-w-2xl lg:max-w-3xl"
         onContextMenu={(e) => e.preventDefault()}
       >

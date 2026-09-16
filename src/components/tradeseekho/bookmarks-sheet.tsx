@@ -26,7 +26,7 @@ export function BookmarksSheet() {
 
   return (
     <Sheet open={bookmarksOpen} onOpenChange={setBookmarksOpen}>
-      <SheetContent side="start" className="flex w-full flex-col gap-0 p-0 sm:max-w-md">
+      <SheetContent side="right" className="flex w-full flex-col gap-0 p-0 sm:max-w-md">
         <SheetHeader className="border-b border-border p-5">
           <SheetTitle className="flex items-center gap-2 text-xl font-extrabold">
             <Bookmark className="h-5 w-5 fill-gold text-gold" /> Saved / Wishlist
