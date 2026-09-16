@@ -3,7 +3,7 @@
 import { motion } from "framer-motion"
 import { Sprout, LineChart, Trophy, CheckCircle2, Award, BookOpen, Crown, ArrowRight, Lock } from "lucide-react"
 import { useStore } from "@/lib/store"
-import { useLessonsBundle } from "@/components/tradeseekho/use-data"
+import { useLessonsBundle, useProMe } from "@/components/tradeseekho/use-data"
 import { Header } from "@/components/tradeseekho/header"
 import { Footer } from "@/components/tradeseekho/footer"
 import { AdBanner } from "@/components/tradeseekho/ad-banner"
@@ -33,6 +33,9 @@ export default function Home() {
   const openLesson = useStore((s) => s.openLesson)
   const setBottomTab = useStore((s) => s.setBottomTab)
   const setActiveCategory = useStore((s) => s.setActiveCategory)
+  const setProOpen = useStore((s) => s.setProOpen)
+  const { data: proMe } = useProMe()
+  const isPro = proMe?.proStatus === "active"
   const { data, isLoading } = useLessonsBundle("all")
 
   const lessons = data?.lessons ?? []
@@ -96,22 +99,29 @@ export default function Home() {
                   <button onClick={() => { setBottomTab("home"); setActiveCategory("all") }} className="text-xs font-bold text-brand">← Levels</button>
                 </div>
                 <div className="grid gap-2.5">
-                  {visibleLessons.map((l) => (
+                  {visibleLessons.map((l) => {
+                    const proLocked = !l.isFree && !isPro
+                    return (
                     <button
                       key={l.id}
-                      onClick={() => openLesson(l.id)}
-                      className="flex items-center gap-3 rounded-xl border border-border bg-card p-3 text-start transition hover:border-brand/50"
+                      onClick={() => proLocked ? setProOpen(true) : openLesson(l.id)}
+                      className={`flex items-center gap-3 rounded-xl border border-border bg-card p-3 text-start transition ${proLocked ? "opacity-70" : "hover:border-brand/50"}`}
                     >
                       <span className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-white" style={{ background: l.categoryColor || "var(--brand)" }}>
                         <span className="text-xs font-extrabold">{l.orderInCategory}</span>
                       </span>
                       <div className="min-w-0 flex-1">
                         <div className="truncate text-sm font-bold">{l.title[lang] || l.title.en}</div>
-                        <div className="text-[11px] text-muted-foreground">{l.categorySlug} · {l.durationMin} min</div>
+                        <div className="text-[11px] text-muted-foreground">{l.categorySlug} · {l.durationMin} min{!l.isFree && " · PRO"}</div>
                       </div>
-                      {l.passed ? <CheckCircle2 className="h-4 w-4 text-brand" /> : l.orderInCategory > 1 && !l.passed ? <Lock className="h-4 w-4 text-muted-foreground" /> : null}
+                      {proLocked ? (
+                        <span className="inline-flex items-center gap-1 rounded-full bg-gold/20 px-2 py-0.5 text-[10px] font-bold text-gold-foreground">
+                          <Crown className="h-3 w-3" /> PRO
+                        </span>
+                      ) : l.passed ? <CheckCircle2 className="h-4 w-4 text-brand" /> : l.orderInCategory > 1 && !l.passed ? <Lock className="h-4 w-4 text-muted-foreground" /> : null}
                     </button>
-                  ))}
+                    )
+                  })}
                 </div>
               </section>
             )}

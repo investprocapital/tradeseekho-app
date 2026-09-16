@@ -32,6 +32,7 @@ export interface LessonListItemDTO {
   order: number
   orderInCategory: number
   isPublished: boolean
+  isFree: boolean
   hasQuiz: boolean
   passed: boolean
   completed: boolean

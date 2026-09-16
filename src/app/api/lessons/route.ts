@@ -46,6 +46,7 @@ export async function GET(req: Request) {
       order: l.order,
       orderInCategory: Math.max(1, orderInCategory),
       isPublished: l.isPublished,
+        isFree: l.isFree,
       hasQuiz: !!l.quiz,
       passed: prog?.passed ?? false,
       completed: prog?.completed ?? false,
