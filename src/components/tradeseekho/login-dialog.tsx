@@ -76,7 +76,11 @@ export function LoginDialog() {
 
   return (
     <Dialog open={loginOpen} onOpenChange={(v) => { if (!busy) { setLoginOpen(v); if (!v) reset() } }}>
-      <DialogContent className="fixed inset-0 z-[100] flex max-h-none w-full max-w-none flex-col items-center justify-center overflow-hidden border-0 bg-[#0A1931] p-0" style={{ borderRadius: 0 }}>
+      <DialogContent
+        showCloseButton={false}
+        className="!fixed !inset-0 !z-[100] !top-0 !left-0 !flex !max-h-none !w-full !max-w-none !translate-x-0 !translate-y-0 !flex-col !items-center !justify-center !overflow-hidden !border-0 !rounded-none !p-0 !bg-[#0A1931]"
+        style={{ borderRadius: 0, position: "fixed", inset: 0, width: "100vw", height: "100vh", maxWidth: "none", transform: "none", top: 0, left: 0 }}
+      >
         <DialogTitle className="sr-only">Login</DialogTitle>
 
         {/* Background: candlestick pattern */}
