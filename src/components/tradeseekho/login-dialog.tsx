@@ -83,20 +83,44 @@ export function LoginDialog() {
       >
         <DialogTitle className="sr-only">Login</DialogTitle>
 
-        {/* Background: candlestick pattern */}
-        <div className="pointer-events-none absolute inset-0 opacity-[0.07]">
+        {/* Background: scattered candlestick pattern (more visible) */}
+        <div className="pointer-events-none absolute inset-0 opacity-[0.12]">
           <BgCandlesticks />
         </div>
 
-        {/* Background: radial glow center */}
-        <div className="pointer-events-none absolute left-1/2 top-1/3 h-80 w-80 -translate-x-1/2 -translate-y-1/2 rounded-full bg-[#00D09C] opacity-10 blur-[100px]" />
+        {/* Background: prominent green glow on right side */}
+        <div className="pointer-events-none absolute right-[-10%] top-1/4 h-96 w-96 rounded-full bg-[#00D09C] opacity-[0.15] blur-[120px]" />
+        {/* Secondary blue glow on left */}
+        <div className="pointer-events-none absolute left-[-5%] bottom-1/3 h-72 w-72 rounded-full bg-[#0EA5E9] opacity-[0.08] blur-[100px]" />
 
-        {/* Background: bottom waves */}
+        {/* Background: sweeping green trend line / wave arc */}
+        <div className="pointer-events-none absolute inset-0">
+          <svg viewBox="0 0 390 600" className="h-full w-full" preserveAspectRatio="none">
+            <path d="M-20,400 C80,350 150,300 200,250 C280,170 340,120 420,60" stroke="#00D09C" strokeWidth="2" fill="none" opacity="0.15" />
+            <path d="M-20,420 C80,370 150,320 200,270 C280,190 340,140 420,80" stroke="#00D09C" strokeWidth="1.5" fill="none" opacity="0.08" />
+          </svg>
+        </div>
+
+        {/* Background: bottom waves (bigger, more glowing) */}
         <div className="pointer-events-none absolute bottom-0 left-0 right-0">
-          <svg viewBox="0 0 390 120" className="w-full" preserveAspectRatio="none" style={{ height: "100px" }}>
-            <path d="M0,60 C60,90 120,30 195,50 C270,70 330,40 390,60 L390,120 L0,120 Z" fill="#00D09C" opacity="0.12" />
-            <path d="M0,80 C60,100 120,50 195,70 C270,90 330,60 390,80 L390,120 L0,120 Z" fill="#0EA5E9" opacity="0.08" />
-            <path d="M0,95 C60,110 120,70 195,85 C270,100 330,75 390,95 L390,120 L0,120 Z" fill="#00D09C" opacity="0.15" />
+          <svg viewBox="0 0 390 200" className="w-full" preserveAspectRatio="none" style={{ height: "160px" }}>
+            <defs>
+              <linearGradient id="wave1" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor="#00D09C" stopOpacity="0.25" />
+                <stop offset="100%" stopColor="#00D09C" stopOpacity="0.05" />
+              </linearGradient>
+              <linearGradient id="wave2" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor="#0EA5E9" stopOpacity="0.15" />
+                <stop offset="100%" stopColor="#0EA5E9" stopOpacity="0.03" />
+              </linearGradient>
+              <linearGradient id="wave3" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor="#00D09C" stopOpacity="0.3" />
+                <stop offset="100%" stopColor="#00D09C" stopOpacity="0.08" />
+              </linearGradient>
+            </defs>
+            <path d="M0,80 C60,120 120,40 195,70 C270,100 330,50 390,80 L390,200 L0,200 Z" fill="url(#wave1)" />
+            <path d="M0,110 C60,140 120,70 195,95 C270,120 330,80 390,110 L390,200 L0,200 Z" fill="url(#wave2)" />
+            <path d="M0,140 C60,160 120,100 195,120 C270,140 330,105 390,140 L390,200 L0,200 Z" fill="url(#wave3)" />
           </svg>
         </div>
 
@@ -105,20 +129,52 @@ export function LoginDialog() {
           <AnimatePresence mode="wait">
             {view === "landing" ? (
               <motion.div key="landing" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0, x: -20 }} className="flex w-full flex-col items-center">
-                {/* Logo */}
-                <div className="mb-2 flex flex-col items-center">
-                  <div className="relative mb-3 inline-flex h-20 w-20 items-center justify-center rounded-2xl bg-gradient-to-br from-[#0EA5E9] to-[#00D09C] shadow-lg shadow-[#00D09C]/30">
-                    <span className="text-4xl font-extrabold text-white">T</span>
-                    <svg className="absolute -right-1 -top-1 h-6 w-6" viewBox="0 0 24 24" fill="none">
-                      <path d="M3 17L9 11L13 15L21 7" stroke="#00D09C" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
-                      <path d="M21 7L21 13M21 7L15 7" stroke="#00D09C" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
-                    </svg>
-                  </div>
-                  <h1 className="text-3xl font-extrabold tracking-tight">
-                    <span className="text-white">Trade</span><span className="text-[#00D09C]">Seekho</span>
-                  </h1>
-                  <p className="mt-1 text-sm font-medium tracking-[0.2em] text-white/60">LEARN. TRADE. GROW.</p>
+                {/* Logo: gradient T + green curved arrow + candlesticks (no box) */}
+                <div className="relative mb-4 flex h-28 w-28 items-center justify-center">
+                  {/* Candlesticks behind the T */}
+                  <svg className="absolute inset-0 h-full w-full" viewBox="0 0 112 112" fill="none">
+                    {/* Candlestick 1 (green/bullish) */}
+                    <line x1="38" y1="30" x2="38" y2="82" stroke="#00D09C" strokeWidth="2" opacity="0.5" />
+                    <rect x="33" y="45" width="10" height="25" fill="#00D09C" opacity="0.35" rx="1.5" />
+                    {/* Candlestick 2 (green/bullish, smaller) */}
+                    <line x1="74" y1="25" x2="74" y2="75" stroke="#00D09C" strokeWidth="2" opacity="0.4" />
+                    <rect x="69" y="35" width="10" height="28" fill="#00D09C" opacity="0.25" rx="1.5" />
+                  </svg>
+                  {/* The T — blue-to-cyan gradient, no box */}
+                  <span
+                    className="relative text-6xl font-extrabold leading-none"
+                    style={{
+                      background: "linear-gradient(135deg, #0EA5E9 0%, #00D09C 100%)",
+                      WebkitBackgroundClip: "text",
+                      WebkitTextFillColor: "transparent",
+                      backgroundClip: "text",
+                    }}
+                  >
+                    T
+                  </span>
+                  {/* Green curved arrow sweeping up-right */}
+                  <svg className="absolute -right-2 -top-1 h-10 w-10" viewBox="0 0 40 40" fill="none">
+                    <path
+                      d="M5,35 C10,25 18,15 30,8"
+                      stroke="#00D09C"
+                      strokeWidth="3"
+                      strokeLinecap="round"
+                      fill="none"
+                    />
+                    {/* Arrowhead */}
+                    <path
+                      d="M30,8 L30,16 M30,8 L22,8"
+                      stroke="#00D09C"
+                      strokeWidth="3"
+                      strokeLinecap="round"
+                      fill="none"
+                    />
+                  </svg>
                 </div>
+                <h1 className="text-3xl font-extrabold tracking-tight">
+                  <span className="text-white">Trade</span><span className="text-[#00D09C]">Seekho</span>
+                </h1>
+                <p className="mt-1.5 text-sm font-medium tracking-[0.15em] text-white/50">Learn. Trade. Grow.</p>
 
                 {/* Spacer */}
                 <div className="h-12" />
@@ -166,12 +222,26 @@ export function LoginDialog() {
                   <ArrowLeft className="h-4 w-4" /> Back
                 </button>
 
-                {/* Logo small */}
-                <div className="mb-6 flex flex-col items-center">
-                  <div className="mb-2 inline-flex h-14 w-14 items-center justify-center rounded-xl bg-gradient-to-br from-[#0EA5E9] to-[#00D09C] shadow-lg shadow-[#00D09C]/30">
-                    <span className="text-2xl font-extrabold text-white">T</span>
+                {/* Logo small (no box — gradient T) */}
+                <div className="mb-2 flex flex-col items-center">
+                  <div className="relative flex h-16 w-16 items-center justify-center">
+                    <span
+                      className="text-4xl font-extrabold leading-none"
+                      style={{
+                        background: "linear-gradient(135deg, #0EA5E9 0%, #00D09C 100%)",
+                        WebkitBackgroundClip: "text",
+                        WebkitTextFillColor: "transparent",
+                        backgroundClip: "text",
+                      }}
+                    >
+                      T
+                    </span>
+                    <svg className="absolute -right-1 -top-0 h-6 w-6" viewBox="0 0 40 40" fill="none">
+                      <path d="M5,35 C10,25 18,15 30,8" stroke="#00D09C" strokeWidth="3" strokeLinecap="round" fill="none" />
+                      <path d="M30,8 L30,16 M30,8 L22,8" stroke="#00D09C" strokeWidth="3" strokeLinecap="round" fill="none" />
+                    </svg>
                   </div>
-                  <h2 className="text-xl font-extrabold text-white">
+                  <h2 className="mt-1 text-xl font-extrabold text-white">
                     {view === "signup" ? "Create Account" : "Welcome Back"}
                   </h2>
                 </div>
