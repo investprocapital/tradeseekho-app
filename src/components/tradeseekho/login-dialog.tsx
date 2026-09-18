@@ -158,13 +158,15 @@ export function LoginDialog() {
                     Don't have an account? <button onClick={() => { setView("signup"); setErr(null) }} className="font-bold text-[#00D09C] hover:underline">Sign Up</button>
                   </p>
 
-                  {/* Girl illustration — VERY BOTTOM, full width, highlighted, transparent bg */}
+                  {/* Girl illustration — transparent PNG, blends with dark bg */}
                   <div className="relative mt-6 flex w-full flex-col items-center">
-                    {/* Green glow behind girl */}
-                    <div className="pointer-events-none absolute bottom-0 left-1/2 h-40 w-40 -translate-x-1/2 rounded-full bg-[#00D09C] opacity-25 blur-[50px]" />
-                    <img src="/login-girl-clean.png" alt="TradeSeekho trader girl"
+                    {/* Green glow behind girl (soft, blends with page) */}
+                    <div className="pointer-events-none absolute bottom-4 left-1/2 h-40 w-48 -translate-x-1/2 rounded-full bg-[#00D09C] opacity-20 blur-[60px]" />
+                    {/* Soft shadow under girl */}
+                    <div className="pointer-events-none absolute bottom-2 left-1/2 h-6 w-40 -translate-x-1/2 rounded-full bg-black opacity-30 blur-[15px]" />
+                    <img src="/login-girl-transparent.png" alt="TradeSeekho trader girl"
                       className="relative w-full object-contain"
-                      style={{ height: "280px", filter: "brightness(1.1) drop-shadow(0 0 15px rgba(0,208,156,0.2))" }} />
+                      style={{ height: "280px", filter: "brightness(1.15) drop-shadow(0 0 12px rgba(0,208,156,0.15))" }} />
                   </div>
                 </motion.div>
               ) : (
