@@ -126,24 +126,14 @@ export function LoginDialog() {
           </div>
 
           {/* RIGHT SIDE — Login card (always visible, centered on mobile) */}
-          <div className="relative flex flex-1 items-center justify-center p-4 sm:p-6">
+          <div className="relative flex flex-1 items-center justify-center overflow-y-auto p-4 sm:p-6">
             {/* Mobile background decorations */}
             <div className="pointer-events-none absolute inset-0 opacity-[0.08] lg:hidden"><BgCandlesticks /></div>
             <div className="pointer-events-none absolute right-0 top-1/4 h-72 w-72 rounded-full bg-[#00D09C] opacity-[0.1] blur-[100px] lg:hidden" />
-            <div className="pointer-events-none absolute bottom-0 left-0 right-0 lg:hidden">
-              <svg viewBox="0 0 390 120" className="w-full" preserveAspectRatio="none" style={{ height: "80px" }}>
-                <path d="M0,60 C60,90 120,30 195,50 C270,70 330,40 390,60 L390,120 L0,120 Z" fill="#00D09C" opacity="0.1" />
-                <path d="M0,80 C60,100 120,50 195,70 C270,90 330,60 390,80 L390,120 L0,120 Z" fill="#0072FF" opacity="0.06" />
-              </svg>
-            </div>
-            {/* Girl illustration — bottom background, faded */}
-            <div className="pointer-events-none absolute bottom-0 left-1/2 -translate-x-1/2 opacity-20 sm:opacity-25" style={{ filter: "blur(1px)" }}>
-              <img src="/login-girl.png" alt="" className="h-[300px] w-auto object-contain sm:h-[400px]" />
-            </div>
 
             {/* Login card — crystal glassmorphism */}
             <div
-              className="relative z-10 w-full max-w-md rounded-3xl p-6 sm:p-8 sm:max-w-sm"
+              className="relative z-10 my-auto w-full max-w-md rounded-3xl p-6 sm:p-8 sm:max-w-sm"
               style={{
                 background: "linear-gradient(145deg, rgba(15, 23, 42, 0.7), rgba(7, 15, 43, 0.5))",
                 backdropFilter: "blur(20px)",
@@ -274,6 +264,20 @@ export function LoginDialog() {
                   </motion.div>
                 )}
               </AnimatePresence>
+            </div>
+
+            {/* Girl illustration — BELOW the login card, full visible, highlighted */}
+            <div className="relative z-10 mt-4 flex w-full max-w-md flex-col items-center sm:max-w-sm">
+              {/* Top fade gradient — merges with card above */}
+              <div className="pointer-events-none absolute -top-8 h-8 w-full bg-gradient-to-b from-transparent to-[#070F2B]" />
+              {/* Green glow behind girl */}
+              <div className="pointer-events-none absolute bottom-0 left-1/2 h-48 w-48 -translate-x-1/2 rounded-full bg-[#00D09C] opacity-20 blur-[60px]" />
+              <img
+                src="/login-girl.png"
+                alt="TradeSeekho trader girl"
+                className="relative w-full object-contain"
+                style={{ height: "280px", opacity: 0.9 }}
+              />
             </div>
           </div>
         </div>
