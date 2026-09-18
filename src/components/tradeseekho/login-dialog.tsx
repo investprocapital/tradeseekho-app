@@ -160,13 +160,11 @@ export function LoginDialog() {
 
                   {/* Girl illustration — transparent PNG, blends with dark bg */}
                   <div className="relative mt-6 flex w-full flex-col items-center">
-                    {/* Green glow behind girl (soft, blends with page) */}
-                    <div className="pointer-events-none absolute bottom-4 left-1/2 h-40 w-48 -translate-x-1/2 rounded-full bg-[#00D09C] opacity-20 blur-[60px]" />
-                    {/* Soft shadow under girl */}
-                    <div className="pointer-events-none absolute bottom-2 left-1/2 h-6 w-40 -translate-x-1/2 rounded-full bg-black opacity-30 blur-[15px]" />
+                    {/* Green glow behind girl */}
+                    <div className="pointer-events-none absolute bottom-4 left-1/2 h-32 w-44 -translate-x-1/2 rounded-full bg-[#00D09C] opacity-20 blur-[50px]" />
                     <img src="/login-girl-transparent.png" alt="TradeSeekho trader girl"
                       className="relative w-full object-contain"
-                      style={{ height: "280px", filter: "brightness(1.15) drop-shadow(0 0 12px rgba(0,208,156,0.15))" }} />
+                      style={{ height: "260px", filter: "brightness(1.2) contrast(1.05) drop-shadow(0 0 10px rgba(0,208,156,0.12))" }} />
                   </div>
                 </motion.div>
               ) : (
