@@ -100,14 +100,16 @@ export function LoginDialog() {
 
             {/* Content */}
             <div className="relative z-10 flex max-w-md flex-col items-center px-8 text-center">
-              {/* Logo — Option 3 (crystal T with candlesticks) */}
-              <div className="mb-4 flex items-center gap-2">
-                <img src="/tradeseekho-logo.png" alt="TradeSeekho" className="h-12 w-12 rounded-xl" />
-                <span className="text-xl font-extrabold"><span className="text-white">Trade</span><span className="text-[#00D09C]">Seekho</span></span>
+              {/* Logo — NEW T with candles (big, centered, with glow) */}
+              <div className="mb-4 flex flex-col items-center">
+                <div className="relative" style={{ filter: "drop-shadow(0 0 25px rgba(0, 208, 156, 0.3))" }}>
+                  <img src="/tradeseekho-logo.png" alt="TradeSeekho" className="h-16 w-16 rounded-2xl" />
+                </div>
+                <span className="mt-2 text-xl font-extrabold"><span className="text-white">Trade</span><span className="text-[#00D09C]">Seekho</span></span>
               </div>
 
-              {/* Girl illustration */}
-              <img src="/login-illustration.png" alt="TradeSeekho learner" className="mb-4 h-48 w-48 rounded-2xl object-cover" />
+              {/* Girl illustration (left side, bigger) */}
+              <img src="/login-girl.png" alt="TradeSeekho learner" className="mb-4 h-52 w-auto rounded-2xl object-cover" />
 
               {/* Feature icons */}
               <div className="mb-4 grid grid-cols-3 gap-4">
@@ -124,7 +126,7 @@ export function LoginDialog() {
           </div>
 
           {/* RIGHT SIDE — Login card (always visible, centered on mobile) */}
-          <div className="flex flex-1 items-center justify-center p-4 sm:p-6">
+          <div className="relative flex flex-1 items-center justify-center p-4 sm:p-6">
             {/* Mobile background decorations */}
             <div className="pointer-events-none absolute inset-0 opacity-[0.08] lg:hidden"><BgCandlesticks /></div>
             <div className="pointer-events-none absolute right-0 top-1/4 h-72 w-72 rounded-full bg-[#00D09C] opacity-[0.1] blur-[100px] lg:hidden" />
@@ -133,6 +135,10 @@ export function LoginDialog() {
                 <path d="M0,60 C60,90 120,30 195,50 C270,70 330,40 390,60 L390,120 L0,120 Z" fill="#00D09C" opacity="0.1" />
                 <path d="M0,80 C60,100 120,50 195,70 C270,90 330,60 390,80 L390,120 L0,120 Z" fill="#0072FF" opacity="0.06" />
               </svg>
+            </div>
+            {/* Girl illustration — bottom background, faded */}
+            <div className="pointer-events-none absolute bottom-0 left-1/2 -translate-x-1/2 opacity-20 sm:opacity-25" style={{ filter: "blur(1px)" }}>
+              <img src="/login-girl.png" alt="" className="h-[300px] w-auto object-contain sm:h-[400px]" />
             </div>
 
             {/* Login card — crystal glassmorphism */}
@@ -151,10 +157,12 @@ export function LoginDialog() {
               <AnimatePresence mode="wait">
                 {view === "landing" ? (
                   <motion.div key="landing" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0, x: -20 }} className="flex flex-col items-center">
-                    {/* Small logo — crystal T */}
-                    <div className="mb-4 flex items-center gap-2">
-                      <img src="/tradeseekho-logo.png" alt="TradeSeekho" className="h-10 w-10 rounded-lg" />
-                      <span className="text-lg font-extrabold"><span className="text-white">Trade</span><span className="text-[#00D09C]">Seekho</span></span>
+                    {/* Logo — BIG, CENTERED, with glow (70px) */}
+                    <div className="mb-3 flex flex-col items-center">
+                      <div className="relative" style={{ filter: "drop-shadow(0 0 20px rgba(0, 208, 156, 0.3))" }}>
+                        <img src="/tradeseekho-logo.png" alt="TradeSeekho" className="h-[70px] w-[70px] rounded-2xl" />
+                      </div>
+                      <span className="mt-2 text-xl font-extrabold"><span className="text-white">Trade</span><span className="text-[#00D09C]">Seekho</span></span>
                     </div>
                     <h2 className="text-2xl font-extrabold text-white">Welcome Back</h2>
                     <p className="mt-1 text-sm text-white/50">Login to your account to continue</p>
@@ -221,9 +229,12 @@ export function LoginDialog() {
                     <button onClick={() => { setView("landing"); setErr(null) }} className="mb-4 flex items-center gap-1.5 self-start text-sm font-semibold text-white/60 hover:text-white">
                       <ArrowLeft className="h-4 w-4" /> Back
                     </button>
-                    <div className="mb-4 flex items-center gap-2">
-                      <img src="/tradeseekho-logo.png" alt="TradeSeekho" className="h-10 w-10 rounded-lg" />
-                      <span className="text-lg font-extrabold"><span className="text-white">Trade</span><span className="text-[#00D09C]">Seekho</span></span>
+                    {/* Logo — BIG, CENTERED, with glow */}
+                    <div className="mb-4 flex flex-col items-center">
+                      <div className="relative" style={{ filter: "drop-shadow(0 0 20px rgba(0, 208, 156, 0.3))" }}>
+                        <img src="/tradeseekho-logo.png" alt="TradeSeekho" className="h-[60px] w-[60px] rounded-2xl" />
+                      </div>
+                      <span className="mt-2 text-lg font-extrabold"><span className="text-white">Trade</span><span className="text-[#00D09C]">Seekho</span></span>
                     </div>
                     <h2 className="text-2xl font-extrabold text-white">{view === "signup" ? "Create Account" : "Welcome Back"}</h2>
                     <p className="mt-1 text-sm text-white/50">{view === "signup" ? "Sign up to start learning" : "Login to your account to continue"}</p>
