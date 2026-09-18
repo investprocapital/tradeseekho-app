@@ -40,16 +40,13 @@ export function Header() {
   return (
     <header className="sticky top-0 z-40 w-full border-b border-border/70 bg-background/85 backdrop-blur supports-[backdrop-filter]:bg-background/70">
       <div className="mx-auto flex h-12 w-full max-w-3xl items-center gap-1 px-2 sm:gap-2 sm:px-3">
-        {/* Home button (circular green logo with gold notification dot) */}
+        {/* Home button (TradeSeekho crystal T logo) */}
         <button
           onClick={() => { setShowAdmin(false); setBottomTab("home") }}
-          className="relative shrink-0 rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
+          className="relative shrink-0 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
           aria-label={t("nav.home")}
         >
-          <span className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-brand text-white shadow-sm shadow-brand/30">
-            <span className="text-sm font-extrabold leading-none">T</span>
-          </span>
-          <span className="pointer-events-none absolute -right-0.5 -top-0.5 h-2.5 w-2.5 rounded-full bg-gold ring-2 ring-background" />
+          <img src="/tradeseekho-logo.png" alt="TradeSeekho" className="h-8 w-8 rounded-lg" />
         </button>
 
         {/* Brand text (desktop only) */}

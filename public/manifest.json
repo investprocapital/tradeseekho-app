@@ -11,9 +11,9 @@
   "categories": ["education", "finance"],
   "icons": [
     {
-      "src": "https://z-cdn.chatglm.cn/z-ai/static/logo.svg",
-      "sizes": "any",
-      "type": "image/svg+xml",
+      "src": "/tradeseekho-logo.png",
+      "sizes": "1024x1024",
+      "type": "image/png",
       "purpose": "any maskable"
     }
   ]

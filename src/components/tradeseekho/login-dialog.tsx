@@ -100,12 +100,9 @@ export function LoginDialog() {
 
             {/* Content */}
             <div className="relative z-10 flex max-w-md flex-col items-center px-8 text-center">
-              {/* Logo */}
+              {/* Logo — Option 3 (crystal T with candlesticks) */}
               <div className="mb-4 flex items-center gap-2">
-                <div className="relative flex h-10 w-10 items-center justify-center">
-                  <span className="text-3xl font-extrabold leading-none" style={{ background: "linear-gradient(135deg, #06b6d4, #00D09C)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}>T</span>
-                  <svg className="absolute -right-1 -top-0 h-5 w-5" viewBox="0 0 40 40" fill="none"><path d="M5,35 C10,25 18,15 30,8" stroke="#00D09C" strokeWidth="3" strokeLinecap="round" fill="none" /><path d="M30,8 L30,16 M30,8 L22,8" stroke="#00D09C" strokeWidth="3" strokeLinecap="round" fill="none" /></svg>
-                </div>
+                <img src="/tradeseekho-logo.png" alt="TradeSeekho" className="h-12 w-12 rounded-xl" />
                 <span className="text-xl font-extrabold"><span className="text-white">Trade</span><span className="text-[#00D09C]">Seekho</span></span>
               </div>
 
@@ -138,20 +135,25 @@ export function LoginDialog() {
               </svg>
             </div>
 
-            {/* Login card */}
+            {/* Login card — crystal glassmorphism */}
             <div
-              className="relative z-10 w-full max-w-md rounded-3xl border border-[#1E3A5F]/60 p-6 sm:p-8 backdrop-blur-xl sm:max-w-sm"
-              style={{ background: "rgba(15, 23, 42, 0.6)", boxShadow: "0 0 40px rgba(0, 208, 156, 0.08)" }}
+              className="relative z-10 w-full max-w-md rounded-3xl p-6 sm:p-8 sm:max-w-sm"
+              style={{
+                background: "linear-gradient(145deg, rgba(15, 23, 42, 0.7), rgba(7, 15, 43, 0.5))",
+                backdropFilter: "blur(20px)",
+                WebkitBackdropFilter: "blur(20px)",
+                border: "1px solid rgba(0, 208, 156, 0.15)",
+                boxShadow: "0 8px 32px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.05), 0 0 60px rgba(0, 208, 156, 0.06)",
+              }}
             >
+              {/* Crystal shimmer top */}
+              <div className="pointer-events-none absolute inset-x-0 top-0 h-px rounded-t-3xl bg-gradient-to-r from-transparent via-[#00D09C]/40 to-transparent" />
               <AnimatePresence mode="wait">
                 {view === "landing" ? (
                   <motion.div key="landing" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0, x: -20 }} className="flex flex-col items-center">
-                    {/* Small logo */}
+                    {/* Small logo — crystal T */}
                     <div className="mb-4 flex items-center gap-2">
-                      <div className="relative flex h-8 w-8 items-center justify-center">
-                        <span className="text-2xl font-extrabold leading-none" style={{ background: "linear-gradient(135deg, #06b6d4, #00D09C)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}>T</span>
-                        <svg className="absolute -right-0.5 -top-0 h-4 w-4" viewBox="0 0 40 40" fill="none"><path d="M5,35 C10,25 18,15 30,8" stroke="#00D09C" strokeWidth="3" strokeLinecap="round" fill="none" /><path d="M30,8 L30,16 M30,8 L22,8" stroke="#00D09C" strokeWidth="3" strokeLinecap="round" fill="none" /></svg>
-                      </div>
+                      <img src="/tradeseekho-logo.png" alt="TradeSeekho" className="h-10 w-10 rounded-lg" />
                       <span className="text-lg font-extrabold"><span className="text-white">Trade</span><span className="text-[#00D09C]">Seekho</span></span>
                     </div>
                     <h2 className="text-2xl font-extrabold text-white">Welcome Back</h2>
@@ -220,10 +222,7 @@ export function LoginDialog() {
                       <ArrowLeft className="h-4 w-4" /> Back
                     </button>
                     <div className="mb-4 flex items-center gap-2">
-                      <div className="relative flex h-8 w-8 items-center justify-center">
-                        <span className="text-2xl font-extrabold leading-none" style={{ background: "linear-gradient(135deg, #06b6d4, #00D09C)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}>T</span>
-                        <svg className="absolute -right-0.5 -top-0 h-4 w-4" viewBox="0 0 40 40" fill="none"><path d="M5,35 C10,25 18,15 30,8" stroke="#00D09C" strokeWidth="3" strokeLinecap="round" fill="none" /><path d="M30,8 L30,16 M30,8 L22,8" stroke="#00D09C" strokeWidth="3" strokeLinecap="round" fill="none" /></svg>
-                      </div>
+                      <img src="/tradeseekho-logo.png" alt="TradeSeekho" className="h-10 w-10 rounded-lg" />
                       <span className="text-lg font-extrabold"><span className="text-white">Trade</span><span className="text-[#00D09C]">Seekho</span></span>
                     </div>
                     <h2 className="text-2xl font-extrabold text-white">{view === "signup" ? "Create Account" : "Welcome Back"}</h2>

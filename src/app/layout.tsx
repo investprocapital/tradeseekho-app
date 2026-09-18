@@ -36,7 +36,8 @@ export const metadata: Metadata = {
   authors: [{ name: "TradeSeekho" }],
   creator: "TradeSeekho",
   icons: {
-    icon: "https://z-cdn.chatglm.cn/z-ai/static/logo.svg",
+    icon: "/tradeseekho-logo.png",
+    apple: "/tradeseekho-logo.png",
   },
   openGraph: {
     type: "website",
