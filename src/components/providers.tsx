@@ -5,6 +5,7 @@ import { SessionProvider } from "next-auth/react"
 import { useEffect, useState } from "react"
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
 import { useStore } from "@/lib/store"
+import { Splash } from "@/components/tradeseekho/splash"
 
 function LangDirSync() {
   const lang = useStore((s) => s.lang)
@@ -25,11 +26,9 @@ export function Providers({ children }: { children: React.ReactNode }) {
         },
       }),
   )
+  const [showSplash, setShowSplash] = useState(true)
 
-  // Rehydrate the persisted store AFTER mount. Combined with skipHydration:true
-  // in the store, this guarantees the server render and the client's initial
-  // render use identical defaults → no hydration mismatch. Persisted values
-  // (lang, onboarding, bookmarks, adminAuthed) then apply on the next paint.
+  // Rehydrate the persisted store AFTER mount.
   useEffect(() => {
     const result = useStore.persist.rehydrate() as unknown as Promise<void> | void
     const markHydrated = () => useStore.setState({ hasHydrated: true })
@@ -40,11 +39,18 @@ export function Providers({ children }: { children: React.ReactNode }) {
     }
   }, [])
 
+  // Hide splash after 2.5s (enough time for app to load)
+  useEffect(() => {
+    const timer = setTimeout(() => setShowSplash(false), 2500)
+    return () => clearTimeout(timer)
+  }, [])
+
   return (
     <ThemeProvider attribute="class" defaultTheme="light" enableSystem={false} disableTransitionOnChange>
       <SessionProvider>
         <QueryClientProvider client={qc}>
           <LangDirSync />
+          {showSplash && <Splash onDone={() => setShowSplash(false)} />}
           {children}
         </QueryClientProvider>
       </SessionProvider>
