@@ -160,11 +160,43 @@ export function LoginDialog() {
 
                   {/* Girl illustration — transparent PNG, blends with dark bg */}
                   <div className="relative mt-6 flex w-full flex-col items-center">
+                    {/* Waves BEHIND girl's feet (bottom) */}
+                    <div className="pointer-events-none absolute bottom-0 left-0 right-0 z-0">
+                      <svg viewBox="0 0 300 80" className="w-full" preserveAspectRatio="none" style={{ height: "60px" }}>
+                        <defs>
+                          <linearGradient id="gw1" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#00D09C" stopOpacity="0.25" /><stop offset="100%" stopColor="#00D09C" stopOpacity="0.05" /></linearGradient>
+                          <linearGradient id="gw2" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#0072FF" stopOpacity="0.15" /><stop offset="100%" stopColor="#0072FF" stopOpacity="0.03" /></linearGradient>
+                        </defs>
+                        <path d="M0,30 C40,50 80,10 150,25 C220,40 260,15 300,30 L300,80 L0,80 Z" fill="url(#gw1)" />
+                        <path d="M0,50 C40,65 80,30 150,45 C220,60 260,35 300,50 L300,80 L0,80 Z" fill="url(#gw2)" />
+                        <path d="M0,65 C40,75 80,50 150,60 C220,70 260,55 300,65 L300,80 L0,80 Z" fill="url(#gw1)" />
+                      </svg>
+                    </div>
                     {/* Green glow behind girl */}
                     <div className="pointer-events-none absolute bottom-4 left-1/2 h-32 w-44 -translate-x-1/2 rounded-full bg-[#00D09C] opacity-20 blur-[50px]" />
-                    <img src="/login-girl-transparent.png" alt="TradeSeekho trader girl"
-                      className="relative w-full object-contain"
-                      style={{ height: "260px", filter: "brightness(1.2) contrast(1.05) drop-shadow(0 0 10px rgba(0,208,156,0.12))" }} />
+                    <div className="relative z-10">
+                      <img src="/login-girl-transparent.png" alt="TradeSeekho trader girl"
+                        className="w-full object-contain"
+                        style={{ height: "260px", filter: "brightness(1.2) contrast(1.05) drop-shadow(0 0 10px rgba(0,208,156,0.12))" }} />
+                      {/* Floating green forex candlestick in girl's raised hand area */}
+                      <motion.div
+                        className="absolute"
+                        style={{ top: "15%", right: "18%" }}
+                        animate={{ y: [0, -8, 0] }}
+                        transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
+                      >
+                        <svg width="28" height="48" viewBox="0 0 28 48" fill="none">
+                          {/* Upper wick */}
+                          <line x1="14" y1="2" x2="14" y2="12" stroke="#00D09C" strokeWidth="2" strokeLinecap="round" />
+                          {/* Candle body (green, glowing) */}
+                          <rect x="6" y="12" width="16" height="24" rx="2" fill="#00D09C" style={{ filter: "drop-shadow(0 0 8px rgba(0,208,156,0.8))" }} />
+                          {/* Inner highlight */}
+                          <rect x="8" y="14" width="3" height="20" rx="1" fill="rgba(255,255,255,0.3)" />
+                          {/* Lower wick */}
+                          <line x1="14" y1="36" x2="14" y2="46" stroke="#00D09C" strokeWidth="2" strokeLinecap="round" />
+                        </svg>
+                      </motion.div>
+                    </div>
                   </div>
                 </motion.div>
               ) : (
