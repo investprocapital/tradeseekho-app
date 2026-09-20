@@ -328,7 +328,11 @@ function LessonsTab() {
               ) : lessons.length === 0 ? (
                 <TableRow><TableCell colSpan={6} className="py-6 text-center text-muted-foreground">{t("common.empty")}</TableCell></TableRow>
               ) : lessons.map((l) => (
-                <TableRow key={l.id}>
+                <TableRow
+                  key={l.id}
+                  className="cursor-pointer hover:bg-muted/30"
+                  onClick={() => setEditing({ open: true, id: l.id })}
+                >
                   <TableCell>
                     {l.imageUrl ? (
                       <img src={l.imageUrl} alt="" className="h-10 w-14 rounded object-cover" />
@@ -344,14 +348,13 @@ function LessonsTab() {
                       ? <Badge className="bg-brand-muted text-brand">{t("lesson.published")}</Badge>
                       : <Badge variant="secondary">{t("lesson.draft")}</Badge>}
                   </TableCell>
-                  <TableCell className="text-end">
+                  <TableCell className="text-end" onClick={(e) => e.stopPropagation()}>
                     <div className="inline-flex gap-1">
-                      <Button size="icon" variant="ghost" className="h-8 w-8" onClick={() => setEditing({ open: true, id: l.id })} aria-label={t("action.edit")}>
-                        <Pencil className="h-4 w-4" />
+                      <Button size="sm" variant="outline" className="h-8 gap-1 text-xs" onClick={() => setEditing({ open: true, id: l.id })}>
+                        <Pencil className="h-3.5 w-3.5" /> Edit
                       </Button>
                       <Button
-                        size="icon" variant="ghost" className="h-8 w-8 text-destructive hover:text-destructive"
-                        aria-label={t("action.delete")}
+                        size="sm" variant="ghost" className="h-8 gap-1 text-xs text-destructive hover:text-destructive"
                         onClick={async () => {
                           if (!confirm(`${t("action.delete")}: ${pick(l.title)}?`)) return
                           try {
@@ -360,7 +363,7 @@ function LessonsTab() {
                           } catch { toast.error(t("common.error")) }
                         }}
                       >
-                        <Trash2 className="h-4 w-4" />
+                        <Trash2 className="h-3.5 w-3.5" /> Delete
                       </Button>
                     </div>
                   </TableCell>
