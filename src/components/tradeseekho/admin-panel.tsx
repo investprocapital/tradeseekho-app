@@ -314,6 +314,7 @@ function LessonsTab() {
           <Table>
             <TableHeader>
               <TableRow>
+                <TableHead className="w-16">Image</TableHead>
                 <TableHead>{t("admin.lessonTitle")}</TableHead>
                 <TableHead className="hidden sm:table-cell">{t("admin.lessonCategory")}</TableHead>
                 <TableHead className="hidden sm:table-cell">Min</TableHead>
@@ -323,11 +324,18 @@ function LessonsTab() {
             </TableHeader>
             <TableBody>
               {isLoading ? (
-                <TableRow><TableCell colSpan={5} className="py-6 text-center text-muted-foreground">{t("common.loading")}</TableCell></TableRow>
+                <TableRow><TableCell colSpan={6} className="py-6 text-center text-muted-foreground">{t("common.loading")}</TableCell></TableRow>
               ) : lessons.length === 0 ? (
-                <TableRow><TableCell colSpan={5} className="py-6 text-center text-muted-foreground">{t("common.empty")}</TableCell></TableRow>
+                <TableRow><TableCell colSpan={6} className="py-6 text-center text-muted-foreground">{t("common.empty")}</TableCell></TableRow>
               ) : lessons.map((l) => (
                 <TableRow key={l.id}>
+                  <TableCell>
+                    {l.imageUrl ? (
+                      <img src={l.imageUrl} alt="" className="h-10 w-14 rounded object-cover" />
+                    ) : (
+                      <div className="flex h-10 w-14 items-center justify-center rounded bg-muted text-[10px] text-muted-foreground">No img</div>
+                    )}
+                  </TableCell>
                   <TableCell className="max-w-[220px] truncate font-semibold">{pick(l.title)}</TableCell>
                   <TableCell className="hidden sm:table-cell capitalize text-muted-foreground">{l.categorySlug}</TableCell>
                   <TableCell className="hidden sm:table-cell text-muted-foreground">{l.durationMin}</TableCell>
@@ -498,7 +506,20 @@ function LessonEditor({ open, id, onOpenChange }: { open: boolean; id: string | 
 
             <div className="space-y-1.5">
               <Label>{t("admin.lessonImage")}</Label>
-              <Input value={form.imageUrl} onChange={(e) => setForm((f) => ({ ...f, imageUrl: e.target.value }))} placeholder="https://..." className="h-10" />
+              <div className="flex gap-2">
+                <Input value={form.imageUrl} onChange={(e) => setForm((f) => ({ ...f, imageUrl: e.target.value }))} placeholder="/lessons/lesson-1.png or https://..." className="h-10" />
+                {form.imageUrl && (
+                  <Button type="button" variant="outline" size="sm" className="h-10 shrink-0 text-destructive hover:text-destructive" onClick={() => setForm((f) => ({ ...f, imageUrl: "" }))}>
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                )}
+              </div>
+              {/* Image preview + zoom */}
+              {form.imageUrl && (
+                <div className="mt-2 overflow-hidden rounded-lg border border-border">
+                  <img src={form.imageUrl} alt="lesson preview" className="h-32 w-full object-cover" />
+                </div>
+              )}
             </div>
 
             {/* Language tabs */}
