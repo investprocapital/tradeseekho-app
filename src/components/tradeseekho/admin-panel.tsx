@@ -1,11 +1,11 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useRef } from "react"
 import { motion } from "framer-motion"
 import {
   Download, Users, BookOpen, BarChart3, Shield, Lock, LogOut, Eye,
   Plus, Pencil, Trash2, Save, Send, Megaphone, Check, ChevronRight, ArrowLeft,
-  Crown, X,
+  Crown, X, Upload,
 } from "lucide-react"
 import {
   Card, CardContent, CardHeader, CardTitle, CardDescription,
@@ -444,6 +444,30 @@ function LessonEditor({ open, id, onOpenChange }: { open: boolean; id: string | 
   const setLoc = (field: "title" | "summary" | "content", l: string, val: string) =>
     setForm((f) => ({ ...f, [field]: { ...f[field], [l]: val } }))
 
+  const imgFileRef = useRef<HTMLInputElement>(null)
+  const [imgUploading, setImgUploading] = useState(false)
+
+  const onImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const f = e.target.files?.[0]
+    if (!f) return
+    setImgUploading(true)
+    try {
+      const fd = new FormData()
+      fd.append("file", f)
+      fd.append("type", "lesson")
+      const res = await fetch("/api/admin/upload-image", { method: "POST", body: fd })
+      const j = await res.json()
+      if (!res.ok) throw new Error(j.error || "upload_failed")
+      setForm((prev) => ({ ...prev, imageUrl: j.url }))
+      toast.success("Image uploaded")
+    } catch {
+      toast.error("Upload failed — image too large (max 500KB)")
+    } finally {
+      setImgUploading(false)
+      if (imgFileRef.current) imgFileRef.current.value = ""
+    }
+  }
+
   const submit = async (publish = false) => {
     if (!form.categoryId || !form.title.en) {
       toast.error("Title (EN) + category required")
@@ -510,14 +534,30 @@ function LessonEditor({ open, id, onOpenChange }: { open: boolean; id: string | 
             <div className="space-y-1.5">
               <Label>{t("admin.lessonImage")}</Label>
               <div className="flex gap-2">
-                <Input value={form.imageUrl} onChange={(e) => setForm((f) => ({ ...f, imageUrl: e.target.value }))} placeholder="/lessons/lesson-1.png or https://..." className="h-10" />
+                <Input value={form.imageUrl} onChange={(e) => setForm((f) => ({ ...f, imageUrl: e.target.value }))} placeholder="URL or upload below" className="h-10" />
                 {form.imageUrl && (
                   <Button type="button" variant="outline" size="sm" className="h-10 shrink-0 text-destructive hover:text-destructive" onClick={() => setForm((f) => ({ ...f, imageUrl: "" }))}>
                     <Trash2 className="h-4 w-4" />
                   </Button>
                 )}
               </div>
-              {/* Image preview + zoom */}
+              {/* Upload from gallery */}
+              <input ref={imgFileRef} type="file" accept="image/*" className="hidden" onChange={onImageUpload} />
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="h-9 gap-1.5 text-xs"
+                onClick={() => imgFileRef.current?.click()}
+                disabled={imgUploading}
+              >
+                {imgUploading ? (
+                  <><span className="h-3.5 w-3.5 animate-spin rounded-full border border-brand/30 border-t-brand" /> Uploading...</>
+                ) : (
+                  <><Upload className="h-3.5 w-3.5" /> Upload from Gallery</>
+                )}
+              </Button>
+              {/* Image preview */}
               {form.imageUrl && (
                 <div className="mt-2 overflow-hidden rounded-lg border border-border">
                   <img src={form.imageUrl} alt="lesson preview" className="h-32 w-full object-cover" />
