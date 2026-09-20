@@ -15,7 +15,7 @@ const SLIDES = [
 export function Onboarding() {
   const t = useT()
   const lang = useStore((s) => s.lang)
-  const urduFont = lang === "ur" || lang === "ar"
+  const rtlFont = lang === "ur" ? "font-urdu" : lang === "ar" ? "font-arabic" : ""
   const seen = useStore((s) => s.onboardingSeen)
   const hasHydrated = useStore((s) => s.hasHydrated)
   const setSeen = useStore((s) => s.setOnboardingSeen)
@@ -61,10 +61,10 @@ export function Onboarding() {
               >
                 <Icon className="h-8 w-8" />
               </span>
-              <h2 className={`mt-5 text-2xl font-extrabold tracking-tight text-foreground ${urduFont ? "font-urdu" : ""}`}>
+              <h2 className={`mt-5 text-2xl font-extrabold tracking-tight text-foreground ${rtlFont}`}>
                 {t(slide.key)}
               </h2>
-              <p className={`mt-2 text-sm text-muted-foreground ${urduFont ? "font-urdu" : ""}`}>
+              <p className={`mt-2 text-sm text-muted-foreground ${rtlFont}`}>
                 {t(slide.body)}
               </p>
             </motion.div>

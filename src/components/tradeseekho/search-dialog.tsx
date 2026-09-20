@@ -16,7 +16,7 @@ export function SearchDialog() {
   const open = useStore((s) => s.searchOpen)
   const setOpen = useStore((s) => s.setSearchOpen)
   const lang = useStore((s) => s.lang)
-  const urduFont = lang === "ur" || lang === "ar"
+  const rtlFont = lang === "ur" ? "font-urdu" : lang === "ar" ? "font-arabic" : ""
   const pick = usePick()
   const openLesson = useStore((s) => s.openLesson)
   const setActiveCategory = useStore((s) => s.setActiveCategory)
@@ -87,7 +87,7 @@ export function SearchDialog() {
                         <Clock className="h-4 w-4" />
                       </span>
                       <div className="min-w-0 flex-1">
-                        <div className={`truncate text-sm font-bold ${urduFont ? "font-urdu" : ""}`}>{pick(l.title)}</div>
+                        <div className={`truncate text-sm font-bold ${rtlFont}`}>{pick(l.title)}</div>
                         <div className="truncate text-[11px] text-muted-foreground">{pick(l.summary)}</div>
                       </div>
                       <div className="flex shrink-0 items-center gap-1.5">

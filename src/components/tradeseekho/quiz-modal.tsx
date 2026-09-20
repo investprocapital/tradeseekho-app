@@ -16,7 +16,7 @@ export function QuizContent({ lesson, quiz }: { lesson: LessonDetailDTO; quiz: P
   const t = useT()
   const pick = usePick()
   const lang = useStore((s) => s.lang)
-  const urduFont = lang === "ur" || lang === "ar"
+  const rtlFont = lang === "ur" ? "font-urdu" : lang === "ar" ? "font-arabic" : ""
   const openLesson = useStore((s) => s.openLesson)
   const closeQuiz = useStore((s) => s.closeQuiz)
   const setCertOpen = useStore((s) => s.setCertOpen)
@@ -86,7 +86,7 @@ export function QuizContent({ lesson, quiz }: { lesson: LessonDetailDTO; quiz: P
             {total} {t("quiz.title")} · pass ≥ {quiz.passMark}
           </span>
         </div>
-        <h2 className={`mt-2 text-xl font-extrabold leading-tight ${urduFont ? "font-urdu" : ""}`}>
+        <h2 className={`mt-2 text-xl font-extrabold leading-tight ${rtlFont}`}>
           {pick(lesson.title)}
         </h2>
       </div>
@@ -111,7 +111,7 @@ export function QuizContent({ lesson, quiz }: { lesson: LessonDetailDTO; quiz: P
                   <span className="mt-0.5 inline-flex h-6 min-w-6 items-center justify-center rounded-md bg-brand px-1.5 text-xs font-bold text-brand-foreground">
                     {i + 1}
                   </span>
-                  <p className={`text-[15px] font-semibold leading-snug text-foreground ${urduFont ? "font-urdu" : ""}`}>
+                  <p className={`text-[15px] font-semibold leading-snug text-foreground ${rtlFont}`}>
                     {pick(q.prompt)}
                   </p>
                 </div>
@@ -212,7 +212,7 @@ function ScoreBanner({ result, urduFont }: { result: QuizSubmitResult; urduFont:
         <div className={`text-base font-extrabold ${result.passed ? "text-brand" : "text-gold-foreground"}`}>
           {result.passed ? "🎉 " + t("quiz.passed") : t("quiz.failed", { need: result.passMark })}
         </div>
-        <div className={`text-sm text-muted-foreground ${urduFont ? "font-urdu" : ""}`}>
+        <div className={`text-sm text-muted-foreground ${rtlFont}`}>
           {t("quiz.scored", { score: result.score, total: result.total })}
         </div>
       </div>
@@ -247,19 +247,19 @@ function QuizResults({
               }`}>
                 {correct ? <Check className="h-3.5 w-3.5" /> : <X className="h-3.5 w-3.5" />}
               </span>
-              <p className={`flex-1 text-[15px] font-semibold leading-snug text-foreground ${urduFont ? "font-urdu" : ""}`}>
+              <p className={`flex-1 text-[15px] font-semibold leading-snug text-foreground ${rtlFont}`}>
                 {pick(q.prompt)}
               </p>
             </div>
             <div className="mt-3 space-y-1.5 ps-8">
               <div className="text-sm">
                 <span className="text-muted-foreground">{t("quiz.correctAnswer")}: </span>
-                <span className={`font-bold text-brand ${urduFont ? "font-urdu" : ""}`}>
+                <span className={`font-bold text-brand ${rtlFont}`}>
                   {String.fromCharCode(65 + correctIdx)}. {pick(q.options[correctIdx])}
                 </span>
               </div>
               {expl && (expl.en || expl.ur || expl.hi || expl.ar) && (
-                <div className={`rounded-lg bg-muted/60 p-2.5 text-sm text-muted-foreground ${urduFont ? "font-urdu" : ""}`}>
+                <div className={`rounded-lg bg-muted/60 p-2.5 text-sm text-muted-foreground ${rtlFont}`}>
                   <span className="font-semibold text-foreground">{t("quiz.explanation")}: </span>
                   {pick(expl)}
                 </div>

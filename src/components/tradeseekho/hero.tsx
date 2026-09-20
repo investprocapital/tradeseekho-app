@@ -10,7 +10,7 @@ import { LANGS } from "@/lib/i18n"
 export function Hero() {
   const t = useT()
   const lang = useStore((s) => s.lang)
-  const urduFont = lang === "ur" || lang === "ar"
+  const rtlFont = lang === "ur" ? "font-urdu" : lang === "ar" ? "font-arabic" : ""
 
   return (
     <section className="relative overflow-hidden">
@@ -20,7 +20,7 @@ export function Hero() {
 
       <div className="relative mx-auto grid max-w-6xl items-center gap-8 px-4 py-14 sm:py-20 lg:grid-cols-2">
         {/* Copy */}
-        <div className={urduFont ? "font-urdu" : ""}>
+        <div className={rtlFont}>
           <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
             <Badge variant="secondary" className="gap-1.5 border-brand/30 bg-brand-muted text-brand">
               <Sparkles className="h-3.5 w-3.5" /> {t("home.heroBadge")}

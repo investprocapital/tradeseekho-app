@@ -22,7 +22,9 @@ export function LessonReader() {
   const t = useT()
   const pick = usePick()
   const lang = useStore((s) => s.lang)
-  const urduFont = lang === "ur" || lang === "ar"
+  
+  
+  const rtlFont = lang === "ur" ? "font-urdu" : lang === "ar" ? "font-arabic" : ""
   const activeLessonId = useStore((s) => s.activeLessonId)
   const quizOpenFor = useStore((s) => s.quizOpenFor)
   const closeLesson = useStore((s) => s.closeLesson)
@@ -85,10 +87,10 @@ export function LessonReader() {
                     {t("lesson.lessonNofM", { n: lesson.orderInCategory, m: lesson.totalInCategory })}
                   </span>
                 </div>
-                <SheetTitle className={`mt-2 pr-8 text-2xl font-extrabold leading-tight ${urduFont ? "font-urdu" : ""}`}>
+                <SheetTitle className={`mt-2 pr-8 text-2xl font-extrabold leading-tight ${rtlFont}`}>
                   {pick(lesson.title)}
                 </SheetTitle>
-                <SheetDescription className={`mt-1 ${urduFont ? "font-urdu" : ""}`}>
+                <SheetDescription className={`mt-1 ${rtlFont}`}>
                   {pick(lesson.summary)}
                 </SheetDescription>
               </div>
@@ -134,7 +136,7 @@ export function LessonReader() {
               onContextMenu={(e) => e.preventDefault()}
             >
               <div
-                className={`no-select mx-auto max-w-2xl px-5 py-6 ${urduFont ? "font-urdu" : ""}`}
+                className={`no-select mx-auto max-w-2xl px-5 py-6 ${rtlFont}`}
                 onCopy={(e) => e.preventDefault()}
                 onCut={(e) => e.preventDefault()}
               >

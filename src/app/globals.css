@@ -158,9 +158,9 @@
   line-height: 2.1;
 }
 
-/* Arabic typography — separate from Urdu, uses Naskh Arabic font */
+/* Arabic typography — Naskh Arabic font (NOT Nastaliq) */
 .font-arabic {
-  font-family: var(--font-noto-naskh-arabic), "Noto Naskh Arabic", "Segoe UI", serif;
+  font-family: var(--font-noto-naskh-arabic), "Noto Naskh Arabic", "Segoe UI", "Traditional Arabic", serif;
   line-height: 2.0;
   direction: rtl;
 }
@@ -170,13 +170,20 @@
   text-align: right;
 }
 
-/* When language is Arabic, use Naskh Arabic font (not Nastaliq) */
-html[lang="ar"] .font-urdu {
-  font-family: var(--font-noto-naskh-arabic), "Noto Naskh Arabic", "Segoe UI", serif;
+/* Arabic language: override .font-urdu to use Naskh Arabic instead of Nastaliq */
+html[lang="ar"] .font-urdu,
+html[lang="ar"] .prose-tradeseekho,
+html[lang="ar"] .no-select {
+  font-family: var(--font-noto-naskh-arabic), "Noto Naskh Arabic", "Segoe UI", serif !important;
   line-height: 2.0;
 }
-html[lang="ar"] .prose-tradeseekho {
-  font-family: var(--font-noto-naskh-arabic), "Noto Naskh Arabic", "Segoe UI", serif;
+
+/* Urdu language: ensure Nastaliq font */
+html[lang="ur"] .font-urdu,
+html[lang="ur"] .prose-tradeseekho,
+html[lang="ur"] .no-select {
+  font-family: var(--font-noto-nastaliq), var(--font-poppins), serif !important;
+  line-height: 2.1;
 }
 
 /* Security: lesson content must be read-only — no selection, no copy */

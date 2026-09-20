@@ -13,7 +13,7 @@ import { toast } from "sonner"
 export function CertificateSheet() {
   const t = useT()
   const lang = useStore((s) => s.lang)
-  const urduFont = lang === "ur" || lang === "ar"
+  const rtlFont = lang === "ur" ? "font-urdu" : lang === "ar" ? "font-arabic" : ""
   const certOpen = useStore((s) => s.certOpen)
   const setCertOpen = useStore((s) => s.setCertOpen)
   const { data, isLoading } = useCertificates()
@@ -93,7 +93,7 @@ function CertificateCard({
       </div>
 
       {/* Body */}
-      <div className={`p-4 ${urduFont ? "font-urdu" : ""}`}>
+      <div className={`p-4 ${rtlFont}`}>
         <p className="text-center text-[11px] uppercase tracking-wide text-muted-foreground">This certifies that</p>
         <h3 className="mt-1 text-center text-xl font-extrabold text-foreground">{cert.userName}</h3>
         <p className="mt-2 text-center text-xs text-muted-foreground">

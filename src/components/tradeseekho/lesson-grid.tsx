@@ -43,7 +43,7 @@ function LessonCard({ lesson, index, totalInCategory }: { lesson: LessonListItem
   const t = useT()
   const pick = usePick()
   const lang = useStore((s) => s.lang)
-  const urduFont = lang === "ur" || lang === "ar"
+  const rtlFont = lang === "ur" ? "font-urdu" : lang === "ar" ? "font-arabic" : ""
   const openLesson = useStore((s) => s.openLesson)
   const toggleBm = useStore((s) => s.toggleBookmark)
   const isBookmarked = useStore((s) => s.bookmarks.includes(lesson.id))
@@ -124,10 +124,10 @@ function LessonCard({ lesson, index, totalInCategory }: { lesson: LessonListItem
           <span>·</span>
           <span className="inline-flex items-center gap-1"><Clock className="h-3 w-3" />{t("lesson.duration", { n: lesson.durationMin })}</span>
         </div>
-        <h3 className={`line-clamp-2 text-base font-bold leading-snug text-foreground ${urduFont ? "font-urdu" : ""}`}>
+        <h3 className={`line-clamp-2 text-base font-bold leading-snug text-foreground ${rtlFont}`}>
           {pick(lesson.title)}
         </h3>
-        <p className={`mt-1 line-clamp-2 text-sm text-muted-foreground ${urduFont ? "font-urdu" : ""}`}>
+        <p className={`mt-1 line-clamp-2 text-sm text-muted-foreground ${rtlFont}`}>
           {pick(lesson.summary)}
         </p>
 

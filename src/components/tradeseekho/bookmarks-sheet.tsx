@@ -12,7 +12,7 @@ export function BookmarksSheet() {
   const t = useT()
   const pick = usePick()
   const lang = useStore((s) => s.lang)
-  const urduFont = lang === "ur" || lang === "ar"
+  const rtlFont = lang === "ur" ? "font-urdu" : lang === "ar" ? "font-arabic" : ""
   const bookmarksOpen = useStore((s) => s.bookmarksOpen)
   const setBookmarksOpen = useStore((s) => s.setBookmarksOpen)
   const openLesson = useStore((s) => s.openLesson)
@@ -61,7 +61,7 @@ export function BookmarksSheet() {
                         <BookOpen className="h-5 w-5" />
                       </span>
                       <div className="min-w-0 flex-1">
-                        <div className={`line-clamp-1 text-sm font-bold text-foreground ${urduFont ? "font-urdu" : ""}`}>
+                        <div className={`line-clamp-1 text-sm font-bold text-foreground ${rtlFont}`}>
                           {pick(l.title)}
                         </div>
                         <div className="mt-0.5 flex items-center gap-2 text-[11px] text-muted-foreground">
