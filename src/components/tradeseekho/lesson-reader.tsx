@@ -76,7 +76,7 @@ export function LessonReader() {
         className="flex h-full w-full flex-col gap-0 p-0 sm:max-w-2xl lg:max-w-3xl"
         onContextMenu={(e) => e.preventDefault()}
       >
-        {lesson && (
+        {lesson ? (
           <>
             {/* Header */}
             <SheetHeader className="flex flex-row items-start justify-between gap-3 border-b border-border p-5 pr-4">
@@ -226,8 +226,16 @@ export function LessonReader() {
           </>
         )}
         {isLoading && (
+          <div className="flex flex-1 items-center justify-center p-10">
+            <div className="flex flex-col items-center gap-3">
+              <div className="h-8 w-8 animate-spin rounded-full border-2 border-brand/30 border-t-brand" />
+              <p className="text-sm text-muted-foreground">{t("common.loading")}</p>
+            </div>
+          </div>
+        )}
+        {!lesson && !isLoading && (
           <div className="flex flex-1 items-center justify-center p-10 text-sm text-muted-foreground">
-            {t("common.loading")}
+            Lesson not found. Please try again.
           </div>
         )}
       </SheetContent>
