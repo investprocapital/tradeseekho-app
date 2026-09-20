@@ -221,6 +221,8 @@ export function LessonReader() {
                 </Button>
               )}
             </div>
+            </>
+            )}
           </>
         ) : null}
         {isLoading && (
