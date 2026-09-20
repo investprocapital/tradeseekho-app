@@ -79,7 +79,7 @@ export function AdminPanel() {
   if (!authed) return <AdminLogin />
 
   return (
-    <div className="mx-auto w-full max-w-6xl px-4 py-6 sm:py-8">
+    <div className="mx-auto w-full max-w-6xl px-2 py-4 sm:px-4 sm:py-8">
       {/* Top bar */}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-2.5">
@@ -106,16 +106,16 @@ export function AdminPanel() {
         </div>
       </div>
 
-      <Tabs value={adminTab} onValueChange={(v) => setAdminTab(v as any)} className="mt-6">
-        <ScrollArea className="ts-scroll w-full">
-          <TabsList className="flex w-max">
-            <TabsTrigger value="dashboard" className="gap-1.5"><BarChart3 className="h-4 w-4" />{t("admin.dashboard")}</TabsTrigger>
-            <TabsTrigger value="lessons" className="gap-1.5"><BookOpen className="h-4 w-4" />{t("admin.manageLessons")}</TabsTrigger>
-            <TabsTrigger value="quizzes" className="gap-1.5"><BarChart3 className="h-4 w-4" />{t("admin.manageQuizzes")}</TabsTrigger>
-            <TabsTrigger value="ads" className="gap-1.5"><Megaphone className="h-4 w-4" />{t("admin.ads")}</TabsTrigger>
-            <TabsTrigger value="pro" className="gap-1.5"><Crown className="h-4 w-4" />Pro Requests</TabsTrigger>
+      <Tabs value={adminTab} onValueChange={(v) => setAdminTab(v as any)} className="mt-4">
+        <div className="overflow-x-auto pb-1">
+          <TabsList className="flex w-max gap-1">
+            <TabsTrigger value="dashboard" className="gap-1 whitespace-nowrap"><BarChart3 className="h-4 w-4" /><span className="hidden xs:inline sm:inline">Dashboard</span></TabsTrigger>
+            <TabsTrigger value="lessons" className="gap-1 whitespace-nowrap"><BookOpen className="h-4 w-4" /><span className="hidden xs:inline sm:inline">Lessons</span></TabsTrigger>
+            <TabsTrigger value="quizzes" className="gap-1 whitespace-nowrap"><BarChart3 className="h-4 w-4" /><span className="hidden xs:inline sm:inline">Quizzes</span></TabsTrigger>
+            <TabsTrigger value="ads" className="gap-1 whitespace-nowrap"><Megaphone className="h-4 w-4" /><span className="hidden xs:inline sm:inline">Ads</span></TabsTrigger>
+            <TabsTrigger value="pro" className="gap-1 whitespace-nowrap"><Crown className="h-4 w-4" /><span className="hidden xs:inline sm:inline">Pro</span></TabsTrigger>
           </TabsList>
-        </ScrollArea>
+        </div>
         <TabsContent value="dashboard" className="mt-5"><DashboardTab /></TabsContent>
         <TabsContent value="lessons" className="mt-5"><LessonsTab /></TabsContent>
         <TabsContent value="quizzes" className="mt-5"><QuizzesTab /></TabsContent>
@@ -310,7 +310,7 @@ function LessonsTab() {
         </Button>
       </div>
       <Card>
-        <ScrollArea className="ts-scroll max-h-[60vh]">
+        <ScrollArea className="ts-scroll max-h-[70vh] overflow-x-auto">
           <Table>
             <TableHeader>
               <TableRow>
@@ -336,9 +336,9 @@ function LessonsTab() {
                       <div className="flex h-10 w-14 items-center justify-center rounded bg-muted text-[10px] text-muted-foreground">No img</div>
                     )}
                   </TableCell>
-                  <TableCell className="max-w-[220px] truncate font-semibold">{pick(l.title)}</TableCell>
-                  <TableCell className="hidden sm:table-cell capitalize text-muted-foreground">{l.categorySlug}</TableCell>
-                  <TableCell className="hidden sm:table-cell text-muted-foreground">{l.durationMin}</TableCell>
+                  <TableCell className="max-w-[180px] truncate font-semibold">{pick(l.title)}</TableCell>
+                  <TableCell className="hidden md:table-cell capitalize text-muted-foreground whitespace-nowrap">{l.categorySlug}</TableCell>
+                  <TableCell className="hidden md:table-cell text-muted-foreground whitespace-nowrap">{l.durationMin}</TableCell>
                   <TableCell>
                     {l.isPublished
                       ? <Badge className="bg-brand-muted text-brand">{t("lesson.published")}</Badge>
@@ -468,7 +468,7 @@ function LessonEditor({ open, id, onOpenChange }: { open: boolean; id: string | 
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-h-[92vh] overflow-hidden p-0 sm:max-w-2xl">
+      <DialogContent className="max-h-[90vh] overflow-y-auto p-0 sm:max-w-2xl">
         <DialogHeader className="border-b border-border p-5">
           <DialogTitle className="flex items-center gap-2 text-lg font-extrabold">
             <BookOpen className="h-5 w-5 text-brand" />
@@ -477,7 +477,7 @@ function LessonEditor({ open, id, onOpenChange }: { open: boolean; id: string | 
           <DialogDescription>{t("admin.lessonEditor")}</DialogDescription>
         </DialogHeader>
 
-        <ScrollArea className="ts-scroll max-h-[64vh]">
+        <div className="max-h-[70vh] overflow-y-auto p-5">
           <div className="space-y-5 p-5">
             {/* Category + meta */}
             <div className="grid gap-3 sm:grid-cols-2">
@@ -576,7 +576,7 @@ function LessonEditor({ open, id, onOpenChange }: { open: boolean; id: string | 
               <Switch checked={form.isPublished} onCheckedChange={(v) => setForm((f) => ({ ...f, isPublished: v }))} />
             </div>
           </div>
-        </ScrollArea>
+        </div>
 
         <div className="flex items-center justify-end gap-2 border-t border-border p-4">
           <Button variant="outline" onClick={() => onOpenChange(false)}>{t("action.cancel")}</Button>
