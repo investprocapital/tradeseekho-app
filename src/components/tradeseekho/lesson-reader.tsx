@@ -9,7 +9,7 @@ import { Progress } from "@/components/ui/progress"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Separator } from "@/components/ui/separator"
 import { Bookmark, X, ArrowRight, BarChart3, Lock, CheckCircle2, BookOpen } from "lucide-react"
-import { motion } from "framer-motion"
+import { motion, AnimatePresence } from "framer-motion"
 import { useStore, useT } from "@/lib/store"
 import { useLessonDetail, useToggleBookmark } from "./use-data"
 import { usePick } from "./localize"
@@ -17,6 +17,7 @@ import { QuizContent } from "./quiz-modal"
 import { AdBanner } from "./ad-banner"
 import { TradingViewChart } from "./tradingview-chart"
 import { toast } from "sonner"
+import { useState } from "react"
 
 export function LessonReader() {
   const t = useT()
@@ -25,6 +26,7 @@ export function LessonReader() {
   
   
   const rtlFont = lang === "ur" ? "font-urdu" : lang === "ar" ? "font-arabic" : ""
+  const [zoomImage, setZoomImage] = useState<string | null>(null)
   const activeLessonId = useStore((s) => s.activeLessonId)
   const quizOpenFor = useStore((s) => s.quizOpenFor)
   const closeLesson = useStore((s) => s.closeLesson)
@@ -141,8 +143,9 @@ export function LessonReader() {
                 onCut={(e) => e.preventDefault()}
               >
                 {lesson.imageUrl && (
-                  <div className="relative mb-5 overflow-hidden rounded-xl">
-                    <img src={lesson.imageUrl} alt="" className="h-44 w-full object-cover no-select" draggable={false} />
+                  <div className="relative mb-5 overflow-hidden rounded-xl cursor-zoom-in" onClick={() => setZoomImage(lesson.imageUrl!)}>
+                    <img src={lesson.imageUrl} alt="" className="h-48 w-full object-cover no-select transition hover:opacity-90" draggable={false} />
+                    <div className="absolute bottom-2 right-2 rounded-full bg-background/80 px-2 py-0.5 text-[10px] font-bold text-muted-foreground">🔍 Tap to zoom</div>
                   </div>
                 )}
                 {pick(lesson.content).trim() ? (
@@ -228,6 +231,22 @@ export function LessonReader() {
           </div>
         )}
       </SheetContent>
+
+      {/* Image zoom lightbox */}
+      <AnimatePresence>
+        {zoomImage && (
+          <motion.div
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[200] flex items-center justify-center bg-black/90 p-4"
+            onClick={() => setZoomImage(null)}
+          >
+            <button className="absolute right-4 top-4 text-white/60 hover:text-white" onClick={() => setZoomImage(null)}>
+              <X className="h-8 w-8" />
+            </button>
+            <img src={zoomImage} alt="" className="max-h-[90vh] max-w-full rounded-lg object-contain" />
+          </motion.div>
+        )}
+      </AnimatePresence>
     </Sheet>
   )
 }

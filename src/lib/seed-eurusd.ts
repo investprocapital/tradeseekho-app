@@ -71,7 +71,8 @@ Forex میں یہی کام آن لائن ہوتا ہے۔
 3. السوق مفتوح **24 ساعة، 5 أيام أسبوعياً**`,
     },
     durationMin: 5,
-    isFree: true,
+    imageUrl: `/lessons/lesson-${ls.order}.png`,
+        isFree: true,
     questions: [
       {
         type: "MCQ",
@@ -200,7 +201,8 @@ TP 1.1010 پر لگایا۔ فرق = 10 Pips
 إذا استخدمت 0.01 لوت، 10 نقاط = **1 دولار ربح**`,
     },
     durationMin: 6,
-    isFree: true,
+    imageUrl: `/lessons/lesson-${ls.order}.png`,
+        isFree: true,
     questions: [
       {
         type: "MCQ",
@@ -332,7 +334,8 @@ Leverage 1:1000 ہے تو Margin بہت کم لگے گا
 إذا تحرك 100 نقطة → 10 دولار ربح.`,
     },
     durationMin: 6,
-    isFree: true,
+    imageUrl: `/lessons/lesson-${ls.order}.png`,
+        isFree: true,
     questions: [
       {
         type: "MCQ",
@@ -450,7 +453,8 @@ London + New York Overlap = شام 6:00 سے رات 9:00 پاکستان ٹائم
 هذا وقت حركة \`EUR/USD\` الأكبر.`,
     },
     durationMin: 5,
-    isFree: true,
+    imageUrl: `/lessons/lesson-${ls.order}.png`,
+        isFree: true,
     questions: [
       {
         type: "MCQ",
@@ -550,7 +554,8 @@ Open 1.1000, High 1.1020, Low 1.0990, Close 1.1015
 هذه شمعة **خضراء** لأن 1.1015 > 1.1000. اليورو قوي.`,
     },
     durationMin: 5,
-    isFree: true,
+    imageUrl: `/lessons/lesson-${ls.order}.png`,
+        isFree: true,
     questions: [
       {
         type: "MCQ",
@@ -650,7 +655,8 @@ Support = फर्श, Resistance = छत`,
 - بِع عند المقاومة`,
     },
     durationMin: 5,
-    isFree: true,
+    imageUrl: `/lessons/lesson-${ls.order}.png`,
+        isFree: true,
     questions: [
       {
         type: "MCQ",
@@ -739,7 +745,8 @@ Downtrend: नीचे Low + नीचे High → Sell`,
 نشتري عند التصحيح.`,
     },
     durationMin: 5,
-    isFree: true,
+    imageUrl: `/lessons/lesson-${ls.order}.png`,
+        isFree: true,
     questions: [
       {
         type: "MCQ",
@@ -842,7 +849,8 @@ Market, Limit, Stop — कब उपयोग करें।`,
 \`EUR/USD\` عادةً له فارق منخفض جداً: 0.1 إلى 0.3 نقطة`,
     },
     durationMin: 5,
-    isFree: true,
+    imageUrl: `/lessons/lesson-${ls.order}.png`,
+        isFree: true,
     questions: [
       {
         type: "MCQ",
@@ -941,7 +949,8 @@ $100 अकाउंट = अधिकतम $2 जोखिम प्रति 
 20 نقطة × 0.01 لوت × 0.10 دولار = 2 دولار`,
     },
     durationMin: 5,
-    isFree: true,
+    imageUrl: `/lessons/lesson-${ls.order}.png`,
+        isFree: true,
     questions: [
       {
         type: "MCQ",
@@ -1028,7 +1037,8 @@ $100 अकाउंट = अधिकतम $2 जोखिम प्रति 
 - 5 أيام أسبوعياً، صفقتان يومياً — هذا يكفي`,
     },
     durationMin: 4,
-    isFree: true,
+    imageUrl: `/lessons/lesson-${ls.order}.png`,
+        isFree: true,
     questions: [
       {
         type: "MCQ",
@@ -1137,7 +1147,8 @@ $10,000 वर्चुअल पैसे से अभ्यास करे�
 - الأسبوع 4: إذا كان الرصيد 10500+ → ابدأ بحساب حقيقي`,
     },
     durationMin: 5,
-    isFree: true,
+    imageUrl: `/lessons/lesson-${ls.order}.png`,
+        isFree: true,
     questions: [
       {
         type: "MCQ",
@@ -1249,7 +1260,8 @@ Certificate: "Level 1: Beginner"`,
 **الشهادة:** "المستوى 1: مبتدئ"`,
     },
     durationMin: 5,
-    isFree: true,
+    imageUrl: `/lessons/lesson-${ls.order}.png`,
+        isFree: true,
     questions: [
       {
         type: "MCQ",
