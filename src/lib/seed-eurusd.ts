@@ -71,7 +71,6 @@ Forex میں یہی کام آن لائن ہوتا ہے۔
 3. السوق مفتوح **24 ساعة، 5 أيام أسبوعياً**`,
     },
     durationMin: 5,
-    imageUrl: `/lessons/lesson-${ls.order}.png`,
         isFree: true,
     questions: [
       {
@@ -201,7 +200,6 @@ TP 1.1010 پر لگایا۔ فرق = 10 Pips
 إذا استخدمت 0.01 لوت، 10 نقاط = **1 دولار ربح**`,
     },
     durationMin: 6,
-    imageUrl: `/lessons/lesson-${ls.order}.png`,
         isFree: true,
     questions: [
       {
@@ -334,7 +332,6 @@ Leverage 1:1000 ہے تو Margin بہت کم لگے گا
 إذا تحرك 100 نقطة → 10 دولار ربح.`,
     },
     durationMin: 6,
-    imageUrl: `/lessons/lesson-${ls.order}.png`,
         isFree: true,
     questions: [
       {
@@ -453,7 +450,6 @@ London + New York Overlap = شام 6:00 سے رات 9:00 پاکستان ٹائم
 هذا وقت حركة \`EUR/USD\` الأكبر.`,
     },
     durationMin: 5,
-    imageUrl: `/lessons/lesson-${ls.order}.png`,
         isFree: true,
     questions: [
       {
@@ -554,7 +550,6 @@ Open 1.1000, High 1.1020, Low 1.0990, Close 1.1015
 هذه شمعة **خضراء** لأن 1.1015 > 1.1000. اليورو قوي.`,
     },
     durationMin: 5,
-    imageUrl: `/lessons/lesson-${ls.order}.png`,
         isFree: true,
     questions: [
       {
@@ -655,7 +650,6 @@ Support = फर्श, Resistance = छत`,
 - بِع عند المقاومة`,
     },
     durationMin: 5,
-    imageUrl: `/lessons/lesson-${ls.order}.png`,
         isFree: true,
     questions: [
       {
@@ -745,7 +739,6 @@ Downtrend: नीचे Low + नीचे High → Sell`,
 نشتري عند التصحيح.`,
     },
     durationMin: 5,
-    imageUrl: `/lessons/lesson-${ls.order}.png`,
         isFree: true,
     questions: [
       {
@@ -849,7 +842,6 @@ Market, Limit, Stop — कब उपयोग करें।`,
 \`EUR/USD\` عادةً له فارق منخفض جداً: 0.1 إلى 0.3 نقطة`,
     },
     durationMin: 5,
-    imageUrl: `/lessons/lesson-${ls.order}.png`,
         isFree: true,
     questions: [
       {
@@ -949,7 +941,6 @@ $100 अकाउंट = अधिकतम $2 जोखिम प्रति 
 20 نقطة × 0.01 لوت × 0.10 دولار = 2 دولار`,
     },
     durationMin: 5,
-    imageUrl: `/lessons/lesson-${ls.order}.png`,
         isFree: true,
     questions: [
       {
@@ -1037,7 +1028,6 @@ $100 अकाउंट = अधिकतम $2 जोखिम प्रति 
 - 5 أيام أسبوعياً، صفقتان يومياً — هذا يكفي`,
     },
     durationMin: 4,
-    imageUrl: `/lessons/lesson-${ls.order}.png`,
         isFree: true,
     questions: [
       {
@@ -1147,7 +1137,6 @@ $10,000 वर्चुअल पैसे से अभ्यास करे�
 - الأسبوع 4: إذا كان الرصيد 10500+ → ابدأ بحساب حقيقي`,
     },
     durationMin: 5,
-    imageUrl: `/lessons/lesson-${ls.order}.png`,
         isFree: true,
     questions: [
       {
@@ -1260,7 +1249,6 @@ Certificate: "Level 1: Beginner"`,
 **الشهادة:** "المستوى 1: مبتدئ"`,
     },
     durationMin: 5,
-    imageUrl: `/lessons/lesson-${ls.order}.png`,
         isFree: true,
     questions: [
       {
@@ -1338,6 +1326,7 @@ export async function seedEurUsdLessons(db: PrismaClient) {
         titleEn: ls.title.en, titleUr: ls.title.ur, titleHi: ls.title.hi, titleAr: ls.title.ar,
         summaryEn: ls.summary.en, summaryUr: ls.summary.ur, summaryHi: ls.summary.hi, summaryAr: ls.summary.ar,
         contentEn: ls.content.en, contentUr: ls.content.ur, contentHi: ls.content.hi, contentAr: ls.content.ar,
+        imageUrl: `/lessons/lesson-${ls.order}.png`,
         durationMin: ls.durationMin,
         isPublished: true,
         isFree: ls.isFree,
