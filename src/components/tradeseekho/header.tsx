@@ -4,7 +4,7 @@ import { useTheme } from "next-themes"
 import { useSession, signOut } from "next-auth/react"
 import {
   Moon, Sun, Home, User as UserIcon, Trophy, Bookmark, Settings as SettingsIcon,
-  Bell, Search, LogIn, LogOut, Edit3, Award,
+  Bell, Search, LogIn, LogOut, Edit3, Award, Languages, Check,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import {
@@ -13,6 +13,7 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { useStore, useT } from "@/lib/store"
 import { useCurrentUser } from "./use-data"
+import { LANG_ORDER, LANGS } from "@/lib/i18n"
 
 export function Header() {
   const t = useT()
@@ -36,6 +37,8 @@ export function Header() {
   const setSearchOpen = useStore((s) => s.setSearchOpen)
   const setEditProfileOpen = useStore((s) => s.setEditProfileOpen)
   const setBottomTab = useStore((s) => s.setBottomTab)
+  const lang = useStore((s) => s.lang)
+  const setLang = useStore((s) => s.setLang)
 
   return (
     <header className="sticky top-0 z-40 w-full border-b border-border/70 bg-background/85 backdrop-blur supports-[backdrop-filter]:bg-background/70">
@@ -83,6 +86,30 @@ export function Header() {
         <Button variant="ghost" size="icon" className="h-9 w-9" aria-label="Search lessons" onClick={() => setSearchOpen(true)}>
           <Search className="h-[18px] w-[18px]" />
         </Button>
+
+        {/* Language switcher — quick access in header */}
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" size="sm" className="h-9 gap-1 px-2" aria-label="Language">
+              <Languages className="h-[18px] w-[18px]" />
+              <span className="text-[10px] font-bold">{LANGS[lang].label}</span>
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-40">
+            <DropdownMenuLabel className="text-xs uppercase tracking-wide text-muted-foreground">
+              Language / زبان / भाषा / لغة
+            </DropdownMenuLabel>
+            <DropdownMenuSeparator />
+            {LANG_ORDER.map((code) => (
+              <DropdownMenuItem key={code} onSelect={(e) => { e.preventDefault(); setLang(code) }} className="gap-2">
+                <span className={LANGS[code].dir === "rtl" ? "font-urdu text-base" : ""}>
+                  {LANGS[code].native}
+                </span>
+                {lang === code && <Check className="ms-auto h-4 w-4 text-brand" />}
+              </DropdownMenuItem>
+            ))}
+          </DropdownMenuContent>
+        </DropdownMenu>
 
         {/* Notifications */}
         <Button variant="ghost" size="icon" className="relative h-9 w-9" aria-label="Notifications" onClick={() => setNotificationsOpen(true)}>

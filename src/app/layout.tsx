@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Poppins, Noto_Nastaliq_Urdu } from "next/font/google";
+import { Poppins, Noto_Nastaliq_Urdu, Noto_Naskh_Arabic } from "next/font/google";
 import "./globals.css";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as SonnerToaster } from "@/components/ui/sonner";
@@ -14,6 +14,13 @@ const poppins = Poppins({
 
 const notoNastaliq = Noto_Nastaliq_Urdu({
   variable: "--font-noto-nastaliq",
+  subsets: ["arabic"],
+  weight: ["400", "500", "600", "700"],
+  display: "swap",
+});
+
+const notoNaskhArabic = Noto_Naskh_Arabic({
+  variable: "--font-noto-naskh-arabic",
   subsets: ["arabic"],
   weight: ["400", "500", "600", "700"],
   display: "swap",
@@ -72,7 +79,7 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body
-        className={`${poppins.variable} ${notoNastaliq.variable} antialiased bg-background text-foreground`}
+        className={`${poppins.variable} ${notoNastaliq.variable} ${notoNaskhArabic.variable} antialiased bg-background text-foreground`}
       >
         <Providers>
           {children}

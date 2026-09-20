@@ -152,14 +152,31 @@
   }
 }
 
-/* Urdu / Arabic typography */
+/* Urdu typography — Nastaliq font */
 .font-urdu {
   font-family: var(--font-urdu);
   line-height: 2.1;
 }
+
+/* Arabic typography — separate from Urdu, uses Naskh Arabic font */
+.font-arabic {
+  font-family: var(--font-noto-naskh-arabic), "Noto Naskh Arabic", "Segoe UI", serif;
+  line-height: 2.0;
+  direction: rtl;
+}
+
 [dir="rtl"] .prose-tradeseekho {
   direction: rtl;
   text-align: right;
+}
+
+/* When language is Arabic, use Naskh Arabic font (not Nastaliq) */
+html[lang="ar"] .font-urdu {
+  font-family: var(--font-noto-naskh-arabic), "Noto Naskh Arabic", "Segoe UI", serif;
+  line-height: 2.0;
+}
+html[lang="ar"] .prose-tradeseekho {
+  font-family: var(--font-noto-naskh-arabic), "Noto Naskh Arabic", "Segoe UI", serif;
 }
 
 /* Security: lesson content must be read-only — no selection, no copy */
