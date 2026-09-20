@@ -221,10 +221,8 @@ export function LessonReader() {
                 </Button>
               )}
             </div>
-            </>
-            )}
           </>
-        )}
+        ) : null}
         {isLoading && (
           <div className="flex flex-1 items-center justify-center p-10">
             <div className="flex flex-col items-center gap-3">
