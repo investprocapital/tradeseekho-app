@@ -15,6 +15,7 @@ import { useLessonDetail, useToggleBookmark } from "./use-data"
 import { usePick } from "./localize"
 import { QuizContent } from "./quiz-modal"
 import { AdBanner } from "./ad-banner"
+import { TradingViewChart } from "./tradingview-chart"
 import { toast } from "sonner"
 
 export function LessonReader() {
@@ -127,8 +128,11 @@ export function LessonReader() {
               />
             </div>
 
-            {/* Body — read-only, non-selectable */}
-            <ScrollArea className="ts-scroll flex-1">
+            {/* Body — read-only, non-selectable, scrollable */}
+            <div
+              className="ts-scroll flex-1 overflow-y-auto"
+              onContextMenu={(e) => e.preventDefault()}
+            >
               <div
                 className={`no-select mx-auto max-w-2xl px-5 py-6 ${urduFont ? "font-urdu" : ""}`}
                 onCopy={(e) => e.preventDefault()}
@@ -170,12 +174,15 @@ export function LessonReader() {
                   </div>
                 )}
 
+                {/* TradingView EUR/USD live chart (300px, interactive) */}
+                <TradingViewChart height={300} />
+
                 {/* AdMob banner inside the reader (web + mobile + iOS) */}
-                <div className="mt-2">
+                <div className="mt-4">
                   <AdBanner compact />
                 </div>
               </div>
-            </ScrollArea>
+            </div>
 
             {/* Footer CTA */}
             <div className="border-t border-border bg-background p-4">
