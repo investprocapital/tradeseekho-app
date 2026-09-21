@@ -17,6 +17,7 @@ export function QuizContent({ lesson, quiz }: { lesson: LessonDetailDTO; quiz: P
   const pick = usePick()
   const lang = useStore((s) => s.lang)
   const rtlFont = lang === "ur" ? "font-urdu" : lang === "ar" ? "font-arabic" : ""
+  const urduFont = lang === "ur" || lang === "ar"
   const openLesson = useStore((s) => s.openLesson)
   const closeQuiz = useStore((s) => s.closeQuiz)
   const setCertOpen = useStore((s) => s.setCertOpen)

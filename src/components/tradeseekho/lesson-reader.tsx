@@ -17,12 +17,14 @@ import { QuizContent } from "./quiz-modal"
 import { AdBanner } from "./ad-banner"
 import { TradingViewChart } from "./tradingview-chart"
 import { toast } from "sonner"
-import { useState } from "react"
+import { useState, useRef, useEffect } from "react"
+import { LANG_ORDER, LANGS } from "@/lib/i18n"
 
 export function LessonReader() {
   const t = useT()
   const pick = usePick()
   const lang = useStore((s) => s.lang)
+  const setLang = useStore((s) => s.setLang)
   
   
   const rtlFont = lang === "ur" ? "font-urdu" : lang === "ar" ? "font-arabic" : ""
@@ -95,6 +97,22 @@ export function LessonReader() {
                 <SheetDescription className={`mt-1 ${rtlFont}`}>
                   {pick(lesson.summary)}
                 </SheetDescription>
+                {/* Language switcher buttons */}
+                <div className="mt-3 flex gap-1.5">
+                  {LANG_ORDER.map((code) => (
+                    <button
+                      key={code}
+                      onClick={() => setLang(code)}
+                      className={`rounded-md px-2.5 py-1 text-[11px] font-bold transition ${
+                        lang === code
+                          ? "bg-brand text-brand-foreground"
+                          : "bg-muted text-muted-foreground hover:bg-muted/70"
+                      } ${LANGS[code].dir === "rtl" ? "font-urdu text-xs" : ""}`}
+                    >
+                      {LANGS[code].native}
+                    </button>
+                  ))}
+                </div>
               </div>
               <div className="flex items-center gap-1">
                 <Button
