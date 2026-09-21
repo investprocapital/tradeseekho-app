@@ -134,18 +134,24 @@ export function LessonReader() {
 
             {/* Body — read-only, non-selectable, scrollable */}
             <div
-              className="ts-scroll flex-1 overflow-y-auto"
+              className="flex-1 overflow-y-auto overscroll-contain"
+              style={{ WebkitOverflowScrolling: "touch", minHeight: 0 }}
               onContextMenu={(e) => e.preventDefault()}
             >
               <div
                 className={`no-select mx-auto max-w-2xl px-5 py-6 ${rtlFont}`}
+                style={lang === "ur" ? { fontFamily: "var(--font-noto-nastaliq), var(--font-poppins), serif" } : lang === "ar" ? { fontFamily: "var(--font-noto-naskh-arabic), serif" } : undefined}
                 onCopy={(e) => e.preventDefault()}
                 onCut={(e) => e.preventDefault()}
               >
                 {lesson.imageUrl && (
-                  <div className="relative mb-5 overflow-hidden rounded-xl cursor-zoom-in" onClick={() => setZoomImage(lesson.imageUrl!)}>
-                    <img src={lesson.imageUrl} alt="" className="h-48 w-full object-cover no-select transition hover:opacity-90" draggable={false} />
-                    <div className="absolute bottom-2 right-2 rounded-full bg-background/80 px-2 py-0.5 text-[10px] font-bold text-muted-foreground">🔍 Tap to zoom</div>
+                  <div
+                    className="relative mb-5 overflow-hidden rounded-xl cursor-zoom-in"
+                    onClick={() => setZoomImage(lesson.imageUrl!)}
+                    onDoubleClick={() => setZoomImage(lesson.imageUrl!)}
+                  >
+                    <img src={lesson.imageUrl} alt="" className="h-48 w-full object-cover no-select" draggable={false} />
+                    <div className="absolute bottom-2 right-2 rounded-full bg-background/80 px-2 py-0.5 text-[10px] font-bold text-muted-foreground">🔍 Tap or double-click to zoom</div>
                   </div>
                 )}
                 {pick(lesson.content).trim() ? (

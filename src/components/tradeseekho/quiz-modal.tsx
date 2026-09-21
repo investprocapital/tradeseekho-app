@@ -33,16 +33,19 @@ export function QuizContent({ lesson, quiz }: { lesson: LessonDetailDTO; quiz: P
   const onSubmit = async () => {
     if (!allAnswered) return
     const arr = quiz.questions.map((q) => answers[q.id])
-    const res = await submit.mutateAsync({ lessonId: quiz.lessonId, answers: arr })
-    setResult(res)
-    // AdMob interstitial cadence is decided server-side (every 2 completed lessons)
-    if (res.showInterstitial) {
-      setShowAd(true)
-    } else {
-      toast(res.passed ? t("toast.quizPassed") : t("toast.quizFailed"))
-    }
-    if (res.certificateId) {
-      toast.success("🏆 Certificate earned!", { description: `You completed the ${res.certificateSlug} level.` })
+    try {
+      const res = await submit.mutateAsync({ lessonId: quiz.lessonId, answers: arr })
+      setResult(res)
+      if (res.showInterstitial) {
+        setShowAd(true)
+      } else {
+        toast(res.passed ? t("toast.quizPassed") : t("toast.quizFailed"))
+      }
+      if (res.certificateId) {
+        toast.success("🏆 Certificate earned!", { description: `You completed the ${res.certificateSlug} level.` })
+      }
+    } catch (err: any) {
+      toast.error("Quiz submit failed. Please try again.")
     }
   }
 
@@ -100,7 +103,7 @@ export function QuizContent({ lesson, quiz }: { lesson: LessonDetailDTO; quiz: P
       </div>
 
       {/* Body */}
-      <div className="ts-scroll flex-1 overflow-y-auto p-5">
+      <div className="flex-1 overflow-y-auto overscroll-contain p-5" style={{ WebkitOverflowScrolling: "touch", minHeight: 0 }}>
         {result ? (
           <QuizResults quiz={quiz} result={result} urduFont={urduFont} />
         ) : (
