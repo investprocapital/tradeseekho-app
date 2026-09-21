@@ -1,6 +1,6 @@
 "use client"
 
-import { useMemo } from "react"
+import { useMemo, useRef, useEffect } from "react"
 import ReactMarkdown from "react-markdown"
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet"
 import { Button } from "@/components/ui/button"
@@ -252,79 +252,126 @@ export function LessonReader() {
 
 /* ---------- Pinch-zoom + double-tap + swipe-to-close lightbox ---------- */
 function ZoomLightbox({ src, onClose }: { src: string; onClose: () => void }) {
+  const containerRef = useRef<HTMLDivElement>(null)
+  const imgRef = useRef<HTMLImageElement>(null)
   const [scale, setScale] = useState(1)
   const [pos, setPos] = useState({ x: 0, y: 0 })
-  const [startDist, setStartDist] = useState(0)
-  const [startScale, setStartScale] = useState(1)
-  const [startPos, setStartPos] = useState({ x: 0, y: 0 })
-  const [lastTap, setLastTap] = useState(0)
-  const touchStart = useState<{ x: number; y: number } | null>(null)[0]
-  const setTouchStart = useState<{ x: number; y: number } | null>(null)[1]
+  const lastTapRef = useRef(0)
+  const pinchRef = useRef({ startDist: 0, startScale: 1 })
+  const panRef = useRef({ startX: 0, startY: 0, startPosX: 0, startPosY: 0, isPanning: false })
+  const swipeRef = useRef({ startY: 0, isSwiping: false })
 
-  // Touch handlers for pinch zoom + pan + double tap + swipe close
-  const onTouchStart = (e: React.TouchEvent) => {
-    if (e.touches.length === 1) {
-      const t = e.touches[0]
-      setTouchStart({ x: t.clientX, y: t.clientY })
-      // Double tap detection
-      const now = Date.now()
-      if (now - lastTap < 300) {
-        setScale(scale > 1 ? 1 : 2.5)
-        setPos({ x: 0, y: 0 })
+  // Use refs for current values inside event listeners (avoids stale closures)
+  const scaleRef = useRef(1)
+  const posRef = useRef({ x: 0, y: 0 })
+
+  const updateScale = (s: number) => {
+    const clamped = Math.max(1, Math.min(5, s))
+    scaleRef.current = clamped
+    setScale(clamped)
+  }
+
+  const updatePos = (p: { x: number; y: number }) => {
+    posRef.current = p
+    setPos(p)
+  }
+
+  // Native touch handlers via useEffect (more reliable than React synthetic events)
+  useEffect(() => {
+    const el = containerRef.current
+    if (!el) return
+
+    const handleTouchStart = (e: TouchEvent) => {
+      if (e.touches.length === 2) {
+        // Pinch start
+        const dx = e.touches[0].clientX - e.touches[1].clientX
+        const dy = e.touches[0].clientY - e.touches[1].clientY
+        pinchRef.current.startDist = Math.sqrt(dx * dx + dy * dy)
+        pinchRef.current.startScale = scaleRef.current
+        panRef.current.isPanning = false
+      } else if (e.touches.length === 1) {
+        const t = e.touches[0]
+        // Double tap detection
+        const now = Date.now()
+        if (now - lastTapRef.current < 300) {
+          updateScale(scaleRef.current > 1 ? 1 : 2.5)
+          updatePos({ x: 0, y: 0 })
+          lastTapRef.current = 0
+        } else {
+          lastTapRef.current = now
+        }
+        // Pan start
+        panRef.current.startX = t.clientX
+        panRef.current.startY = t.clientY
+        panRef.current.startPosX = posRef.current.x
+        panRef.current.startPosY = posRef.current.y
+        panRef.current.isPanning = scaleRef.current > 1
+        // Swipe start
+        swipeRef.current.startY = t.clientY
+        swipeRef.current.isSwiping = scaleRef.current === 1
       }
-      setLastTap(now)
-    } else if (e.touches.length === 2) {
-      const dx = e.touches[0].clientX - e.touches[1].clientX
-      const dy = e.touches[0].clientY - e.touches[1].clientY
-      setStartDist(Math.sqrt(dx * dx + dy * dy))
-      setStartScale(scale)
     }
-  }
 
-  const onTouchMove = (e: React.TouchEvent) => {
-    e.preventDefault()
-    if (e.touches.length === 2) {
-      const dx = e.touches[0].clientX - e.touches[1].clientX
-      const dy = e.touches[0].clientY - e.touches[1].clientY
-      const dist = Math.sqrt(dx * dx + dy * dy)
-      if (startDist > 0) {
-        const newScale = Math.max(1, Math.min(5, (dist / startDist) * startScale))
-        setScale(newScale)
+    const handleTouchMove = (e: TouchEvent) => {
+      e.preventDefault()
+      e.stopPropagation()
+      if (e.touches.length === 2 && pinchRef.current.startDist > 0) {
+        // Pinch zoom
+        const dx = e.touches[0].clientX - e.touches[1].clientX
+        const dy = e.touches[0].clientY - e.touches[1].clientY
+        const dist = Math.sqrt(dx * dx + dy * dy)
+        const ratio = dist / pinchRef.current.startDist
+        updateScale(pinchRef.current.startScale * ratio)
+      } else if (e.touches.length === 1) {
+        const t = e.touches[0]
+        if (panRef.current.isPanning) {
+          // Pan when zoomed in
+          const dx = t.clientX - panRef.current.startX
+          const dy = t.clientY - panRef.current.startY
+          updatePos({
+            x: panRef.current.startPosX + dx,
+            y: panRef.current.startPosY + dy,
+          })
+        } else if (swipeRef.current.isSwiping) {
+          // Swipe down to close
+          const dy = t.clientY - swipeRef.current.startY
+          if (dy > 100) onClose()
+        }
       }
-    } else if (e.touches.length === 1 && scale > 1 && touchStart) {
-      const t = e.touches[0]
-      const dx = t.clientX - touchStart.x
-      const dy = t.clientY - touchStart.y
-      setPos({ x: startPos.x + dx, y: startPos.y + dy })
-    } else if (e.touches.length === 1 && scale === 1 && touchStart) {
-      // Swipe down to close
-      const t = e.touches[0]
-      const dy = t.clientY - touchStart.y
-      if (dy > 80) onClose()
     }
-  }
 
-  const onTouchEnd = () => {
-    setStartDist(0)
-    setStartPos(pos)
-    setTouchStart(null)
-  }
+    const handleTouchEnd = () => {
+      pinchRef.current.startDist = 0
+      panRef.current.isPanning = false
+      swipeRef.current.isSwiping = false
+    }
 
-  // Mouse wheel zoom for desktop
-  const onWheel = (e: React.WheelEvent) => {
-    e.preventDefault()
-    const delta = e.deltaY > 0 ? -0.15 : 0.15
-    setScale((s) => Math.max(1, Math.min(5, s + delta)))
-  }
+    const handleWheel = (e: WheelEvent) => {
+      e.preventDefault()
+      const delta = e.deltaY > 0 ? -0.2 : 0.2
+      updateScale(scaleRef.current + delta)
+    }
+
+    // Use passive: false so we can call preventDefault
+    el.addEventListener("touchstart", handleTouchStart, { passive: false })
+    el.addEventListener("touchmove", handleTouchMove, { passive: false })
+    el.addEventListener("touchend", handleTouchEnd, { passive: false })
+    el.addEventListener("wheel", handleWheel, { passive: false })
+
+    return () => {
+      el.removeEventListener("touchstart", handleTouchStart)
+      el.removeEventListener("touchmove", handleTouchMove)
+      el.removeEventListener("touchend", handleTouchEnd)
+      el.removeEventListener("wheel", handleWheel)
+    }
+  }, [onClose])
 
   return (
     <motion.div
       initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-      className="fixed inset-0 z-[200] flex items-center justify-center bg-black/95 touch-none"
-      onTouchStart={onTouchStart}
-      onTouchMove={onTouchMove}
-      onTouchEnd={onTouchEnd}
-      onWheel={onWheel}
+      ref={containerRef}
+      className="fixed inset-0 z-[200] flex items-center justify-center bg-black/95"
+      style={{ touchAction: "none" }}
     >
       {/* Close button */}
       <button
@@ -344,13 +391,17 @@ function ZoomLightbox({ src, onClose }: { src: string; onClose: () => void }) {
 
       {/* Zoomable image */}
       <img
+        ref={imgRef}
         src={src}
         alt=""
-        className="max-h-[90vh] max-w-full select-none rounded-lg object-contain transition-transform"
+        className="max-h-[90vh] max-w-full rounded-lg object-contain"
         style={{
           transform: `translate(${pos.x}px, ${pos.y}px) scale(${scale})`,
           transformOrigin: "center center",
-          touchAction: "none",
+          willChange: "transform",
+          userSelect: "none",
+          WebkitUserSelect: "none",
+          pointerEvents: "none",
         }}
         draggable={false}
       />
