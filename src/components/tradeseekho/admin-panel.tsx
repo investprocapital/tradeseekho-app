@@ -450,18 +450,23 @@ function LessonEditor({ open, id, onOpenChange }: { open: boolean; id: string | 
   const onImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const f = e.target.files?.[0]
     if (!f) return
+    // Check size before upload
+    if (f.size > 2 * 1024 * 1024) {
+      toast.error("Image too large (max 2MB). Use a smaller image.")
+      if (imgFileRef.current) imgFileRef.current.value = ""
+      return
+    }
     setImgUploading(true)
     try {
       const fd = new FormData()
       fd.append("file", f)
-      fd.append("type", "lesson")
       const res = await fetch("/api/admin/upload-image", { method: "POST", body: fd })
       const j = await res.json()
       if (!res.ok) throw new Error(j.error || "upload_failed")
       setForm((prev) => ({ ...prev, imageUrl: j.url }))
-      toast.success("Image uploaded")
-    } catch {
-      toast.error("Upload failed — image too large (max 500KB)")
+      toast.success("Image uploaded successfully")
+    } catch (err: any) {
+      toast.error(err?.message === "too_large" ? "Image too large (max 2MB)" : "Upload failed. Try a smaller image.")
     } finally {
       setImgUploading(false)
       if (imgFileRef.current) imgFileRef.current.value = ""
