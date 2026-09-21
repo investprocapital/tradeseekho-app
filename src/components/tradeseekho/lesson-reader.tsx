@@ -240,21 +240,120 @@ export function LessonReader() {
         )}
       </SheetContent>
 
-      {/* Image zoom lightbox */}
+      {/* Image zoom lightbox — pinch zoom + double tap + swipe to close */}
       <AnimatePresence>
         {zoomImage && (
-          <motion.div
-            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[200] flex items-center justify-center bg-black/90 p-4"
-            onClick={() => setZoomImage(null)}
-          >
-            <button className="absolute right-4 top-4 text-white/60 hover:text-white" onClick={() => setZoomImage(null)}>
-              <X className="h-8 w-8" />
-            </button>
-            <img src={zoomImage} alt="" className="max-h-[90vh] max-w-full rounded-lg object-contain" />
-          </motion.div>
+          <ZoomLightbox src={zoomImage} onClose={() => setZoomImage(null)} />
         )}
       </AnimatePresence>
     </Sheet>
+  )
+}
+
+/* ---------- Pinch-zoom + double-tap + swipe-to-close lightbox ---------- */
+function ZoomLightbox({ src, onClose }: { src: string; onClose: () => void }) {
+  const [scale, setScale] = useState(1)
+  const [pos, setPos] = useState({ x: 0, y: 0 })
+  const [startDist, setStartDist] = useState(0)
+  const [startScale, setStartScale] = useState(1)
+  const [startPos, setStartPos] = useState({ x: 0, y: 0 })
+  const [lastTap, setLastTap] = useState(0)
+  const touchStart = useState<{ x: number; y: number } | null>(null)[0]
+  const setTouchStart = useState<{ x: number; y: number } | null>(null)[1]
+
+  // Touch handlers for pinch zoom + pan + double tap + swipe close
+  const onTouchStart = (e: React.TouchEvent) => {
+    if (e.touches.length === 1) {
+      const t = e.touches[0]
+      setTouchStart({ x: t.clientX, y: t.clientY })
+      // Double tap detection
+      const now = Date.now()
+      if (now - lastTap < 300) {
+        setScale(scale > 1 ? 1 : 2.5)
+        setPos({ x: 0, y: 0 })
+      }
+      setLastTap(now)
+    } else if (e.touches.length === 2) {
+      const dx = e.touches[0].clientX - e.touches[1].clientX
+      const dy = e.touches[0].clientY - e.touches[1].clientY
+      setStartDist(Math.sqrt(dx * dx + dy * dy))
+      setStartScale(scale)
+    }
+  }
+
+  const onTouchMove = (e: React.TouchEvent) => {
+    e.preventDefault()
+    if (e.touches.length === 2) {
+      const dx = e.touches[0].clientX - e.touches[1].clientX
+      const dy = e.touches[0].clientY - e.touches[1].clientY
+      const dist = Math.sqrt(dx * dx + dy * dy)
+      if (startDist > 0) {
+        const newScale = Math.max(1, Math.min(5, (dist / startDist) * startScale))
+        setScale(newScale)
+      }
+    } else if (e.touches.length === 1 && scale > 1 && touchStart) {
+      const t = e.touches[0]
+      const dx = t.clientX - touchStart.x
+      const dy = t.clientY - touchStart.y
+      setPos({ x: startPos.x + dx, y: startPos.y + dy })
+    } else if (e.touches.length === 1 && scale === 1 && touchStart) {
+      // Swipe down to close
+      const t = e.touches[0]
+      const dy = t.clientY - touchStart.y
+      if (dy > 80) onClose()
+    }
+  }
+
+  const onTouchEnd = () => {
+    setStartDist(0)
+    setStartPos(pos)
+    setTouchStart(null)
+  }
+
+  // Mouse wheel zoom for desktop
+  const onWheel = (e: React.WheelEvent) => {
+    e.preventDefault()
+    const delta = e.deltaY > 0 ? -0.15 : 0.15
+    setScale((s) => Math.max(1, Math.min(5, s + delta)))
+  }
+
+  return (
+    <motion.div
+      initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+      className="fixed inset-0 z-[200] flex items-center justify-center bg-black/95 touch-none"
+      onTouchStart={onTouchStart}
+      onTouchMove={onTouchMove}
+      onTouchEnd={onTouchEnd}
+      onWheel={onWheel}
+    >
+      {/* Close button */}
+      <button
+        className="absolute right-4 top-4 z-10 flex h-10 w-10 items-center justify-center rounded-full bg-white/10 text-white/80 hover:bg-white/20"
+        onClick={onClose}
+        aria-label="Close"
+      >
+        <X className="h-6 w-6" />
+      </button>
+
+      {/* Hint text */}
+      {scale === 1 && (
+        <div className="pointer-events-none absolute bottom-8 left-1/2 -translate-x-1/2 text-center text-xs text-white/40">
+          <p>Pinch to zoom · Double tap · Swipe down to close</p>
+        </div>
+      )}
+
+      {/* Zoomable image */}
+      <img
+        src={src}
+        alt=""
+        className="max-h-[90vh] max-w-full select-none rounded-lg object-contain transition-transform"
+        style={{
+          transform: `translate(${pos.x}px, ${pos.y}px) scale(${scale})`,
+          transformOrigin: "center center",
+          touchAction: "none",
+        }}
+        draggable={false}
+      />
+    </motion.div>
   )
 }
