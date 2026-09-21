@@ -17,7 +17,6 @@ import { QuizContent } from "./quiz-modal"
 import { AdBanner } from "./ad-banner"
 import { TradingViewChart } from "./tradingview-chart"
 import { toast } from "sonner"
-import { useState, useRef, useEffect } from "react"
 import { LANG_ORDER, LANGS } from "@/lib/i18n"
 
 export function LessonReader() {
