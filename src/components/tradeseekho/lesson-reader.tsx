@@ -273,119 +273,109 @@ export function LessonReader() {
   )
 }
 
-/* ---------- Pinch-zoom + double-tap + swipe-to-close lightbox ---------- */
+/* ---------- Zoomable image lightbox with buttons + pinch + rotate ---------- */
 function ZoomLightbox({ src, onClose }: { src: string; onClose: () => void }) {
   const containerRef = useRef<HTMLDivElement>(null)
-  const imgRef = useRef<HTMLImageElement>(null)
   const [scale, setScale] = useState(1)
   const [pos, setPos] = useState({ x: 0, y: 0 })
+  const [rotation, setRotation] = useState(0)
+
+  // Refs for real-time values (avoid stale closures in native event listeners)
+  const scaleRef = useRef(1)
+  const posRef = useRef({ x: 0, y: 0 })
   const lastTapRef = useRef(0)
   const pinchRef = useRef({ startDist: 0, startScale: 1 })
   const panRef = useRef({ startX: 0, startY: 0, startPosX: 0, startPosY: 0, isPanning: false })
   const swipeRef = useRef({ startY: 0, isSwiping: false })
 
-  // Use refs for current values inside event listeners (avoids stale closures)
-  const scaleRef = useRef(1)
-  const posRef = useRef({ x: 0, y: 0 })
-
-  const updateScale = (s: number) => {
+  const applyScale = (s: number) => {
     const clamped = Math.max(1, Math.min(5, s))
     scaleRef.current = clamped
     setScale(clamped)
+    if (clamped === 1) {
+      posRef.current = { x: 0, y: 0 }
+      setPos({ x: 0, y: 0 })
+    }
   }
 
-  const updatePos = (p: { x: number; y: number }) => {
+  const applyPos = (p: { x: number; y: number }) => {
     posRef.current = p
     setPos(p)
   }
 
-  // Native touch handlers via useEffect (more reliable than React synthetic events)
+  // Native touch event listeners (most reliable for multi-touch on mobile)
   useEffect(() => {
     const el = containerRef.current
     if (!el) return
 
-    const handleTouchStart = (e: TouchEvent) => {
+    const onTouchStart = (e: TouchEvent) => {
       if (e.touches.length === 2) {
-        // Pinch start
         const dx = e.touches[0].clientX - e.touches[1].clientX
         const dy = e.touches[0].clientY - e.touches[1].clientY
         pinchRef.current.startDist = Math.sqrt(dx * dx + dy * dy)
         pinchRef.current.startScale = scaleRef.current
         panRef.current.isPanning = false
+        swipeRef.current.isSwiping = false
       } else if (e.touches.length === 1) {
         const t = e.touches[0]
-        // Double tap detection
         const now = Date.now()
         if (now - lastTapRef.current < 300) {
-          updateScale(scaleRef.current > 1 ? 1 : 2.5)
-          updatePos({ x: 0, y: 0 })
+          applyScale(scaleRef.current > 1 ? 1 : 3)
           lastTapRef.current = 0
         } else {
           lastTapRef.current = now
         }
-        // Pan start
-        panRef.current.startX = t.clientX
-        panRef.current.startY = t.clientY
-        panRef.current.startPosX = posRef.current.x
-        panRef.current.startPosY = posRef.current.y
-        panRef.current.isPanning = scaleRef.current > 1
-        // Swipe start
-        swipeRef.current.startY = t.clientY
-        swipeRef.current.isSwiping = scaleRef.current === 1
+        panRef.current = {
+          startX: t.clientX, startY: t.clientY,
+          startPosX: posRef.current.x, startPosY: posRef.current.y,
+          isPanning: scaleRef.current > 1,
+        }
+        swipeRef.current = { startY: t.clientY, isSwiping: scaleRef.current === 1 }
       }
     }
 
-    const handleTouchMove = (e: TouchEvent) => {
-      e.preventDefault()
-      e.stopPropagation()
-      if (e.touches.length === 2 && pinchRef.current.startDist > 0) {
-        // Pinch zoom
+    const onTouchMove = (e: TouchEvent) => {
+      if (e.cancelable) e.preventDefault()
+      if (e.touches.length === 2 && pinchRef.current.startDist > 10) {
         const dx = e.touches[0].clientX - e.touches[1].clientX
         const dy = e.touches[0].clientY - e.touches[1].clientY
         const dist = Math.sqrt(dx * dx + dy * dy)
         const ratio = dist / pinchRef.current.startDist
-        updateScale(pinchRef.current.startScale * ratio)
+        applyScale(pinchRef.current.startScale * ratio)
       } else if (e.touches.length === 1) {
         const t = e.touches[0]
         if (panRef.current.isPanning) {
-          // Pan when zoomed in
-          const dx = t.clientX - panRef.current.startX
-          const dy = t.clientY - panRef.current.startY
-          updatePos({
-            x: panRef.current.startPosX + dx,
-            y: panRef.current.startPosY + dy,
+          applyPos({
+            x: panRef.current.startPosX + (t.clientX - panRef.current.startX),
+            y: panRef.current.startPosY + (t.clientY - panRef.current.startY),
           })
         } else if (swipeRef.current.isSwiping) {
-          // Swipe down to close
-          const dy = t.clientY - swipeRef.current.startY
-          if (dy > 100) onClose()
+          if (t.clientY - swipeRef.current.startY > 120) onClose()
         }
       }
     }
 
-    const handleTouchEnd = () => {
+    const onTouchEnd = () => {
       pinchRef.current.startDist = 0
       panRef.current.isPanning = false
       swipeRef.current.isSwiping = false
     }
 
-    const handleWheel = (e: WheelEvent) => {
-      e.preventDefault()
-      const delta = e.deltaY > 0 ? -0.2 : 0.2
-      updateScale(scaleRef.current + delta)
+    const onWheel = (e: WheelEvent) => {
+      if (e.cancelable) e.preventDefault()
+      applyScale(scaleRef.current + (e.deltaY > 0 ? -0.3 : 0.3))
     }
 
-    // Use passive: false so we can call preventDefault
-    el.addEventListener("touchstart", handleTouchStart, { passive: false })
-    el.addEventListener("touchmove", handleTouchMove, { passive: false })
-    el.addEventListener("touchend", handleTouchEnd, { passive: false })
-    el.addEventListener("wheel", handleWheel, { passive: false })
+    el.addEventListener("touchstart", onTouchStart, { passive: false })
+    el.addEventListener("touchmove", onTouchMove, { passive: false })
+    el.addEventListener("touchend", onTouchEnd, { passive: false })
+    el.addEventListener("wheel", onWheel, { passive: false })
 
     return () => {
-      el.removeEventListener("touchstart", handleTouchStart)
-      el.removeEventListener("touchmove", handleTouchMove)
-      el.removeEventListener("touchend", handleTouchEnd)
-      el.removeEventListener("wheel", handleWheel)
+      el.removeEventListener("touchstart", onTouchStart)
+      el.removeEventListener("touchmove", onTouchMove)
+      el.removeEventListener("touchend", onTouchEnd)
+      el.removeEventListener("wheel", onWheel)
     }
   }, [onClose])
 
@@ -393,33 +383,60 @@ function ZoomLightbox({ src, onClose }: { src: string; onClose: () => void }) {
     <motion.div
       initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
       ref={containerRef}
-      className="fixed inset-0 z-[200] flex items-center justify-center bg-black/95"
+      className="fixed inset-0 z-[200] flex items-center justify-center bg-black"
       style={{ touchAction: "none" }}
     >
-      {/* Close button */}
-      <button
-        className="absolute right-4 top-4 z-10 flex h-10 w-10 items-center justify-center rounded-full bg-white/10 text-white/80 hover:bg-white/20"
-        onClick={onClose}
-        aria-label="Close"
-      >
-        <X className="h-6 w-6" />
-      </button>
+      {/* Top bar: close + rotate + zoom controls */}
+      <div className="absolute left-0 right-0 top-0 z-20 flex items-center justify-between p-4">
+        <button
+          className="flex h-10 w-10 items-center justify-center rounded-full bg-white/10 text-white"
+          onClick={onClose}
+          aria-label="Close"
+        >
+          <X className="h-6 w-6" />
+        </button>
+        <div className="flex gap-2">
+          <button
+            className="flex h-10 w-10 items-center justify-center rounded-full bg-white/10 text-white text-lg font-bold"
+            onClick={() => applyScale(scaleRef.current - 0.5)}
+            aria-label="Zoom out"
+          >
+            −
+          </button>
+          <span className="flex h-10 items-center rounded-full bg-white/10 px-3 text-xs font-bold text-white">
+            {Math.round(scale * 100)}%
+          </span>
+          <button
+            className="flex h-10 w-10 items-center justify-center rounded-full bg-white/10 text-white text-lg font-bold"
+            onClick={() => applyScale(scaleRef.current + 0.5)}
+            aria-label="Zoom in"
+          >
+            +
+          </button>
+          <button
+            className="flex h-10 w-10 items-center justify-center rounded-full bg-white/10 text-white"
+            onClick={() => setRotation((r) => r + 90)}
+            aria-label="Rotate"
+          >
+            <RefreshCw className="h-5 w-5" />
+          </button>
+        </div>
+      </div>
 
-      {/* Hint text */}
+      {/* Hint */}
       {scale === 1 && (
-        <div className="pointer-events-none absolute bottom-8 left-1/2 -translate-x-1/2 text-center text-xs text-white/40">
-          <p>Pinch to zoom · Double tap · Swipe down to close</p>
+        <div className="pointer-events-none absolute bottom-6 left-1/2 -translate-x-1/2 text-center text-xs text-white/40">
+          <p>Pinch · Double tap · Swipe down to close · Use +/− buttons</p>
         </div>
       )}
 
-      {/* Zoomable image */}
+      {/* Zoomable + rotatable image */}
       <img
-        ref={imgRef}
         src={src}
         alt=""
-        className="max-h-[90vh] max-w-full rounded-lg object-contain"
+        className="max-h-[90vh] max-w-full object-contain"
         style={{
-          transform: `translate(${pos.x}px, ${pos.y}px) scale(${scale})`,
+          transform: `translate(${pos.x}px, ${pos.y}px) scale(${scale}) rotate(${rotation}deg)`,
           transformOrigin: "center center",
           willChange: "transform",
           userSelect: "none",
