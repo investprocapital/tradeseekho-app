@@ -934,15 +934,17 @@ If you risk $10 and your stop is 20 pips away, and 1 pip on a micro lot ≈ $0.1
     create: { id: 'local-learner', role: 'student' },
   })
 
-  // ---------- Replace generic lessons with EUR/USD Beginner (12) + Intermediate (10) + Advanced (16) ----------
+  // ---------- Replace generic lessons with EUR/USD Beginner (12) + Intermediate (10) + Advanced (16) + Bonus (5) ----------
   // The base seed above creates 6 generic lessons. Now we replace the Beginner,
-  // Intermediate, and Advanced categories with the full EUR/USD curriculum (38 lessons total).
+  // Intermediate, and Advanced categories with the full EUR/USD curriculum (43 lessons total).
   const { seedEurUsdLessons } = await import("./seed-eurusd")
   const { seedIntermediateLessons } = await import("./seed-intermediate")
   const { seedAdvancedLessons } = await import("./seed-advanced")
+  const { seedBonusLessons } = await import("./seed-bonus")
   const eur = await seedEurUsdLessons(db)
   const inter = await seedIntermediateLessons(db)
   const adv = await seedAdvancedLessons(db)
+  const bonus = await seedBonusLessons(db)
 
   const finalLessons = await db.lesson.count()
   const finalQuizzes = await db.quiz.count()
@@ -957,6 +959,7 @@ If you risk $10 and your stop is 20 pips away, and 1 pip on a micro lot ≈ $0.1
   console.log(`   EUR/USD Beginner: ${eur.lessons} lessons + ${eur.questions} questions`)
   console.log(`   EUR/USD Intermediate: ${inter.lessons} lessons + ${inter.questions} questions`)
   console.log(`   EUR/USD Advanced: ${adv.lessons} lessons + ${adv.questions} questions`)
+  console.log(`   EUR/USD Bonus: ${bonus.lessons} lessons + ${bonus.questions} questions`)
 
   return { categories: 3, lessons: finalLessons, quizzes: finalQuizzes }
 }
