@@ -1,0 +1,1920 @@
+     1→/* TradeSeekho Intermediate Lessons — 10 lessons (13-22) + 40 quiz questions
+     2→   Run via POST /api/admin/seed-intermediate (admin-gated)
+     3→   Adds Intermediate lessons: MA/EMA, RSI, MACD, Bollinger, Chart Patterns,
+     4→   Fibonacci, Price Action, Fundamental Analysis (News/Interest Rate/CPI). */
+     5→import type { PrismaClient } from "@prisma/client"
+     6→
+     7→type QuizQ = {
+     8→  type: "MCQ"
+     9→  prompt: { en: string; ur: string; hi: string; ar: string }
+    10→  options: { en: string; ur: string; hi: string; ar: string }[]
+    11→  correctIndex: number
+    12→  explanation: { en: string; ur: string; hi: string; ar: string }
+    13→}
+    14→
+    15→type LessonSeed = {
+    16→  id: string
+    17→  order: number
+    18→  title: { en: string; ur: string; hi: string; ar: string }
+    19→  summary: { en: string; ur: string; hi: string; ar: string }
+    20→  content: { en: string; ur: string; hi: string; ar: string }
+    21→  durationMin: number
+    22→  isFree: boolean
+    23→  questions: QuizQ[]
+    24→}
+    25→
+    26→const LESSONS: LessonSeed[] = [
+    27→  // ===== LESSON 13: Moving Averages =====
+    28→  {
+    29→    id: "eurusd-13",
+    30→    order: 1,
+    31→    title: {
+    32→      en: "Moving Averages — MA & EMA | Catching the Trend",
+    33→      ur: "Moving Averages - MA, EMA | ٹرینڈ پکڑنا",
+    34→      hi: "मूविंग एवरेज - MA, EMA | ट्रेंड पकड़ना",
+    35→      ar: "المتوسطات المتحركة - MA و EMA | التقاط الاتجاه",
+    36→    },
+    37→    summary: {
+    38→      en: "Filter the noise and find the real market direction with SMA & EMA.",
+    39→      ur: "شور فلٹر کریں اور مارکیٹ کا اصل رخ SMA اور EMA سے پکڑیں۔",
+    40→      hi: "शोर को फ़िल्टर करें और SMA व EMA से बाज़ार की असली दिशा पकड़ें।",
+    41→      ar: "صفِّ الضوضاء واكتشف الاتجاه الحقيقي للسوق باستخدام SMA و EMA.",
+    42→    },
+    43→    content: {
+    44→      en: `## Moving Averages — MA & EMA
+    45→
+    46→**Moving Average** means "average of price". It tells us the real direction of the market and filters out the noise.
+    47→
+    48→### Two Main Types
+    49→
+    50→**1. SMA = Simple Moving Average**
+    51→Adds up the prices of the last X candles and divides by X. It is slow.
+    52→
+    53→**2. EMA = Exponential Moving Average**
+    54→Gives more weight to the latest price. It gives faster signals. Traders prefer EMA.
+    55→
+    56→### Most Popular Settings
+    57→1. **EMA 50** = Short-term trend
+    58→2. **EMA 200** = Long-term trend. Also called the "Golden Line"
+    59→
+    60→### Trend Rules
+    61→1. **Uptrend:** price is above EMA 200
+    62→2. **Downtrend:** price is below EMA 200
+    63→3. **Golden Cross:** EMA 50 cuts EMA 200 from below = Buy signal
+    64→4. **Death Cross:** EMA 50 cuts EMA 200 from above = Sell signal
+    65→
+    66→### Example — EUR/USD 1H chart
+    67→Price is at 1.0980 and EMA 200 is also at 1.0980.
+    68→Price moves above EMA 200 and EMA 50 cuts EMA 200.
+    69→**Signal:** Buy opportunity. SL = 20 pips below EMA 200`,
+    70→      ur: `## Moving Averages - MA, EMA
+    71→
+    72→Moving Average کا مطلب ہے "قیمت کی اوسط"۔ یہ ہمیں بتاتا ہے کہ مارکیٹ کا اصل رخ کیا ہے۔ شور فلٹر کر دیتا ہے۔
+    73→
+    74→### 2 بڑی قسمیں
+    75→
+    76→**1. SMA = Simple Moving Average**
+    77→گزشتہ X کینڈل کی قیمت کو جمع کر کے اوسط نکالتا ہے۔ سست ہوتا ہے۔
+    78→
+    79→**2. EMA = Exponential Moving Average**
+    80→نئی قیمت کو زیادہ وزن دیتا ہے۔ تیز سگنل دیتا ہے۔ ٹریڈر EMA کو زیادہ پسند کرتے ہیں۔
+    81→
+    82→### سب سے مشہور سیٹنگ
+    83→1. **EMA 50** = شارٹ ٹرم ٹرینڈ
+    84→2. **EMA 200** = لانگ ٹرم ٹرینڈ۔ اسے "Golden Line" بھی کہتے ہیں
+    85→
+    86→### ٹرینڈ رول
+    87→1. **Uptrend:** قیمت EMA 200 کے اوپر ہو
+    88→2. **Downtrend:** قیمت EMA 200 کے نیچے ہو
+    89→3. **Golden Cross:** EMA 50، EMA 200 کو اوپر سے کاٹے = Buy سگنل
+    90→4. **Death Cross:** EMA 50، EMA 200 کو نیچے سے کاٹے = Sell سگنل
+    91→
+    92→### مثال: EUR/USD 1H چارٹ
+    93→قیمت 1.0980 ہے اور EMA 200 بھی 1.0980 پر ہے۔
+    94→قیمت EMA 200 کے اوپر گئی اور EMA 50 نے EMA 200 کو کاٹا۔
+    95→**سگنل:** Buy کا موقع۔ SL = EMA 200 کے نیچے 20 Pips`,
+    96→      hi: `## मूविंग एवरेज - MA और EMA
+    97→
+    98→**मूविंग एवरेज** का मतलब है "कीमत का औसत"। यह हमें बताता है कि बाज़ार का असली रुख क्या है। यह शोर को फ़िल्टर कर देता है।
+    99→
+   100→### 2 मुख्य प्रकार
+   101→
+   102→**1. SMA = Simple Moving Average**
+   103→पिछली X कैंडल की कीमत को जोड़कर औसत निकालता है। यह धीमा होता है।
+   104→
+   105→**2. EMA = Exponential Moving Average**
+   106→नई कीमत को ज़्यादा वज़न देता है। तेज़ सिग्नल देता है। ट्रेडर EMA को ज़्यादा पसंद करते हैं।
+   107→
+   108→### सबसे मशहूर सेटिंग
+   109→1. **EMA 50** = शॉर्ट टर्म ट्रेंड
+   110→2. **EMA 200** = लॉन्ग टर्म ट्रेंड। इसे "Golden Line" भी कहते हैं
+   111→
+   112→### ट्रेंड नियम
+   113→1. **Uptrend:** कीमत EMA 200 के ऊपर हो
+   114→2. **Downtrend:** कीमत EMA 200 के नीचे हो
+   115→3. **Golden Cross:** EMA 50, EMA 200 को ऊपर से काटे = Buy सिग्नल
+   116→4. **Death Cross:** EMA 50, EMA 200 को नीचे से काटे = Sell सिग्नल
+   117→
+   118→### उदाहरण: EUR/USD 1H चार्ट
+   119→कीमत 1.0980 है और EMA 200 भी 1.0980 पर है।
+   120→कीमत EMA 200 के ऊपर गई और EMA 50 ने EMA 200 को काटा।
+   121→**सिग्नल:** Buy का मौका। SL = EMA 200 के नीचे 20 Pips`,
+   122→      ar: `## المتوسطات المتحركة - MA و EMA
+   123→
+   124→**المتوسط المتحرك** يعني "متوسط السعر". يخبرنا بالاتجاه الحقيقي للسوق ويرشح الضوضاء.
+   125→
+   126→### نوعان رئيسيان
+   127→
+   128→**1. SMA = المتوسط المتحرك البسيط**
+   129→يجمع أسعار آخر X شموع ويقسم على X. بطيء.
+   130→
+   131→**2. EMA = المتوسط المتحرك الأسي**
+   132→يعطي وزناً أكبر للسعر الأخير. يعطي إشارات أسرع. يفضله المتداولون.
+   133→
+   134→### أشهر الإعدادات
+   135→1. **EMA 50** = اتجاه قصير المدى
+   136→2. **EMA 200** = اتجاه طويل المدى. يسمى أيضاً "الخط الذهبي"
+   137→
+   138→### قواعد الاتجاه
+   139→1. **صاعد:** السعر فوق EMA 200
+   140→2. **هابط:** السعر تحت EMA 200
+   141→3. **التقاطع الذهبي:** EMA 50 يقطع EMA 200 من الأسفل = إشارة شراء
+   142→4. **تقاطع الموت:** EMA 50 يقطع EMA 200 من الأعلى = إشارة بيع
+   143→
+   144→### مثال: EUR/USD رسم 1S
+   145→السعر عند 1.0980 و EMA 200 أيضاً عند 1.0980.
+   146→السعر صعد فوق EMA 200 و EMA 50 قطع EMA 200.
+   147→**الإشارة:** فرصة شراء. SL = 20 نقطة تحت EMA 200`,
+   148→    },
+   149→    durationMin: 6,
+   150→    isFree: true,
+   151→    questions: [
+   152→      {
+   153→        type: "MCQ",
+   154→        prompt: { en: "What is the difference between EMA and SMA?", ur: "EMA اور SMA میں فرق کیا ہے؟", hi: "EMA और SMA में अंतर क्या है?", ar: "ما الفرق بين EMA و SMA؟" },
+   155→        options: [
+   156→          { en: "EMA is slow, SMA is fast", ur: "EMA سست ہے، SMA تیز ہے", hi: "EMA धीमा है, SMA तेज़ है", ar: "EMA بطيء، SMA سريع" },
+   157→          { en: "EMA gives more weight to the latest price", ur: "EMA نئی قیمت کو زیادہ وزن دیتا ہے", hi: "EMA नई कीमत को ज़्यादा वज़न देता है", ar: "EMA يعطي وزناً أكبر للسعر الجديد" },
+   158→          { en: "Both are the same", ur: "دونوں ایک جیسے ہیں", hi: "दोनों एक जैसे हैं", ar: "كلاهما متساوي" },
+   159→          { en: "EMA only works on Daily chart", ur: "EMA صرف Daily پر کام کرتا ہے", hi: "EMA केवल Daily पर काम करता है", ar: "EMA يعمل فقط على الديلي" },
+   160→        ],
+   161→        correctIndex: 1,
+   162→        explanation: { en: "EMA gives more weight to the latest price, so it reacts faster than SMA.", ur: "EMA نئی قیمت کو زیادہ وزن دیتا ہے، اس لیے SMA سے تیز ردعمل دیتا ہے۔", hi: "EMA नई कीमत को ज़्यादा वज़न देता है, इसलिए SMA से तेज़ प्रतिक्रिया देता है।", ar: "EMA يعطي وزناً أكبر للسعر الجديد، لذا يتفاعل أسرع من SMA." },
+   163→      },
+   164→      {
+   165→        type: "MCQ",
+   166→        prompt: { en: "Which EMA is called the 'Golden Line'?", ur: "Golden Line کس EMA کو کہتے ہیں؟", hi: "Golden Line किस EMA को कहते हैं?", ar: "أي EMA يسمى الخط الذهبي؟" },
+   167→        options: [
+   168→          { en: "EMA 20", ur: "EMA 20", hi: "EMA 20", ar: "EMA 20" },
+   169→          { en: "EMA 50", ur: "EMA 50", hi: "EMA 50", ar: "EMA 50" },
+   170→          { en: "EMA 200", ur: "EMA 200", hi: "EMA 200", ar: "EMA 200" },
+   171→          { en: "EMA 100", ur: "EMA 100", hi: "EMA 100", ar: "EMA 100" },
+   172→        ],
+   173→        correctIndex: 2,
+   174→        explanation: { en: "EMA 200 is called the Golden Line — it shows the long-term trend.", ur: "EMA 200 کو Golden Line کہتے ہیں — یہ لانگ ٹرم ٹرینڈ دکھاتا ہے۔", hi: "EMA 200 को Golden Line कहते हैं — यह लॉन्ग टर्म ट्रेंड दिखाता है।", ar: "EMA 200 يسمى الخط الذهبي — يظهر الاتجاه طويل المدى." },
+   175→      },
+   176→      {
+   177→        type: "MCQ",
+   178→        prompt: { en: "What does a Golden Cross mean?", ur: "Golden Cross کا مطلب کیا ہے؟", hi: "Golden Cross का मतलब क्या है?", ar: "ماذا يعني التقاطع الذهبي؟" },
+   179→        options: [
+   180→          { en: "EMA 200 cuts EMA 50", ur: "EMA 200، EMA 50 کو کاٹے", hi: "EMA 200, EMA 50 को काटे", ar: "EMA 200 يقطع EMA 50" },
+   181→          { en: "EMA 50 cuts EMA 200 from above = Sell", ur: "EMA 50، EMA 200 کو اوپر سے کاٹے = Sell", hi: "EMA 50, EMA 200 को ऊपर से काटे = Sell", ar: "EMA 50 يقطع EMA 200 من الأعلى = بيع" },
+   182→          { en: "Price goes below EMA", ur: "قیمت EMA کے نیچے جائے", hi: "कीमत EMA के नीचे जाए", ar: "السعر ينزل تحت EMA" },
+   183→          { en: "Market closes", ur: "مارکیٹ بند ہو جائے", hi: "बाज़ार बंद हो जाए", ar: "السوق يغلق" },
+   184→        ],
+   185→        correctIndex: 1,
+   186→        explanation: { en: "Golden Cross = EMA 50 cuts EMA 200 from above = Sell signal.", ur: "Golden Cross = EMA 50 کا EMA 200 کو اوپر سے کاٹنا = Sell سگنل۔", hi: "Golden Cross = EMA 50 का EMA 200 को ऊपर से काटना = Sell सिग्नल।", ar: "التقاطع الذهبي = EMA 50 يقطع EMA 200 من الأعلى = إشارة بيع." },
+   187→      },
+   188→      {
+   189→        type: "MCQ",
+   190→        prompt: { en: "If price is above EMA 200, the market is…", ur: "اگر قیمت EMA 200 کے اوپر ہے تو مارکیٹ؟", hi: "अगर कीमत EMA 200 के ऊपर है तो बाज़ार?", ar: "إذا كان السعر فوق EMA 200، فالسوق…؟" },
+   191→        options: [
+   192→          { en: "Downtrend", ur: "Downtrend", hi: "Downtrend", ar: "هابط" },
+   193→          { en: "Uptrend", ur: "Uptrend", hi: "Uptrend", ar: "صاعد" },
+   194→          { en: "Sideways", ur: "Sideways", hi: "Sideways", ar: "عرضي" },
+   195→          { en: "Closed", ur: "بند", hi: "बंद", ar: "مغلق" },
+   196→        ],
+   197→        correctIndex: 1,
+   198→        explanation: { en: "Price above EMA 200 = Uptrend (long-term bullish).", ur: "قیمت EMA 200 کے اوپر = Uptrend (لانگ ٹرم بولش)۔", hi: "कीमत EMA 200 के ऊपर = Uptrend (लॉन्ग टर्म बुलिश)।", ar: "السعر فوق EMA 200 = صاعد (طويل المدى)." },
+   199→      },
+   200→      {
+   201→        type: "MCQ",
+   202→        prompt: { en: "EUR/USD at 1.1000, EMA 50 cuts EMA 200 upward. Signal?", ur: "EUR/USD 1.1000 پر ہے۔ EMA 50 نے EMA 200 کو اوپر کاٹا۔ سگنل؟", hi: "EUR/USD 1.1000 पर है। EMA 50 ने EMA 200 को ऊपर काटा। सिग्नल?", ar: "EUR/USD عند 1.1000، EMA 50 قطع EMA 200 صعوداً. الإشارة؟" },
+   203→        options: [
+   204→          { en: "Sell", ur: "Sell", hi: "Sell", ar: "بيع" },
+   205→          { en: "Buy", ur: "Buy", hi: "Buy", ar: "شراء" },
+   206→          { en: "Hold", ur: "Hold", hi: "Hold", ar: "انتظار" },
+   207→          { en: "No signal", ur: "کوئی سگنل نہیں", hi: "कोई सिग्नल नहीं", ar: "بلا إشارة" },
+   208→        ],
+   209→        correctIndex: 1,
+   210→        explanation: { en: "EMA 50 cutting EMA 200 upward = Golden Cross = Buy signal.", ur: "EMA 50 کا EMA 200 کو اوپر کاٹنا = Golden Cross = Buy سگنل۔", hi: "EMA 50 का EMA 200 को ऊपर काटना = Golden Cross = Buy सिग्नल।", ar: "EMA 50 يقطع EMA 200 صعوداً = تقاطع ذهبي = إشارة شراء." },
+   211→      },
+   212→    ],
+   213→  },
+   214→
+   215→  // ===== LESSON 14: RSI =====
+   216→  {
+   217→    id: "eurusd-14",
+   218→    order: 2,
+   219→    title: {
+   220→      en: "RSI Indicator | Overbought & Oversold",
+   221→      ur: "RSI Indicator | Overbought & Oversold",
+   222→      hi: "RSI इंडिकेटर | ओवरबॉट और ओवरसोल्ड",
+   223→      ar: "مؤشر RSI | الإفراط في الشراء والبيع",
+   224→    },
+   225→    summary: {
+   226→      en: "Find out if price was bought too much or sold too much — RSI 0 to 100.",
+   227→      ur: "جانیں قیمت زیادہ خریدی گئی یا زیادہ بیچی گئی — RSI 0 سے 100۔",
+   228→      hi: "जानें कीमत ज़्यादा खरीदी गई या ज़्यादा बेची गई — RSI 0 से 100।",
+   229→      ar: "اكتشف إن كان السعر اشتري كثيراً أو بيع كثيراً — RSI من 0 إلى 100.",
+   230→    },
+   231→    content: {
+   232→      en: `## RSI Indicator | Overbought & Oversold
+   233→
+   234→**RSI = Relative Strength Index.** It tells us whether price was "overbought" or "oversold".
+   235→Range: 0 to 100.
+   236→
+   237→### 3 Zones
+   238→1. **0 – 30 = Oversold zone** = price fell too much. Reversal or Buy opportunity
+   239→2. **30 – 70 = Neutral zone** = normal market
+   240→3. **70 – 100 = Overbought zone** = price went too high. Reversal or Sell opportunity
+   241→
+   242→### RSI Setting
+   243→Leave the default at **14**.
+   244→
+   245→### 2 Important Signals
+   246→
+   247→**1. Divergence**
+   248→Price makes a new Low but RSI makes a higher Low = Buy signal
+   249→
+   250→**2. 50 Line Cross**
+   251→RSI goes above 50 = Bullish. Below 50 = Bearish
+   252→
+   253→### Example — EUR/USD
+   254→\`EUR/USD\` reaches 1.1050 Resistance. RSI is at 82 = Overbought.
+   255→At the same time price makes a new High but RSI does NOT = Bearish Divergence.
+   256→**Signal:** Sell opportunity. TP = next Support 1.1000`,
+   257→      ur: `## RSI Indicator | Overbought & Oversold
+   258→
+   259→RSI = Relative Strength Index۔ یہ بتاتا ہے قیمت "زیادہ خریدی" گئی ہے یا "زیادہ بیچی" گئی ہے۔
+   260→رینج: 0 سے 100 تک
+   261→
+   262→### 3 زون
+   263→1. **0 - 30 = Oversold زون** = قیمت بہت گر گئی۔ ریورسل یا Buy کا موقع
+   264→2. **30 - 70 = Neutral زون** = نارمل مارکیٹ
+   265→3. **70 - 100 = Overbought زون** = قیمت بہت اوپر چلی گئی۔ ریورسل یا Sell کا موقع
+   266→
+   267→### RSI کی سیٹنگ
+   268→14 ڈیفالٹ رہنے دیں۔
+   269→
+   270→### 2 اہم سگنل
+   271→
+   272→**1. Divergence = ڈائیورجنس**
+   273→قیمت نیا Low بنا رہی ہو لیکن RSI اونچا Low بنا رہا ہو = Buy سگنل
+   274→
+   275→**2. 50 لائن کراس**
+   276→RSI 50 کے اوپر جائے = Bullish۔ نیچے جائے = Bearish
+   277→
+   278→### مثال: EUR/USD
+   279→\`EUR/USD\` 1.1050 Resistance پر گیا۔ RSI 82 پر ہے = Overbought
+   280→ساتھ ہی قیمت نے نیا High بنایا لیکن RSI نے نیا High نہیں بنایا = Bearish Divergence
+   281→**سگنل:** Sell کا موقع۔ TP = اگلی Support 1.1000`,
+   282→      hi: `## RSI इंडिकेटर | ओवरबॉट और ओवरसोल्ड
+   283→
+   284→**RSI = Relative Strength Index।** यह बताता है कीमत "ज़्यादा खरीदी" गई या "ज़्यादा बेची" गई।
+   285→रेंज: 0 से 100।
+   286→
+   287→### 3 ज़ोन
+   288→1. **0 – 30 = ओवरसोल्ड ज़ोन** = कीमत बहुत गिर गई। रिवर्सल या Buy मौका
+   289→2. **30 – 70 = न्यूट्रल ज़ोन** = सामान्य बाज़ार
+   290→3. **70 – 100 = ओवरबॉट ज़ोन** = कीमत बहुत ऊपर चली गई। रिवर्सल या Sell मौका
+   291→
+   292→### RSI की सेटिंग
+   293→14 डिफ़ॉल्ट रहने दें।
+   294→
+   295→### 2 ज़रूरी सिग्नल
+   296→
+   297→**1. Divergence = डाइवर्जेंस**
+   298→कीमत नया Low बना रही हो लेकिन RSI ऊपर वाला Low बना रहा हो = Buy सिग्नल
+   299→
+   300→**2. 50 लाइन क्रॉस**
+   301→RSI 50 के ऊपर जाए = Bullish। नीचे जाए = Bearish
+   302→
+   303→### उदाहरण: EUR/USD
+   304→\`EUR/USD\` 1.1050 Resistance पर पहुँचा। RSI 82 पर है = ओवरबॉट
+   305→साथ ही कीमत ने नया High बनाया लेकिन RSI ने नया High नहीं बनाया = Bearish Divergence
+   306→**सिग्नल:** Sell का मौका। TP = अगली Support 1.1000`,
+   307→      ar: `## مؤشر RSI | الإفراط في الشراء والبيع
+   308→
+   309→**RSI = مؤشر القوة النسبية.** يخبرنا إن كان السعر "اشتري كثيراً" أو "بيع كثيراً".
+   310→النطاق: من 0 إلى 100.
+   311→
+   312→### 3 مناطق
+   313→1. **0 – 30 = منطقة بيع مفرط** = السعر هبط كثيراً. انعكاس أو فرصة شراء
+   314→2. **30 – 70 = منطقة محايدة** = سوق عادي
+   315→3. **70 – 100 = منطقة شراء مفرط** = السعر ارتفع كثيراً. انعكاس أو فرصة بيع
+   316→
+   317→### إعداد RSI
+   318→اترك الافتراضي عند **14**.
+   319→
+   320→### إشارتان مهمتان
+   321→
+   322→**1. التباعد**
+   323→السعر يصنع قاعًا جديداً لكن RSI يصنع قاعاً أعلى = إشارة شراء
+   324→
+   325→**2. عبور خط 50**
+   326→RSI فوق 50 = صعودي. تحت 50 = هبوطي
+   327→
+   328→### مثال: EUR/USD
+   329→\`EUR/USD\` وصل إلى مقاومة 1.1050. RSI عند 82 = شراء مفرط.
+   330→في نفس الوقت السعر صنع قمة جديدة لكن RSI لم يصنع = تباعد هبوطي.
+   331→**الإشارة:** فرصة بيع. الهدف = الدعم التالي 1.1000`,
+   332→    },
+   333→    durationMin: 6,
+   334→    isFree: true,
+   335→    questions: [
+   336→      {
+   337→        type: "MCQ",
+   338→        prompt: { en: "What is RSI's range?", ur: "RSI کی رینج کیا ہے؟", hi: "RSI की रेंज क्या है?", ar: "ما هو نطاق RSI؟" },
+   339→        options: [
+   340→          { en: "0 to 50", ur: "0 سے 50", hi: "0 से 50", ar: "0 إلى 50" },
+   341→          { en: "0 to 100", ur: "0 سے 100", hi: "0 से 100", ar: "0 إلى 100" },
+   342→          { en: "-100 to +100", ur: "-100 سے +100", hi: "-100 से +100", ar: "-100 إلى +100" },
+   343→          { en: "10 to 90", ur: "10 سے 90", hi: "10 से 90", ar: "10 إلى 90" },
+   344→        ],
+   345→        correctIndex: 1,
+   346→        explanation: { en: "RSI ranges from 0 to 100.", ur: "RSI کی رینج 0 سے 100 تک ہے۔", hi: "RSI की रेंज 0 से 100 तक है।", ar: "نطاق RSI من 0 إلى 100." },
+   347→      },
+   348→      {
+   349→        type: "MCQ",
+   350→        prompt: { en: "RSI at 80 — which zone is this?", ur: "RSI 80 پر ہے تو یہ کون سا زون ہے؟", hi: "RSI 80 पर है तो यह कौन सा ज़ोन है?", ar: "RSI عند 80 — أي منطقة هذه؟" },
+   351→        options: [
+   352→          { en: "Oversold", ur: "Oversold", hi: "ओवरसोल्ड", ar: "بيع مفرط" },
+   353→          { en: "Neutral", ur: "Neutral", hi: "न्यूट्रल", ar: "محايد" },
+   354→          { en: "Overbought", ur: "Overbought", hi: "ओवरबॉट", ar: "شراء مفرط" },
+   355→          { en: "Breakout", ur: "Breakout", hi: "ब्रेकआउट", ar: "اختراق" },
+   356→        ],
+   357→        correctIndex: 2,
+   358→        explanation: { en: "RSI 70-100 = Overbought zone (price too high, possible reversal).", ur: "RSI 70-100 = Overbought زون (قیمت بہت اوپر، ریورسل ممکن)۔", hi: "RSI 70-100 = ओवरबॉट ज़ोन (कीमत बहुत ऊपर, रिवर्सल संभव)।", ar: "RSI 70-100 = منطقة شراء مفرط (السعر مرتفع جداً، انعكاس محتمل)." },
+   359→      },
+   360→      {
+   361→        type: "MCQ",
+   362→        prompt: { en: "When does Bearish Divergence form?", ur: "Bearish Divergence کب بنتی ہے؟", hi: "Bearish Divergence कब बनती है?", ar: "متى يتشكل التباعد الهبوطي؟" },
+   363→        options: [
+   364→          { en: "Price makes Low, RSI makes High", ur: "قیمت Low بنائے، RSI High بنائے", hi: "कीमत Low बनाए, RSI High बनाए", ar: "السعر قاع، RSI قمة" },
+   365→          { en: "Price makes High, RSI does not make High", ur: "قیمت High بنائے، RSI High نہ بنائے", hi: "कीमत High बनाए, RSI High न बनाए", ar: "السعر قمة، RSI لا يصنع قمة" },
+   366→          { en: "RSI crosses 50", ur: "RSI 50 کراس کرے", hi: "RSI 50 क्रॉस करे", ar: "RSI يقطع 50" },
+   367→          { en: "RSI goes below 30", ur: "RSI 30 سے نیچے جائے", hi: "RSI 30 से नीचे जाए", ar: "RSI ينزل تحت 30" },
+   368→        ],
+   369→        correctIndex: 1,
+   370→        explanation: { en: "Bearish Divergence = price makes new High but RSI does NOT = Sell signal.", ur: "Bearish Divergence = قیمت نیا High بنائے لیکن RSI نہ بنائے = Sell سگنل۔", hi: "Bearish Divergence = कीमत नया High बनाए लेकिन RSI न बनाए = Sell सिग्नल।", ar: "التباعد الهبوطي = السعر قمة جديدة لكن RSI لا = إشارة بيع." },
+   371→      },
+   372→      {
+   373→        type: "MCQ",
+   374→        prompt: { en: "RSI at 25 — what should you do?", ur: "RSI 25 پر ہے تو کیا کرنا چاہیے؟", hi: "RSI 25 पर है तो क्या करना चाहिए?", ar: "RSI عند 25 — ماذا تفعل؟" },
+   375→        options: [
+   376→          { en: "Sell", ur: "Sell", hi: "Sell", ar: "بيع" },
+   377→          { en: "Look for Buy opportunity", ur: "Buy کا موقع دیکھیں", hi: "Buy का मौका देखें", ar: "ابحث عن فرصة شراء" },
+   378→          { en: "Do nothing", ur: "کچھ نہ کریں", hi: "कुछ न करें", ar: "لا تفعل شيئاً" },
+   379→          { en: "Increase lot size", ur: "Lot بڑھا دیں", hi: "Lot बढ़ा दें", ar: "زد حجم الصفقة" },
+   380→        ],
+   381→        correctIndex: 1,
+   382→        explanation: { en: "RSI 0-30 = Oversold = price fell too much = look for Buy (reversal).", ur: "RSI 0-30 = Oversold = قیمت بہت گر گئی = Buy کا موقع دیکھیں (ریورسل)۔", hi: "RSI 0-30 = ओवरसोल्ड = कीमत बहुत गिरी = Buy का मौका देखें (रिवर्सल)।", ar: "RSI 0-30 = بيع مفرط = السعر هبط كثيراً = ابحث عن شراء (انعكاس)." },
+   383→      },
+   384→      {
+   385→        type: "MCQ",
+   386→        prompt: { en: "What does the RSI 50 line mean?", ur: "RSI 50 لائن کا کیا مطلب ہے؟", hi: "RSI 50 लाइन का क्या मतलब है?", ar: "ماذا يعني خط RSI 50؟" },
+   387→        options: [
+   388→          { en: "Overbought", ur: "Overbought", hi: "ओवरबॉट", ar: "شراء مفرط" },
+   389→          { en: "Oversold", ur: "Oversold", hi: "ओवरसोल्ड", ar: "بيع مفرط" },
+   390→          { en: "Bullish/Bearish dividing line", ur: "Bullish/Bearish کی تقسیم لائن", hi: "Bullish/Bearish का विभाजन रेखा", ar: "خط فصل صعودي/هبوطي" },
+   391→          { en: "TP level", ur: "TP لیول", hi: "TP लेवल", ar: "مستوى الهدف" },
+   392→        ],
+   393→        correctIndex: 2,
+   394→        explanation: { en: "RSI 50 = dividing line. Above 50 = Bullish, below 50 = Bearish.", ur: "RSI 50 = تقسیم لائن۔ 50 کے اوپر = Bullish، نیچے = Bearish۔", hi: "RSI 50 = विभाजन रेखा। 50 के ऊपर = Bullish, नीचे = Bearish।", ar: "RSI 50 = خط فصل. فوق 50 = صعودي، تحت 50 = هبوطي." },
+   395→      },
+   396→    ],
+   397→  },
+   398→
+   399→  // ===== LESSON 15: MACD =====
+   400→  {
+   401→    id: "eurusd-15",
+   402→    order: 3,
+   403→    title: {
+   404→      en: "MACD Indicator | Momentum Strategy",
+   405→      ur: "MACD Indicator | Momentum Strategy",
+   406→      hi: "MACD इंडिकेटर | मोमेंटम स्ट्रेटेजी",
+   407→      ar: "مؤشر MACD | استراتيجية الزخم",
+   408→    },
+   409→    summary: {
+   410→      en: "MACD checks both momentum and trend in one indicator.",
+   411→      ur: "MACD ایک ہی انڈیکیٹر میں Momentum اور ٹرینڈ دونوں چیک کرتا ہے۔",
+   412→      hi: "MACD एक ही इंडिकेटर में मोमेंटम और ट्रेंड दोनों जाँचता है।",
+   413→      ar: "MACD يفحص الزخم والاتجاه معاً في مؤشر واحد.",
+   414→    },
+   415→    content: {
+   416→      en: `## MACD Indicator | Momentum Strategy
+   417→
+   418→**MACD = Moving Average Convergence Divergence.** It checks both momentum and trend.
+   419→
+   420→### 3 Parts of MACD
+   421→1. **MACD Line** = blue line
+   422→2. **Signal Line** = red line
+   423→3. **Histogram** = bars going up and down
+   424→
+   425→### Setting
+   426→Default **12, 26, 9**
+   427→
+   428→### 3 Big Signals
+   429→
+   430→**1. Crossover**
+   431→MACD Line cuts Signal Line from below = Buy
+   432→MACD Line cuts Signal Line from above = Sell
+   433→
+   434→**2. Zero Line Cross**
+   435→MACD line goes above 0 = Uptrend starts
+   436→MACD line goes below 0 = Downtrend starts
+   437→
+   438→**3. Divergence**
+   439→Like RSI. Price makes a High but MACD does not = Reversal
+   440→
+   441→### Example — EUR/USD 4H chart
+   442→Price is above EMA 200 = Uptrend.
+   443→MACD Line cuts Signal Line and Histogram goes up.
+   444→**Signal:** Buy confirmed. TP = next Resistance`,
+   445→      ur: `## MACD Indicator | Momentum Strategy
+   446→
+   447→MACD = Moving Average Convergence Divergence۔ یہ Momentum اور ٹرینڈ دونوں چیک کرتا ہے۔
+   448→
+   449→### MACD کے 3 حصے
+   450→1. **MACD Line** = نیلی لکیر
+   451→2. **Signal Line** = سرخ لکیر
+   452→3. **Histogram** = اوپر نیچے والے بار
+   453→
+   454→### سیٹنگ
+   455→12, 26, 9 ڈیفالٹ
+   456→
+   457→### 3 بڑے سگنل
+   458→
+   459→**1. Crossover**
+   460→MACD Line، Signal Line کو نیچے سے اوپر کاٹے = Buy
+   461→MACD Line، Signal Line کو اوپر سے نیچے کاٹے = Sell
+   462→
+   463→**2. Zero Line Cross**
+   464→MACD لائن 0 کے اوپر جائے = Uptrend شروع
+   465→MACD لائن 0 کے نیچے جائے = Downtrend شروع
+   466→
+   467→**3. Divergence**
+   468→RSI کی طرح۔ قیمت High بنا رہی، MACD نہیں = ریورسل
+   469→
+   470→### مثال: EUR/USD 4H چارٹ
+   471→قیمت EMA 200 کے اوپر ہے = Uptrend
+   472→MACD Line نے Signal Line کو کاٹا اور Histogram اوپر گیا
+   473→**سگنل:** Buy کی تصدیق۔ TP = اگلی Resistance`,
+   474→      hi: `## MACD इंडिकेटर | मोमेंटम स्ट्रेटेजी
+   475→
+   476→**MACD = Moving Average Convergence Divergence।** यह मोमेंटम और ट्रेंड दोनों जाँचता है।
+   477→
+   478→### MACD के 3 हिस्से
+   479→1. **MACD Line** = नीली लाइन
+   480→2. **Signal Line** = लाल लाइन
+   481→3. **Histogram** = ऊपर नीचे वाली बार
+   482→
+   483→### सेटिंग
+   484→12, 26, 9 डिफ़ॉल्ट
+   485→
+   486→### 3 बड़े सिग्नल
+   487→
+   488→**1. Crossover**
+   489→MACD Line, Signal Line को नीचे से ऊपर काटे = Buy
+   490→MACD Line, Signal Line को ऊपर से नीचे काटे = Sell
+   491→
+   492→**2. Zero Line Cross**
+   493→MACD लाइन 0 के ऊपर जाए = Uptrend शुरू
+   494→MACD लाइन 0 के नीचे जाए = Downtrend शुरू
+   495→
+   496→**3. Divergence**
+   497→RSI की तरह। कीमत High बना रही, MACD नहीं = रिवर्सल
+   498→
+   499→### उदाहरण: EUR/USD 4H चार्ट
+   500→कीमत EMA 200 के ऊपर है = Uptrend
+   501→MACD Line ने Signal Line को काटा और Histogram ऊपर गया
+   502→**सिग्नल:** Buy की पुष्टि। TP = अगली Resistance`,
+   503→      ar: `## مؤشر MACD | استراتيجية الزخم
+   504→
+   505→**MACD = تقارب وتباعد المتوسط المتحرك.** يفحص الزخم والاتجاه معاً.
+   506→
+   507→### 3 أجزاء من MACD
+   508→1. **خط MACD** = الخط الأزرق
+   509→2. **خط الإشارة** = الخط الأحمر
+   510→3. **الهيستوغرام** = أعمدة صاعدة وهابطة
+   511→
+   512→### الإعداد
+   513→الافتراضي **12, 26, 9**
+   514→
+   515→### 3 إشارات كبيرة
+   516→
+   517→**1. التقاطع**
+   518→خط MACD يقطع خط الإشارة من الأسفل = شراء
+   519→خط MACD يقطع خط الإشارة من الأعلى = بيع
+   520→
+   521→**2. عبور خط الصفر**
+   522→خط MACD فوق 0 = بداية اتجاه صاعد
+   523→خط MACD تحت 0 = بداية اتجاه هابط
+   524→
+   525→**3. التباعد**
+   526→مثل RSI. السعر يصنع قمة لكن MACD لا = انعكاس
+   527→
+   528→### مثال: EUR/USD رسم 4س
+   529→السعر فوق EMA 200 = اتجاه صاعد.
+   530→خط MACD قطع خط الإشارة والهيستوغرام صعد.
+   531→**الإشارة:** تأكيد شراء. الهدف = المقاومة التالية`,
+   532→    },
+   533→    durationMin: 6,
+   534→    isFree: true,
+   535→    questions: [
+   536→      {
+   537→        type: "MCQ",
+   538→        prompt: { en: "How many lines + Histogram does MACD have?", ur: "MACD میں کتنی لائنیں + Histogram ہوتے ہیں؟", hi: "MACD में कितनी लाइनें + Histogram होते हैं?", ar: "كم عدد الخطوط + الهيستوغرام في MACD؟" },
+   539→        options: [
+   540→          { en: "1 line", ur: "1 لائن", hi: "1 लाइन", ar: "خط واحد" },
+   541→          { en: "2 lines + Histogram", ur: "2 لائن + Histogram", hi: "2 लाइनें + Histogram", ar: "خطان + هيستوغرام" },
+   542→          { en: "3 lines", ur: "3 لائن", hi: "3 लाइनें", ar: "3 خطوط" },
+   543→          { en: "Only Histogram", ur: "صرف Histogram", hi: "सिर्फ़ Histogram", ar: "فقط هيستوغرام" },
+   544→        ],
+   545→        correctIndex: 1,
+   546→        explanation: { en: "MACD = MACD Line + Signal Line + Histogram (2 lines + Histogram).", ur: "MACD = MACD Line + Signal Line + Histogram (2 لائنیں + Histogram)۔", hi: "MACD = MACD Line + Signal Line + Histogram (2 लाइनें + Histogram)।", ar: "MACD = خط MACD + خط الإشارة + الهيستوغرام (خطان + هيستوغرام)." },
+   547→      },
+   548→      {
+   549→        type: "MCQ",
+   550→        prompt: { en: "When does MACD give a Buy signal?", ur: "MACD Buy سگنل کب ملتا ہے؟", hi: "MACD Buy सिग्नल कब मिलता है?", ar: "متى يعطي MACD إشارة شراء؟" },
+   551→        options: [
+   552→          { en: "MACD cuts Signal from above", ur: "MACD، Signal کو اوپر سے کاٹے", hi: "MACD, Signal को ऊपर से काटे", ar: "MACD يقطع الإشارة من الأعلى" },
+   553→          { en: "MACD cuts Signal from below", ur: "MACD، Signal کو نیچے سے کاٹے", hi: "MACD, Signal को नीचे से काटे", ar: "MACD يقطع الإشارة من الأسفل" },
+   554→          { en: "Histogram goes down", ur: "Histogram نیچے جائے", hi: "Histogram नीचे जाए", ar: "الهيستوغرام يهبط" },
+   555→          { en: "MACD goes below 0", ur: "MACD 0 سے نیچے جائے", hi: "MACD 0 से नीचे जाए", ar: "MACD يهبط تحت 0" },
+   556→        ],
+   557→        correctIndex: 1,
+   558→        explanation: { en: "MACD cutting Signal from below = Buy signal.", ur: "MACD کا Signal کو نیچے سے کاٹنا = Buy سگنل۔", hi: "MACD का Signal को नीचे से काटना = Buy सिग्नल।", ar: "قطع MACD لخط الإشارة من الأسفل = إشارة شراء." },
+   559→      },
+   560→      {
+   561→        type: "MCQ",
+   562→        prompt: { en: "If MACD line is above 0, then?", ur: "MACD لائن 0 کے اوپر ہے تو؟", hi: "MACD लाइन 0 के ऊपर है तो?", ar: "إذا كان خط MACD فوق 0 فـ؟" },
+   563→        options: [
+   564→          { en: "Downtrend", ur: "Downtrend", hi: "Downtrend", ar: "اتجاه هابط" },
+   565→          { en: "Uptrend", ur: "Uptrend", hi: "Uptrend", ar: "اتجاه صاعد" },
+   566→          { en: "Sideways", ur: "Sideways", hi: "Sideways", ar: "عرضي" },
+   567→          { en: "News", ur: "News", hi: "News", ar: "أخبار" },
+   568→        ],
+   569→        correctIndex: 1,
+   570→        explanation: { en: "MACD above 0 = Uptrend (bullish momentum).", ur: "MACD 0 کے اوپر = Uptrend (بولش Momentum)۔", hi: "MACD 0 के ऊपर = Uptrend (बुलिश Momentum)।", ar: "MACD فوق 0 = اتجاه صاعد (زخم صاعد)." },
+   571→      },
+   572→      {
+   573→        type: "MCQ",
+   574→        prompt: { en: "What is the default setting of MACD?", ur: "MACD کی ڈیفالٹ سیٹنگ کیا ہے؟", hi: "MACD की डिफ़ॉल्ट सेटिंग क्या है?", ar: "ما هو الإعداد الافتراضي لـ MACD؟" },
+   575→        options: [
+   576→          { en: "14, 14, 14", ur: "14, 14, 14", hi: "14, 14, 14", ar: "14, 14, 14" },
+   577→          { en: "12, 26, 9", ur: "12, 26, 9", hi: "12, 26, 9", ar: "12, 26, 9" },
+   578→          { en: "20, 2, 2", ur: "20, 2, 2", hi: "20, 2, 2", ar: "20, 2, 2" },
+   579→          { en: "50, 200, 9", ur: "50, 200, 9", hi: "50, 200, 9", ar: "50, 200, 9" },
+   580→        ],
+   581→        correctIndex: 1,
+   582→        explanation: { en: "MACD default = 12, 26, 9.", ur: "MACD ڈیفالٹ = 12, 26, 9۔", hi: "MACD डिफ़ॉल्ट = 12, 26, 9।", ar: "MACD الافتراضي = 12, 26, 9." },
+   583→      },
+   584→      {
+   585→        type: "MCQ",
+   586→        prompt: { en: "If both MACD + EMA 200 give Buy, then?", ur: "MACD + EMA 200 دونوں Buy دے رہے ہوں تو؟", hi: "MACD + EMA 200 दोनों Buy दे रहे हों तो?", ar: "إذا أعطى كلٌ من MACD + EMA 200 إشارة Buy فـ؟" },
+   587→        options: [
+   588→          { en: "Weak signal", ur: "سگنل کمزور ہے", hi: "सिग्नल कमज़ोर है", ar: "إشارة ضعيفة" },
+   589→          { en: "Strong confirmed signal", ur: "سگنل طاقتور تصدیق ہے", hi: "सिग्नल मज़बूत पुष्टि है", ar: "إشارة قوية مؤكدة" },
+   590→          { en: "Don't take trade", ur: "Trade نہ لیں", hi: "Trade न लें", ar: "لا تتداول" },
+   591→          { en: "Only Sell", ur: "صرف Sell", hi: "सिर्फ़ Sell", ar: "فقط بيع" },
+   592→        ],
+   593→        correctIndex: 1,
+   594→        explanation: { en: "MACD + EMA 200 both Buy = strong confirmation (Confluence).", ur: "MACD + EMA 200 دونوں Buy = طاقتور تصدیق (Confluence)۔", hi: "MACD + EMA 200 दोनों Buy = मज़बूत पुष्टि (Confluence)।", ar: "MACD + EMA 200 كلاهما Buy = تأكيد قوي (Confluence)." },
+   595→      },
+   596→    ],
+   597→  },
+   598→
+   599→  // ===== LESSON 16: Bollinger Bands =====
+   600→  {
+   601→    id: "eurusd-16",
+   602→    order: 4,
+   603→    title: {
+   604→      en: "Bollinger Bands | Volatility Trade",
+   605→      ur: "Bollinger Bands | Volatility Trade",
+   606→      hi: "बोलिंगर बैंड्स | वोलैटिलिटी ट्रेड",
+   607→      ar: "بولينجر باند | تداول التقلب",
+   608→    },
+   609→    summary: {
+   610→      en: "3 bands that show market volatility and big breakouts.",
+   611→      ur: "3 بینڈ جو مارکیٹ کی Volatility اور بڑے Breakout دکھاتے ہیں۔",
+   612→      hi: "3 बैंड जो बाज़ार की वोलैटिलिटी और बड़े ब्रेकआउट दिखाते हैं।",
+   613→      ar: "3 فرقانات تُظهر تقلب السوق والاختراقات الكبيرة.",
+   614→    },
+   615→    content: {
+   616→      en: `## Bollinger Bands | Volatility Trade
+   617→
+   618→**Bollinger Bands** consist of 3 lines. They show how much volatility is in the market.
+   619→
+   620→### 3 Lines
+   621→1. **Middle Band** = EMA 20
+   622→2. **Upper Band** = EMA 20 + 2× Standard Deviation
+   623→3. **Lower Band** = EMA 20 − 2× Standard Deviation
+   624→
+   625→### Setting
+   626→Default **20, 2**
+   627→
+   628→### 3 Rules
+   629→
+   630→**1. Squeeze**
+   631→When all 3 bands come close together = a big move is coming. Wait for the breakout.
+   632→
+   633→**2. Bounce Trade**
+   634→Price touches the Lower Band and comes back = Buy
+   635→Price touches the Upper Band and comes back = Sell
+   636→
+   637→**3. Walk the Band**
+   638→In an uptrend, price walks along the Upper Band = trend is strong
+   639→
+   640→### Example — EUR/USD
+   641→Market was sideways. Bands squeezed.
+   642→Suddenly price broke the Upper Band and closed above it.
+   643→**Signal:** Buy Stop order above the Upper Band. This is a breakout trade.`,
+   644→      ur: `## Bollinger Bands | Volatility Trade
+   645→
+   646→Bollinger Bands 3 لائنوں پر مشتمل ہے۔ یہ بتاتا ہے مارکیٹ میں Volatility کتنی ہے۔
+   647→
+   648→### 3 لائنیں
+   649→1. **Middle Band** = EMA 20
+   650→2. **Upper Band** = EMA 20 + 2x Standard Deviation
+   651→3. **Lower Band** = EMA 20 - 2x Standard Deviation
+   652→
+   653→### سیٹنگ
+   654→20, 2 ڈیفالٹ
+   655→
+   656→### 3 رول
+   657→
+   658→**1. Squeeze = سکویز**
+   659→جب 3وں بینڈ قریب آ جائیں = بڑی موومنٹ آنے والی ہے۔ بریک آؤٹ کا انتظار کریں
+   660→
+   661→**2. Bounce Trade**
+   662→قیمت Lower Band کو ٹچ کرے اور واپس آئے = Buy
+   663→قیمت Upper Band کو ٹچ کرے اور واپس آئے = Sell
+   664→
+   665→**3. Walk the Band**
+   666→Uptrend میں قیمت Upper Band کے ساتھ چلے = ٹرینڈ طاقتور ہے
+   667→
+   668→### مثال: EUR/USD
+   669→مارکیٹ سائیڈ وے تھی۔ بینڈ سکویز ہو گئے۔
+   670→اچانک قیمت نے Upper Band توڑا اور اس کے اوپر بند ہوئی۔
+   671→**سگنل:** Buy Stop آرڈر Upper Band کے اوپر۔ یہ بریک آؤٹ ٹریڈ ہے۔`,
+   672→      hi: `## बोलिंगर बैंड्स | वोलैटिलिटी ट्रेड
+   673→
+   674→**बोलिंगर बैंड्स** 3 लाइनों से बने हैं। ये दिखाते हैं कि बाज़ार में कितनी वोलैटिलिटी है।
+   675→
+   676→### 3 लाइनें
+   677→1. **Middle Band** = EMA 20
+   678→2. **Upper Band** = EMA 20 + 2× Standard Deviation
+   679→3. **Lower Band** = EMA 20 − 2× Standard Deviation
+   680→
+   681→### सेटिंग
+   682→डिफ़ॉल्ट **20, 2**
+   683→
+   684→### 3 नियम
+   685→
+   686→**1. Squeeze = स्क्वीज़**
+   687→जब तीनों बैंड पास आ जाएँ = बड़ा मूवमेंट आने वाला है। ब्रेकआउट का इंतज़ार करें।
+   688→
+   689→**2. Bounce Trade**
+   690→कीमत Lower Band को छुए और वापस आए = Buy
+   691→कीमत Upper Band को छुए और वापस आए = Sell
+   692→
+   693→**3. Walk the Band**
+   694→Uptrend में कीमत Upper Band के साथ चले = ट्रेंड मज़बूत है
+   695→
+   696→### उदाहरण: EUR/USD
+   697→बाज़ार साइडवे था। बैंड स्क्वीज़ हो गए।
+   698→अचानक कीमत ने Upper Band तोड़ा और उसके ऊपर बंद हुआ।
+   699→**सिग्नल:** Buy Stop ऑर्डर Upper Band के ऊपर। यह ब्रेकआउट ट्रेड है।`,
+   700→      ar: `## بولينجر باند | تداول التقلب
+   701→
+   702→**بولينجر باند** يتكون من 3 خطوط. تُظهر مقدار التقلب في السوق.
+   703→
+   704→### 3 خطوط
+   705→1. **الخط الأوسط** = EMA 20
+   706→2. **الخط العلوي** = EMA 20 + 2× الانحراف المعياري
+   707→3. **الخط السفلي** = EMA 20 − 2× الانحراف المعياري
+   708→
+   709→### الإعداد
+   710→الافتراضي **20, 2**
+   711→
+   712→### 3 قواعد
+   713→
+   714→**1. الانضغاط**
+   715→عندما تقترب الفرقانات الثلاثة = حركة كبيرة قادمة. انتظر الاختراق.
+   716→
+   717→**2. تداول الارتداد**
+   718→السعر يلمس الخط السفلي ويرتد = شراء
+   719→السعر يلمس الخط العلوي ويرتد = بيع
+   720→
+   721→**3. المشي مع الباند**
+   722→في اتجاه صاعد، السعر يمشي مع الخط العلوي = الاتجاه قوي
+   723→
+   724→### مثال: EUR/USD
+   725→السوق كان عرضي. الفرقانات انضغطت.
+   726→فجأة السعر كسر الخط العلوي وأغلق فوقه.
+   727→**الإشارة:** أمر Buy Stop فوق الخط العلوي. هذا تداول اختراق.`,
+   728→    },
+   729→    durationMin: 6,
+   730→    isFree: true,
+   731→    questions: [
+   732→      {
+   733→        type: "MCQ",
+   734→        prompt: { en: "How many lines are in Bollinger Bands?", ur: "Bollinger Bands میں کتنی لائنیں ہوتی ہیں؟", hi: "Bollinger Bands में कितनी लाइनें होती हैं?", ar: "كم عدد الخطوط في بولينجر باند؟" },
+   735→        options: [
+   736→          { en: "1", ur: "1", hi: "1", ar: "1" },
+   737→          { en: "2", ur: "2", hi: "2", ar: "2" },
+   738→          { en: "3", ur: "3", hi: "3", ar: "3" },
+   739→          { en: "4", ur: "4", hi: "4", ar: "4" },
+   740→        ],
+   741→        correctIndex: 2,
+   742→        explanation: { en: "Bollinger Bands has 3 lines (Middle, Upper, Lower).", ur: "Bollinger Bands میں 3 لائنیں ہوتی ہیں (Middle, Upper, Lower)۔", hi: "Bollinger Bands में 3 लाइनें होती हैं (Middle, Upper, Lower)।", ar: "بولينجر باند به 3 خطوط (الأوسط، العلوي، السفلي)." },
+   743→      },
+   744→      {
+   745→        type: "MCQ",
+   746→        prompt: { en: "What does Squeeze mean?", ur: "Squeeze کا مطلب؟", hi: "Squeeze का मतलब?", ar: "ماذا يعني الانضغاط (Squeeze)؟" },
+   747→        options: [
+   748→          { en: "Big move ended", ur: "بڑی موومنٹ ختم", hi: "बड़ा मूवमेंट खत्म", ar: "حركة كبيرة انتهت" },
+   749→          { en: "Big move coming", ur: "بڑی موومنٹ آنے والی ہے", hi: "बड़ा मूवमेंट आने वाला है", ar: "حركة كبيرة قادمة" },
+   750→          { en: "Market closed", ur: "مارکیٹ بند", hi: "बाज़ार बंद", ar: "السوق مغلق" },
+   751→          { en: "News coming", ur: "News آ رہی ہے", hi: "News आ रही है", ar: "أخبار قادمة" },
+   752→        ],
+   753→        correctIndex: 1,
+   754→        explanation: { en: "Squeeze = bands coming close together = big move coming.", ur: "Squeeze = بینڈ قریب آنا = بڑی موومنٹ آنے والی ہے۔", hi: "Squeeze = बैंड पास आना = बड़ा मूवमेंट आने वाला है।", ar: "Squeeze = اقتراب الفرقانات = حركة كبيرة قادمة." },
+   755→      },
+   756→      {
+   757→        type: "MCQ",
+   758→        prompt: { en: "If price touches the Lower Band and comes back?", ur: "قیمت Lower Band کو ٹچ کر کے واپس آئے تو؟", hi: "कीमत Lower Band को टच करके वापस आए तो?", ar: "إذا لمس السعر الخط السفلي وعاد؟" },
+   759→        options: [
+   760→          { en: "Sell", ur: "Sell", hi: "Sell", ar: "بيع" },
+   761→          { en: "Buy", ur: "Buy", hi: "Buy", ar: "شراء" },
+   762→          { en: "Hold", ur: "Hold", hi: "Hold", ar: "انتظار" },
+   763→          { en: "Close", ur: "Close", hi: "Close", ar: "إغلاق" },
+   764→        ],
+   765→        correctIndex: 1,
+   766→        explanation: { en: "Bounce from Lower Band = Buy signal.", ur: "Lower Band سے Bounce = Buy سگنل۔", hi: "Lower Band से Bounce = Buy सिग्नल।", ar: "الارتداد من الخط السفلي = إشارة شراء." },
+   767→      },
+   768→      {
+   769→        type: "MCQ",
+   770→        prompt: { en: "What is the default setting of Bollinger?", ur: "Bollinger کی ڈیفالٹ سیٹنگ؟", hi: "Bollinger की डिफ़ॉल्ट सेटिंग?", ar: "ما هو الإعداد الافتراضي لبولينجر؟" },
+   771→        options: [
+   772→          { en: "50, 2", ur: "50, 2", hi: "50, 2", ar: "50, 2" },
+   773→          { en: "20, 2", ur: "20, 2", hi: "20, 2", ar: "20, 2" },
+   774→          { en: "14, 3", ur: "14, 3", hi: "14, 3", ar: "14, 3" },
+   775→          { en: "200, 1", ur: "200, 1", hi: "200, 1", ar: "200, 1" },
+   776→        ],
+   777→        correctIndex: 1,
+   778→        explanation: { en: "Bollinger default = 20, 2.", ur: "Bollinger ڈیفالٹ = 20, 2۔", hi: "Bollinger डिफ़ॉल्ट = 20, 2।", ar: "بولينجر الافتراضي = 20, 2." },
+   779→      },
+   780→      {
+   781→        type: "MCQ",
+   782→        prompt: { en: "In Uptrend, price moves with which band?", ur: "Uptrend میں قیمت کس بینڈ کے ساتھ چلتی ہے؟", hi: "Uptrend में कीमत किस बैंड के साथ चलती है?", ar: "في الاتجاه الصاعد، السعر يمشي مع أي خط؟" },
+   783→        options: [
+   784→          { en: "Lower Band", ur: "Lower Band", hi: "Lower Band", ar: "الخط السفلي" },
+   785→          { en: "Middle Band", ur: "Middle Band", hi: "Middle Band", ar: "الخط الأوسط" },
+   786→          { en: "Upper Band", ur: "Upper Band", hi: "Upper Band", ar: "الخط العلوي" },
+   787→          { en: "None", ur: "کوئی نہیں", hi: "कोई नहीं", ar: "لا شيء" },
+   788→        ],
+   789→        correctIndex: 2,
+   790→        explanation: { en: "In Uptrend, price moves with the Upper Band (Walk the Band).", ur: "Uptrend میں قیمت Upper Band کے ساتھ چلتی ہے (Walk the Band)۔", hi: "Uptrend में कीमत Upper Band के साथ चलती है (Walk the Band)।", ar: "في الاتجاه الصاعد، السعر يمشي مع الخط العلوي (Walk the Band)." },
+   791→      },
+   792→    ],
+   793→  },
+   794→
+   795→  // ===== LESSON 17: Chart Patterns 1 - Head & Shoulders, Double Top/Bottom =====
+   796→  {
+   797→    id: "eurusd-17",
+   798→    order: 5,
+   799→    title: {
+   800→      en: "Chart Patterns 1: Head & Shoulders, Double Top/Bottom",
+   801→      ur: "Chart Patterns 1: Head & Shoulders, Double Top/Bottom",
+   802→      hi: "चार्ट पैटर्न 1: हेड और शोल्डर, डबल टॉप/बॉटम",
+   803→      ar: "أنماط الرسم 1: الرأس والكتفين، القمة/القاع المزدوج",
+   804→    },
+   805→    summary: {
+   806→      en: "Reversal patterns that repeat again and again — Head & Shoulders and Double Top/Bottom.",
+   807→      ur: "ریورسل پیٹرن جو بار بار بنتے ہیں — Head & Shoulders اور Double Top/Bottom۔",
+   808→      hi: "रिवर्सल पैटर्न जो बार-बार बनते हैं — Head & Shoulders और Double Top/Bottom।",
+   809→      ar: "أنماط انعكاس تتكرر مراراً — الرأس والكتفين والقمة/القاع المزدوج.",
+   810→    },
+   811→    content: {
+   812→      en: `## Chart Patterns 1: Head & Shoulders, Double Top/Bottom
+   813→
+   814→A **chart pattern** is a shape of price that forms again and again. These tell us about reversals.
+   815→
+   816→### 1. Head & Shoulders
+   817→Forms at the end of an Uptrend = Bearish reversal
+   818→**Shape:** Left shoulder, higher head, right shoulder. Neckline below.
+   819→**Confirm:** When price breaks the Neckline → Sell
+   820→
+   821→### 2. Inverse Head & Shoulders
+   822→Forms at the end of a Downtrend = Bullish reversal
+   823→**Confirm:** Neckline breaks → Buy
+   824→
+   825→### 3. Double Top
+   826→Reaches the same Resistance twice and pulls back = Sell signal
+   827→**Confirm:** Middle Support breaks
+   828→
+   829→### 4. Double Bottom
+   830→Reaches the same Support twice and goes up = Buy signal
+   831→**Confirm:** Middle Resistance breaks
+   832→
+   833→### Example — EUR/USD Daily
+   834→\`EUR/USD\` made a Head at 1.1100. Then shoulder at 1.1050, head at 1.1090, shoulder at 1.1040.
+   835→Neckline was 1.1000. Price broke it.
+   836→**Signal:** Sell. TP = distance from Head to Neckline, projected down`,
+   837→      ur: `## Chart Patterns 1: Head & Shoulders, Double Top/Bottom
+   838→
+   839→Chart Pattern قیمت کا وہ نقشہ ہے جو بار بار بنتا ہے۔ یہ ہمیں ریورسل بتاتے ہیں۔
+   840→
+   841→### 1. Head & Shoulders = سر اور کندھے
+   842→یہ Uptrend کے آخر میں بنتا ہے = Bearish ریورسل
+   843→**شکل:** بائیں کندھا، اونچا سر، دائیں کندھا۔ نیچے Neckline
+   844→**تصدیق:** جب قیمت Neckline توڑے تو Sell
+   845→
+   846→### 2. Inverse Head & Shoulders
+   847→یہ Downtrend کے آخر میں بنتا ہے = Bullish ریورسل
+   848→**تصدیق:** Neckline ٹوٹے تو Buy
+   849→
+   850→### 3. Double Top = ڈبل ٹاپ
+   851→ایک ہی Resistance پر 2 بار جا کر واپس آیا = Sell سگنل
+   852→**تصدیق:** درمیان والی Support ٹوٹے
+   853→
+   854→### 4. Double Bottom = ڈبل باٹم
+   855→ایک ہی Support پر 2 بار جا کر اوپر گیا = Buy سگنل
+   856→**تصدیق:** درمیان والی Resistance ٹوٹے
+   857→
+   858→### مثال: EUR/USD Daily
+   859→\`EUR/USD\` 1.1100 پر Head بنا۔ پھر 1.1050 پر کندھا، پھر 1.1090 پر سر، پھر 1.1040 پر کندھا
+   860→Neckline 1.1000 تھی۔ قیمت نے توڑا۔
+   861→**سگنل:** Sell۔ TP = Head سے Neckline کا فاصلہ نیچے`,
+   862→      hi: `## चार्ट पैटर्न 1: हेड और शोल्डर, डबल टॉप/बॉटम
+   863→
+   864→**चार्ट पैटर्न** कीमत का वह आकार है जो बार-बार बनता है। ये हमें रिवर्सल बताते हैं।
+   865→
+   866→### 1. Head & Shoulders = सिर और कंधे
+   867→यह Uptrend के अंत में बनता है = Bearish रिवर्सल
+   868→**आकार:** बायाँ कंधा, ऊँचा सिर, दायाँ कंधा। नीचे Neckline
+   869→**पुष्टि:** जब कीमत Neckline तोड़े तो Sell
+   870→
+   871→### 2. Inverse Head & Shoulders
+   872→यह Downtrend के अंत में बनता है = Bullish रिवर्सल
+   873→**पुष्टि:** Neckline टूटे तो Buy
+   874→
+   875→### 3. Double Top = डबल टॉप
+   876→एक ही Resistance पर 2 बार जाकर वापस आया = Sell सिग्नल
+   877→**पुष्टि:** बीच वाली Support टूटे
+   878→
+   879→### 4. Double Bottom = डबल बॉटम
+   880→एक ही Support पर 2 बार जाकर ऊपर गया = Buy सिग्नल
+   881→**पुष्टि:** बीच वाली Resistance टूटे
+   882→
+   883→### उदाहरण: EUR/USD Daily
+   884→\`EUR/USD\` 1.1100 पर Head बना। फिर 1.1050 पर कंधा, फिर 1.1090 पर सिर, फिर 1.1040 पर कंधा
+   885→Neckline 1.1000 थी। कीमत ने तोड़ा।
+   886→**सिग्नल:** Sell। TP = Head से Neckline की दूरी नीचे`,
+   887→      ar: `## أنماط الرسم 1: الرأس والكتفين، القمة/القاع المزدوج
+   888→
+   889→**نمط الرسم** هو شكل للسعر يتكرر مراراً. تخبرنا عن الانعكاسات.
+   890→
+   891→### 1. الرأس والكتفين
+   892→يتشكل في نهاية اتجاه صاعد = انعكاس هبوطي
+   893→**الشكل:** كتف أيسر، رأس أعلى، كتف أيمن. خط العنق أسفل.
+   894→**التأكيد:** عندما يكسر السعر خط العنق → بيع
+   895→
+   896→### 2. الرأس والكتفين المقلوب
+   897→يتشكل في نهاية اتجاه هابط = انعكاس صعودي
+   898→**التأكيد:** كسر خط العنق → شراء
+   899→
+   900→### 3. القمة المزدوجة
+   901→يصل لنفس المقاومة مرتين ويرتد = إشارة بيع
+   902→**التأكيد:** كسر الدعم الأوسط
+   903→
+   904→### 4. القاع المزدوج
+   905→يصل لنفس الدعم مرتين ويصعد = إشارة شراء
+   906→**التأكيد:** كسر المقاومة الوسطى
+   907→
+   908→### مثال: EUR/USD يومي
+   909→\`EUR/USD\` صنع رأساً عند 1.1100. ثم كتف عند 1.1050، ثم رأس عند 1.1090، ثم كتف عند 1.1040.
+   910→خط العنق كان 1.1000. السعر كسره.
+   911→**الإشارة:** بيع. الهدف = مسافة الرأس إلى خط العنق للأسفل`,
+   912→    },
+   913→    durationMin: 7,
+   914→    isFree: true,
+   915→    questions: [
+   916→      {
+   917→        type: "MCQ",
+   918→        prompt: { en: "When does Head & Shoulders form?", ur: "Head & Shoulders کب بنتا ہے؟", hi: "Head & Shoulders कब बनता है?", ar: "متى يتشكل نمط الرأس والكتفين؟" },
+   919→        options: [
+   920→          { en: "At the end of Downtrend", ur: "Downtrend کے آخر میں", hi: "Downtrend के अंत में", ar: "في نهاية الاتجاه الهابط" },
+   921→          { en: "At the end of Uptrend", ur: "Uptrend کے آخر میں", hi: "Uptrend के अंत में", ar: "في نهاية الاتجاه الصاعد" },
+   922→          { en: "In Sideways", ur: "Sideways میں", hi: "Sideways में", ar: "في السوق العرضي" },
+   923→          { en: "During News", ur: "News کے دوران", hi: "News के दौरान", ar: "أثناء الأخبار" },
+   924→        ],
+   925→        correctIndex: 1,
+   926→        explanation: { en: "Head & Shoulders forms at the end of Uptrend = Bearish reversal.", ur: "Head & Shoulders Uptrend کے آخر میں بنتا ہے = Bearish ریورسل۔", hi: "Head & Shoulders Uptrend के अंत में बनता है = Bearish रिवर्सल।", ar: "الرأس والكتفين يتشكل في نهاية الاتجاه الصاعد = انعكاس هبوطي." },
+   927→      },
+   928→      {
+   929→        type: "MCQ",
+   930→        prompt: { en: "What signal comes after a Double Top?", ur: "Double Top کے بعد کیا سگنل ملتا ہے؟", hi: "Double Top के बाद क्या सिग्नल मिलता है?", ar: "ما هي الإشارة بعد القمة المزدوجة؟" },
+   931→        options: [
+   932→          { en: "Buy", ur: "Buy", hi: "Buy", ar: "شراء" },
+   933→          { en: "Sell", ur: "Sell", hi: "Sell", ar: "بيع" },
+   934→          { en: "Hold", ur: "Hold", hi: "Hold", ar: "انتظار" },
+   935→          { en: "None", ur: "کوئی نہیں", hi: "कोई नहीं", ar: "لا شيء" },
+   936→        ],
+   937→        correctIndex: 1,
+   938→        explanation: { en: "Double Top = Sell signal (price rejected at Resistance twice).", ur: "Double Top = Sell سگنل (قیمت 2 بار Resistance پر رد ہوئی)۔", hi: "Double Top = Sell सिग्नल (कीमत 2 बार Resistance पर अस्वीकृत हुई)।", ar: "القمة المزدوجة = إشارة بيع (السعر رُفض عند المقاومة مرتين)." },
+   939→      },
+   940→      {
+   941→        type: "MCQ",
+   942→        prompt: { en: "What is necessary to confirm a pattern?", ur: "Pattern کی تصدیق کے لیے کیا ضروری ہے؟", hi: "Pattern की पुष्टि के लिए क्या ज़रूरी है?", ar: "ما اللازم لتأكيد النمط؟" },
+   943→        options: [
+   944→          { en: "Just the shape forms", ur: "صرف شکل بنے", hi: "सिर्फ़ आकार बने", ar: "فقط يتشكل الشكل" },
+   945→          { en: "Neckline or Support/Resistance break", ur: "Neckline یا Support/Resistance کا Break", hi: "Neckline या Support/Resistance का Break", ar: "كسر خط العنق أو الدعم/المقاومة" },
+   946→          { en: "Big lot", ur: "بڑا Lot", hi: "बड़ा Lot", ar: "حجم كبير" },
+   947→          { en: "News", ur: "News", hi: "News", ar: "أخبار" },
+   948→        ],
+   949→        correctIndex: 1,
+   950→        explanation: { en: "To confirm a pattern, a Neckline or Support/Resistance break is necessary.", ur: "Pattern کی تصدیق کے لیے Neckline یا Support/Resistance کا Break ضروری ہے۔", hi: "Pattern की पुष्टि के लिए Neckline या Support/Resistance का Break ज़रूरी है।", ar: "لتأكيد النمط، كسر خط العنق أو الدعم/المقاومة ضروري." },
+   951→      },
+   952→      {
+   953→        type: "MCQ",
+   954→        prompt: { en: "What does an Inverse Head & Shoulders give?", ur: "Inverse Head & Shoulders کیا دیتا ہے؟", hi: "Inverse Head & Shoulders क्या देता है?", ar: "ماذا يعطي النمط المعاكس للرأس والكتفين؟" },
+   955→        options: [
+   956→          { en: "Bearish reversal", ur: "Bearish ریورسل", hi: "Bearish रिवर्सल", ar: "انعكاس هبوطي" },
+   957→          { en: "Bullish reversal", ur: "Bullish ریورسل", hi: "Bullish रिवर्सल", ar: "انعكاس صاعد" },
+   958→          { en: "Continuation", ur: "Continuation", hi: "Continuation", ar: "استمرار" },
+   959→          { en: "No difference", ur: "کوئی فرق نہیں", hi: "कोई फ़र्क नहीं", ar: "بلا فرق" },
+   960→        ],
+   961→        correctIndex: 1,
+   962→        explanation: { en: "Inverse Head & Shoulders = Bullish reversal (at the end of Downtrend).", ur: "Inverse Head & Shoulders = Bullish ریورسل (Downtrend کے آخر میں)۔", hi: "Inverse Head & Shoulders = Bullish रिवर्सल (Downtrend के अंत में)।", ar: "النمط المعاكس للرأس والكتفين = انعكاس صاعد (في نهاية الاتجاه الهابط)." },
+   963→      },
+   964→      {
+   965→        type: "MCQ",
+   966→        prompt: { en: "EUR/USD touched 1.1100 twice and came back. Which pattern is this?", ur: "EUR/USD نے 2 بار 1.1100 ٹچ کیا اور واپس آیا۔ یہ کون سا پیٹرن؟", hi: "EUR/USD ने 2 बार 1.1100 टच किया और वापस आया। यह कौन सा पैटर्न है?", ar: "لمس EUR/USD مستوى 1.1100 مرتين وعاد. ما هذا النمط؟" },
+   967→        options: [
+   968→          { en: "Double Bottom", ur: "Double Bottom", hi: "Double Bottom", ar: "قاع مزدوج" },
+   969→          { en: "Head & Shoulders", ur: "Head & Shoulders", hi: "Head & Shoulders", ar: "رأس وكتفين" },
+   970→          { en: "Double Top", ur: "Double Top", hi: "Double Top", ar: "قمة مزدوجة" },
+   971→          { en: "Triangle", ur: "Triangle", hi: "Triangle", ar: "مثلث" },
+   972→        ],
+   973→        correctIndex: 2,
+   974→        explanation: { en: "Going to the same Resistance twice = Double Top = Sell signal.", ur: "ایک ہی Resistance پر 2 بار جانا = Double Top = Sell سگنل۔", hi: "एक ही Resistance पर 2 बार जाना = Double Top = Sell सिग्नल।", ar: "الذهاب لنفس المقاومة مرتين = قمة مزدوجة = إشارة بيع." },
+   975→      },
+   976→    ],
+   977→  },
+   978→
+   979→  // ===== LESSON 18: Chart Patterns 2 - Triangles, Flags, Wedges =====
+   980→  {
+   981→    id: "eurusd-18",
+   982→    order: 6,
+   983→    title: {
+   984→      en: "Chart Patterns 2: Triangles, Flags, Wedges | Continuation",
+   985→      ur: "Chart Patterns 2: Triangles, Flags, Wedges | Continuation Patterns",
+   986→      hi: "चार्ट पैटर्न 2: ट्राएंगल्स, फ्लैग्स, वेज | कंटिन्यूएशन पैटर्न",
+   987→      ar: "أنماط الرسم 2: المثلثات، الأعلام، الإسفين | أنماط الاستمرار",
+   988→    },
+   989→    summary: {
+   990→      en: "Continuation patterns — the trend pauses, then continues in the same direction.",
+   991→      ur: "Continuation پیٹرن — ٹرینڈ تھوڑا رک کر پھر اسی رخ میں چلے گا۔",
+   992→      hi: "कंटिन्यूएशन पैटर्न — ट्रेंड रुककर उसी दिशा में चलता है।",
+   993→      ar: "أنماط الاستمرار — يتوقف الاتجاه ثم يستمر بنفس الاتجاه.",
+   994→    },
+   995→    content: {
+   996→      en: `## Chart Patterns 2: Triangles, Flags, Wedges
+   997→
+   998→These are **Continuation Patterns**. The trend pauses briefly, then continues in the same direction. They form during a trend.
+   999→
+  1000→### 1. Triangles
+  1001→**3 types:**
+  1002→1. **Symmetrical Triangle:** top line down, bottom line up. Wait for breakout. Breaks in the trend's direction.
+  1003→2. **Ascending Triangle:** flat Resistance on top, rising Support below. Bullish. Higher chance of breaking up.
+  1004→3. **Descending Triangle:** flat Support below, falling Resistance above. Bearish. Higher chance of breaking down.
+  1005→
+  1006→### 2. Flags
+  1007→A small sideways channel after a fast move. Like the market paused to rest.
+  1008→**Rule:** When price breaks against the flag, the trend continues. Target = length of the Flag Pole.
+  1009→
+  1010→### 3. Wedges
+  1011→Like triangles but both lines go in the same direction.
+  1012→**Rising Wedge:** both lines go up = Bearish reversal
+  1013→**Falling Wedge:** both lines go down = Bullish reversal
+  1014→
+  1015→### Example — EUR/USD 1H
+  1016→\`EUR/USD\` went from 1.0900 to 1.1000 = Flag Pole
+  1017→Then a Flag formed between 1.0980 and 1.1000.
+  1018→Price broke above the Flag.
+  1019→**Signal:** Buy. TP = 1.1000 + 100 pips = 1.1100`,
+  1020→      ur: `## Chart Patterns 2: Triangles, Flags, Wedges
+  1021→
+  1022→یہ "Continuation Patterns" ہیں۔ مطلب ٹرینڈ تھوڑا رک کر پھر اسی رخ میں چلے گا۔ یہ ٹرینڈ کے درمیان بنتے ہیں۔
+  1023→
+  1024→### 1. Triangles = تکون
+  1025→**3 قسمیں:**
+  1026→1. **Symmetrical Triangle:** اوپر والی لائن نیچے، نیچے والی اوپر۔ بریک آؤٹ کا انتظار کریں۔ ٹرینڈ کی سمت میں بریک ہوگا۔
+  1027→2. **Ascending Triangle:** اوپر فلیٹ Resistance، نیچے اونچی Support۔ Bullish ہے۔ اوپر بریک کا چانس زیادہ۔
+  1028→3. **Descending Triangle:** نیچے فلیٹ Support، اوپر نیچی Resistance۔ Bearish ہے۔ نیچے بریک کا چانس زیادہ۔
+  1029→
+  1030→### 2. Flags = جھنڈا
+  1031→تیز موومنٹ کے بعد چھوٹا سا سائیڈ وے چینل۔ جیسے تھک کر رکا ہو۔
+  1032→**رول:** Flag کے خلاف بریک ہو تو ٹرینڈ جاری رہے گا۔ Flag کے بعد ٹارگٹ = Flag Pole کی لمبائی۔
+  1033→
+  1034→### 3. Wedges = پچر
+  1035→Triangles کی طرح لیکن دونوں لائنیں ایک ہی سمت میں جا رہی ہوں۔
+  1036→**Rising Wedge:** دونوں اوپر جا رہی ہیں = Bearish ریورسل
+  1037→**Falling Wedge:** دونوں نیچے جا رہی ہیں = Bullish ریورسل
+  1038→
+  1039→### مثال: EUR/USD 1H
+  1040→\`EUR/USD\` 1.0900 سے 1.1000 گیا = Flag Pole
+  1041→پھر 1.0980 اور 1.1000 کے درمیان Flag بنا۔
+  1042→قیمت نے Flag کے اوپر بریک کیا۔
+  1043→**سگنل:** Buy۔ TP = 1.1000 + 100 Pips = 1.1100`,
+  1044→      hi: `## चार्ट पैटर्न 2: ट्राएंगल्स, फ्लैग्स, वेज
+  1045→
+  1046→ये **Continuation Patterns** हैं। मतलब ट्रेंड थोड़ा रुककर फिर उसी दिशा में चलेगा। ये ट्रेंड के बीच में बनते हैं।
+  1047→
+  1048→### 1. Triangles = त्रिकोण
+  1049→**3 प्रकार:**
+  1050→1. **Symmetrical Triangle:** ऊपर वाली लाइन नीचे, नीचे वाली ऊपर। ब्रेकआउट का इंतज़ार करें। ट्रेंड की दिशा में ब्रेक होगा।
+  1051→2. **Ascending Triangle:** ऊपर फ्लैट Resistance, नीचे ऊपर उठती Support। Bullish है। ऊपर ब्रेक का चांस ज़्यादा।
+  1052→3. **Descending Triangle:** नीचे फ्लैट Support, ऊपर गिरती Resistance। Bearish है। नीचे ब्रेक का चांस ज़्यादा।
+  1053→
+  1054→### 2. Flags = झंडा
+  1055→तेज़ मूवमेंट के बाद छोटा साइडवे चैनल। जैसे थककर रुक गया।
+  1056→**नियम:** Flag के खिलाफ़ ब्रेक हो तो ट्रेंड जारी रहेगा। Flag के बाद टार्गेट = Flag Pole की लंबाई।
+  1057→
+  1058→### 3. Wedges = वेज
+  1059→Triangles की तरह लेकिन दोनों लाइनें एक ही दिशा में जाती हैं।
+  1060→**Rising Wedge:** दोनों ऊपर जा रही हैं = Bearish रिवर्सल
+  1061→**Falling Wedge:** दोनों नीचे जा रही हैं = Bullish रिवर्सल
+  1062→
+  1063→### उदाहरण: EUR/USD 1H
+  1064→\`EUR/USD\` 1.0900 से 1.1000 गया = Flag Pole
+  1065→फिर 1.0980 और 1.1000 के बीच Flag बना।
+  1066→कीमत ने Flag के ऊपर ब्रेक किया।
+  1067→**सिग्नल:** Buy। TP = 1.1000 + 100 Pips = 1.1100`,
+  1068→      ar: `## أنماط الرسم 2: المثلثات، الأعلام، الإسفين
+  1069→
+  1070→هذه **أنماط استمرار**. أي يتوقف الاتجاه ثم يستمر بنفس الاتجاه. تتشكل أثناء الاتجاه.
+  1071→
+  1072→### 1. المثلثات
+  1073→**3 أنواع:**
+  1074→1. **المثلث المتماثل:** الخط العلوي هابط، الخط السفلي صاعد. انتظر الاختراق. يخترق في اتجاه السوق.
+  1075→2. **المثلث الصاعد:** مقاومة مسطحة بالأعلى، دعم صاعد بالأسفل. صعودي. فرصة اختراق علوي أكبر.
+  1076→3. **المثلث الهابط:** دعم مسطح بالأسفل، مقاومة هابطة بالأعلى. هبوطي. فرصة اختراق سفلي أكبر.
+  1077→
+  1078→### 2. الأعلام
+  1079→قناة عرضية صغيرة بعد حركة سريعة. كأن السوق توقف للراحة.
+  1080→**القاعدة:** عند الاختراق ضد العلم، يستمر الاتجاه. الهدف = طول سارية العلم.
+  1081→
+  1082→### 3. الإسفين
+  1083→مثل المثلثات لكن كلا الخطين يسيران في نفس الاتجاه.
+  1084→**إسفين صاعد:** كلاهما يصعد = انعكاس هبوطي
+  1085→**إسفين هابط:** كلاهما يهبط = انعكاس صعودي
+  1086→
+  1087→### مثال: EUR/USD 1س
+  1088→\`EUR/USD\` صعد من 1.0900 إلى 1.1000 = سارية العلم
+  1089→ثم تشكل علم بين 1.0980 و 1.1000.
+  1090→السعر اخترق فوق العلم.
+  1091→**الإشارة:** شراء. الهدف = 1.1000 + 100 نقطة = 1.1100`,
+  1092→    },
+  1093→    durationMin: 7,
+  1094→    isFree: true,
+  1095→    questions: [
+  1096→      {
+  1097→        type: "MCQ",
+  1098→        prompt: { en: "What does Continuation Pattern mean?", ur: "Continuation Pattern کا مطلب کیا ہے؟", hi: "Continuation Pattern का मतलब क्या है?", ar: "ماذا يعني نمط الاستمرار؟" },
+  1099→        options: [
+  1100→          { en: "Trend will reverse", ur: "ٹرینڈ ریورس ہو جائے گا", hi: "ट्रेंड रिवर्स हो जाएगा", ar: "سيعكس الاتجاه" },
+  1101→          { en: "Trend pauses then continues same direction", ur: "ٹرینڈ تھوڑا رک کر پھر اسی رخ میں جائے گا", hi: "ट्रेंड रुक कर फिर उसी दिशा में जाएगा", ar: "يتوقف الاتجاه ثم يكمل بنفس الاتجاه" },
+  1102→          { en: "Market will close", ur: "مارکیٹ بند ہو جائے گی", hi: "बाज़ार बंद हो जाएगी", ar: "سيغلق السوق" },
+  1103→          { en: "News will come", ur: "News آئے گی", hi: "News आएगी", ar: "ستأتي الأخبار" },
+  1104→        ],
+  1105→        correctIndex: 1,
+  1106→        explanation: { en: "Continuation = trend pauses then continues in the same direction.", ur: "Continuation = ٹرینڈ رک کر اسی رخ میں جاری رہے گا۔", hi: "Continuation = ट्रेंड रुक कर उसी दिशा में जारी रहेगा।", ar: "الاستمرار = يتوقف الاتجاه ثم يكمل بنفس الاتجاه." },
+  1107→      },
+  1108→      {
+  1109→        type: "MCQ",
+  1110→        prompt: { en: "How is an Ascending Triangle formed?", ur: "Ascending Triangle کیسا ہوتا ہے؟", hi: "Ascending Triangle कैसा होता है?", ar: "كيف يتشكل المثلث الصاعد؟" },
+  1111→        options: [
+  1112→          { en: "Both Resistance top and bottom", ur: "اوپر نیچے دونوں Resistance", hi: "ऊपर नीचे दोनों Resistance", ar: "مقاومة علوية وسفلية معاً" },
+  1113→          { en: "Flat Resistance on top, rising Support below", ur: "اوپر فلیٹ Resistance، نیچے اونچی Support", hi: "ऊपर फ्लैट Resistance, नीचे ऊपर उठती Support", ar: "مقاومة مسطحة أعلى، ودعم صاعد أسفل" },
+  1114→          { en: "Both Support", ur: "دونوں Support", hi: "दोनों Support", ar: "كلاهما دعم" },
+  1115→          { en: "Round shape", ur: "گول شکل", hi: "गोल आकार", ar: "شكل دائري" },
+  1116→        ],
+  1117→        correctIndex: 1,
+  1118→        explanation: { en: "Ascending Triangle = flat Resistance on top, rising Support below = Bullish.", ur: "Ascending Triangle = اوپر فلیٹ Resistance، نیچے اونچی Support = Bullish۔", hi: "Ascending Triangle = ऊपर फ्लैट Resistance, नीचे ऊपर उठती Support = Bullish।", ar: "المثلث الصاعد = مقاومة مسطحة أعلى، ودعم صاعد أسفل = صاعد." },
+  1119→      },
+  1120→      {
+  1121→        type: "MCQ",
+  1122→        prompt: { en: "How to find the target after a Flag Pattern?", ur: "Flag Pattern کے بعد ٹارگٹ کیسے نکالیں گے؟", hi: "Flag Pattern के बाद टार्गेट कैसे निकालेंगे?", ar: "كيف نحدد الهدف بعد نمط العلم؟" },
+  1123→        options: [
+  1124→          { en: "50 pips fixed", ur: "50 Pips فکس", hi: "50 Pips फिक्स", ar: "50 نقطة ثابتة" },
+  1125→          { en: "Flag Pole length", ur: "Flag Pole کی لمبائی", hi: "Flag Pole की लंबाई", ar: "طول عمود العلم" },
+  1126→          { en: "By guess", ur: "اندازے سے", hi: "अंदाज़े से", ar: "بالتخمين" },
+  1127→          { en: "Looking at RSI", ur: "RSI دیکھ کر", hi: "RSI देख कर", ar: "بالنظر إلى RSI" },
+  1128→        ],
+  1129→        correctIndex: 1,
+  1130→        explanation: { en: "Flag target = Flag Pole length projected from the breakout.", ur: "Flag کا ٹارگٹ = Flag Pole کی لمبائی بریک سے-projected۔", hi: "Flag का टार्गेट = Flag Pole की लंबाई ब्रेक से प्रोजेक्टेड।", ar: "هدف العلم = طول عمود العلم مسقط من الكسر." },
+  1131→      },
+  1132→      {
+  1133→        type: "MCQ",
+  1134→        prompt: { en: "What signal does a Falling Wedge give?", ur: "Falling Wedge کیا سگنل دیتا ہے؟", hi: "Falling Wedge क्या सिग्नल देता है?", ar: "ما الإشارة التي يعطيها الوتد الهابط؟" },
+  1135→        options: [
+  1136→          { en: "Bearish reversal", ur: "Bearish ریورسل", hi: "Bearish रिवर्सल", ar: "انعكاس هبوطي" },
+  1137→          { en: "Bullish reversal", ur: "Bullish ریورسل", hi: "Bullish रिवर्सल", ar: "انعكاس صاعد" },
+  1138→          { en: "Sideways", ur: "Sideways", hi: "Sideways", ar: "عرضي" },
+  1139→          { en: "No signal", ur: "کوئی سگنل نہیں", hi: "कोई सिग्नल नहीं", ar: "بلا إشارة" },
+  1140→        ],
+  1141→        correctIndex: 1,
+  1142→        explanation: { en: "Falling Wedge (both lines pointing down) = Bullish reversal.", ur: "Falling Wedge (دونوں لائنیں نیچے) = Bullish ریورسل۔", hi: "Falling Wedge (दोनों लाइनें नीचे) = Bullish रिवर्सल।", ar: "الوتد الهابط (كلا الخطين للأسفل) = انعكاس صاعد." },
+  1143→      },
+  1144→      {
+  1145→        type: "MCQ",
+  1146→        prompt: { en: "EUR/USD went up 100 pips then formed a sideways channel. Which pattern is this?", ur: "EUR/USD 100 Pips اوپر گیا پھر سائیڈ وے چینل بنا۔ یہ کون سا پیٹرن؟", hi: "EUR/USD 100 Pips ऊपर गया फिर साइडवेच चैनल बना। यह कौन सा पैटर्न है?", ar: "صعد EUR/USD 100 نقطة ثم كوّن قناة عرضية. ما هذا النمط؟" },
+  1147→        options: [
+  1148→          { en: "Triangle", ur: "Triangle", hi: "Triangle", ar: "مثلث" },
+  1149→          { en: "Head & Shoulders", ur: "Head & Shoulders", hi: "Head & Shoulders", ar: "رأس وكتفين" },
+  1150→          { en: "Flag", ur: "Flag", hi: "Flag", ar: "علم" },
+  1151→          { en: "Double Top", ur: "Double Top", hi: "Double Top", ar: "قمة مزدوجة" },
+  1152→        ],
+  1153→        correctIndex: 2,
+  1154→        explanation: { en: "Sideways channel after a fast move = Flag Pattern.", ur: "تیز موومنٹ کے بعد سائیڈ وے چینل = Flag Pattern۔", hi: "तेज़ मूवमेंट के बाद साइडवेच चैनल = Flag Pattern।", ar: "قناة عرضية بعد حركة سريعة = نمط العلم." },
+  1155→      },
+  1156→    ],
+  1157→  },
+  1158→
+  1159→  // ===== LESSON 19: Fibonacci Retracement =====
+  1160→  {
+  1161→    id: "eurusd-19",
+  1162→    order: 7,
+  1163→    title: {
+  1164→      en: "Fibonacci Retracement | Finding Entry Points",
+  1165→      ur: "Fibonacci Retracement | Entry Points ڈھونڈنا",
+  1166→      hi: "फिबोनैचि रिट्रेसमेंट | एंट्री पॉइंट ढूँढना",
+  1167→      ar: "تصحيح فيبوناتشي | إيجاد نقاط الدخول",
+  1168→    },
+  1169→    summary: {
+  1170→      en: "Big traders use Fibonacci to find where price may stop after a correction.",
+  1171→      ur: "بڑے ٹریڈر Fibonacci سے بتاتے ہیں کہ Correction کے بعد قیمت کہاں رک سکتی ہے۔",
+  1172→      hi: "बड़े ट्रेडर Fibonacci से बताते हैं कि Correction के बाद कीमत कहाँ रुक सकती है।",
+  1173→      ar: "المتداولون الكبار يستخدمون فيبوناتشي لمعرفة أين قد يتوقف السعر بعد التصحيح.",
+  1174→    },
+  1175→    content: {
+  1176→      en: `## Fibonacci Retracement | Finding Entry Points
+  1177→
+  1178→**Fibonacci** tells us where price may stop after a correction. Big traders watch these levels.
+  1179→
+  1180→### Most Important Levels
+  1181→23.6%, 38.2%, 50%, 61.8%, 78.6%
+  1182→**Most powerful:** 61.8% = "Golden Ratio"
+  1183→
+  1184→### How to Draw It?
+  1185→1. **In Uptrend:** draw Fib from Swing Low to Swing High
+  1186→2. **In Downtrend:** draw Fib from Swing High to Swing Low
+  1187→
+  1188→### Trading Rule
+  1189→Price reaches 61.8% or 50% and rejects → take Entry there. SL = below 78.6%
+  1190→
+  1191→### Fib + Confluence = Best
+  1192→If the 61.8% Fib and a Support level are at the same place, that zone becomes very powerful.
+  1193→
+  1194→### Example — EUR/USD 4H
+  1195→\`EUR/USD\` went from 1.0800 to 1.1000. Now a correction came.
+  1196→We drew Fib from 1.0800 to 1.1000.
+  1197→Price reached 61.8% = 1.0876. A Support + Bullish Pin Bar formed there.
+  1198→**Signal:** Buy at 1.0876. SL 1.0840. TP 1.1000`,
+  1199→      ur: `## Fibonacci Retracement | Entry Points ڈھونڈنا
+  1200→
+  1201→Fibonacci ہمیں بتاتا ہے کہ قیمت Correction کے بعد کہاں رک سکتی ہے۔ بڑے ٹریڈر یہی لیول دیکھتے ہیں۔
+  1202→
+  1203→### سب سے اہم لیول
+  1204→23.6%, 38.2%, 50%, 61.8%, 78.6%
+  1205→**سب سے طاقتور:** 61.8% = "Golden Ratio"
+  1206→
+  1207→### کیسے لگائیں؟
+  1208→1. **Uptrend میں:** سوئنگ Low سے سوئنگ High تک Fib کھینچیں
+  1209→2. **Downtrend میں:** سوئنگ High سے سوئنگ Low تک Fib کھینچیں
+  1210→
+  1211→### ٹریڈنگ رول
+  1212→قیمت 61.8% یا 50% پر آ کر ریجیکٹ ہو = وہاں سے Entry لیں۔ SL = 78.6% کے نیچے
+  1213→
+  1214→### Fib + Confluence = سب سے بہترین
+  1215→اگر 61.8% Fib اور Support ایک جگہ پر ہوں تو وہ زون بہت طاقتور بن جاتا ہے۔
+  1216→
+  1217→### مثال: EUR/USD 4H
+  1218→\`EUR/USD\` 1.0800 سے 1.1000 گیا۔ اب Correction آئی۔
+  1219→ہم نے Fib 1.0800 سے 1.1000 تک لگایا۔
+  1220→قیمت 61.8% پر آئی = 1.0876۔ وہاں Support + Bullish Pin Bar بنی۔
+  1221→**سگنل:** Buy 1.0876۔ SL 1.0840۔ TP 1.1000`,
+  1222→      hi: `## फिबोनैचि रिट्रेसमेंट | एंट्री पॉइंट ढूँढना
+  1223→
+  1224→**Fibonacci** हमें बताता है कि Correction के बाद कीमत कहाँ रुक सकती है। बड़े ट्रेडर इन्हीं लेवल को देखते हैं।
+  1225→
+  1226→### सबसे ज़रूरी लेवल
+  1227→23.6%, 38.2%, 50%, 61.8%, 78.6%
+  1228→**सबसे शक्तिशाली:** 61.8% = "Golden Ratio"
+  1229→
+  1230→### कैसे लगाएँ?
+  1231→1. **Uptrend में:** Swing Low से Swing High तक Fib खींचें
+  1232→2. **Downtrend में:** Swing High से Swing Low तक Fib खींचें
+  1233→
+  1234→### ट्रेडिंग नियम
+  1235→कीमत 61.8% या 50% पर आकर रिजेक्ट हो = वहाँ से Entry लें। SL = 78.6% के नीचे
+  1236→
+  1237→### Fib + Confluence = सबसे अच्छा
+  1238→अगर 61.8% Fib और Support एक जगह हों तो वह ज़ोन बहुत शक्तिशाली बन जाता है।
+  1239→
+  1240→### उदाहरण: EUR/USD 4H
+  1241→\`EUR/USD\` 1.0800 से 1.1000 गया। अब Correction आई।
+  1242→हमने Fib 1.0800 से 1.1000 तक लगाया।
+  1243→कीमत 61.8% पर आई = 1.0876। वहाँ Support + Bullish Pin Bar बनी।
+  1244→**सिग्नल:** Buy 1.0876। SL 1.0840। TP 1.1000`,
+  1245→      ar: `## تصحيح فيبوناتشي | إيجاد نقاط الدخول
+  1246→
+  1247→**فيبوناتشي** يخبرنا أين قد يتوقف السعر بعد التصحيح. المتداولون الكبار يراقبون هذه المستويات.
+  1248→
+  1249→### أهم المستويات
+  1250→23.6%, 38.2%, 50%, 61.8%, 78.6%
+  1251→**الأقوى:** 61.8% = "النسبة الذهبية"
+  1252→
+  1253→### كيف نرسمه؟
+  1254→1. **في اتجاه صاعد:** ارسم فيبوناتشي من القاع إلى القمة
+  1255→2. **في اتجاه هابط:** ارسم فيبوناتشي من القمة إلى القاع
+  1256→
+  1257→### قاعدة التداول
+  1258→السعر يصل إلى 61.8% أو 50% ويرتد → خذ الدخول هناك. SL = تحت 78.6%
+  1259→
+  1260→### فيبوناتشي + تلاقي = الأفضل
+  1261→إذا كان 61.8% فيبوناتشي والدعم في نفس المكان، تصبح تلك المنطقة قوية جداً.
+  1262→
+  1263→### مثال: EUR/USD 4س
+  1264→\`EUR/USD\` صعد من 1.0800 إلى 1.1000. الآن جاء تصحيح.
+  1265→رسمنا فيبوناتشي من 1.0800 إلى 1.1000.
+  1266→السعر وصل إلى 61.8% = 1.0876. تشكل هناك دعم + شمعة دبوس صعودية.
+  1267→**الإشارة:** شراء عند 1.0876. SL 1.0840. الهدف 1.1000`,
+  1268→    },
+  1269→    durationMin: 7,
+  1270→    isFree: true,
+  1271→    questions: [
+  1272→      {
+  1273→        type: "MCQ",
+  1274→        prompt: { en: "Which is the most powerful Fibonacci level?", ur: "Fibonacci کا سب سے طاقتور لیول کون سا ہے؟", hi: "Fibonacci का सबसे शक्तिशाली स्तर कौन सा है?", ar: "ما هو أقوى مستوى فيبوناتشي؟" },
+  1275→        options: [
+  1276→          { en: "23.6%", ur: "23.6%", hi: "23.6%", ar: "23.6%" },
+  1277→          { en: "38.2%", ur: "38.2%", hi: "38.2%", ar: "38.2%" },
+  1278→          { en: "50%", ur: "50%", hi: "50%", ar: "50%" },
+  1279→          { en: "61.8%", ur: "61.8%", hi: "61.8%", ar: "61.8%" },
+  1280→        ],
+  1281→        correctIndex: 3,
+  1282→        explanation: { en: "61.8% = Golden Ratio = most powerful Fib level.", ur: "61.8% = Golden Ratio = سب سے طاقتور Fib لیول۔", hi: "61.8% = Golden Ratio = सबसे शक्तिशाली Fib स्तर।", ar: "61.8% = النسبة الذهبية = أقوى مستوى فيبوناتشي." },
+  1283→      },
+  1284→      {
+  1285→        type: "MCQ",
+  1286→        prompt: { en: "In Uptrend, from where to where do you draw Fib?", ur: "Uptrend میں Fib کہاں سے کہاں لگائیں گے؟", hi: "Uptrend में Fib कहाँ से कहाँ लगाएँगे?", ar: "في الاتجاه الصاعد، من أين إلى أين نرسم الفيبوناتشي؟" },
+  1287→        options: [
+  1288→          { en: "High to Low", ur: "High سے Low", hi: "High से Low", ar: "من القمة إلى القاع" },
+  1289→          { en: "Low to High", ur: "Low سے High", hi: "Low से High", ar: "من القاع إلى القمة" },
+  1290→          { en: "In the middle", ur: "بیچ میں", hi: "बीच में", ar: "في المنتصف" },
+  1291→          { en: "Anywhere", ur: "کہیں بھی", hi: "कहीं भी", ar: "أي مكان" },
+  1292→        ],
+  1293→        correctIndex: 1,
+  1294→        explanation: { en: "In Uptrend, Fib = from Swing Low to Swing High.", ur: "Uptrend میں Fib = Swing Low سے Swing High تک۔", hi: "Uptrend में Fib = Swing Low से Swing High तक।", ar: "في الاتجاه الصاعد، الفيبوناتشي = من القاع المتأرجح إلى القمة المتأرجحة." },
+  1295→      },
+  1296→      {
+  1297→        type: "MCQ",
+  1298→        prompt: { en: "What is 61.8% called?", ur: "61.8% کو کیا کہتے ہیں؟", hi: "61.8% को क्या कहते हैं?", ar: "ماذا يُسمى 61.8%؟" },
+  1299→        options: [
+  1300→          { en: "Silver Ratio", ur: "Silver Ratio", hi: "Silver Ratio", ar: "النسبة الفضية" },
+  1301→          { en: "Golden Ratio", ur: "Golden Ratio", hi: "Golden Ratio", ar: "النسبة الذهبية" },
+  1302→          { en: "Normal Ratio", ur: "Normal Ratio", hi: "Normal Ratio", ar: "نسبة عادية" },
+  1303→          { en: "Risk Ratio", ur: "Risk Ratio", hi: "Risk Ratio", ar: "نسبة المخاطرة" },
+  1304→        ],
+  1305→        correctIndex: 1,
+  1306→        explanation: { en: "61.8% = Golden Ratio (most powerful).", ur: "61.8% = Golden Ratio (سب سے طاقتور)۔", hi: "61.8% = Golden Ratio (सबसे शक्तिशाली)।", ar: "61.8% = النسبة الذهبية (الأقوى)." },
+  1307→      },
+  1308→      {
+  1309→        type: "MCQ",
+  1310→        prompt: { en: "What does Fib + Confluence mean?", ur: "Fib + Confluence کا مطلب؟", hi: "Fib + Confluence का मतलब?", ar: "ماذا يعني Fib + Confluence؟" },
+  1311→        options: [
+  1312→          { en: "2 indicators together", ur: "2 Indicator ایک ساتھ", hi: "2 Indicator एक साथ", ar: "مؤشران معاً" },
+  1313→          { en: "Fib level and Support/Resistance at the same place", ur: "Fib لیول اور Support/Resistance ایک جگہ ہوں", hi: "Fib स्तर और Support/Resistance एक जगह हों", ar: "مستوى Fib و الدعم/المقاومة في نفس المكان" },
+  1314→          { en: "2 news together", ur: "2 News ایک ساتھ", hi: "2 News एक साथ", ar: "خبران معاً" },
+  1315→          { en: "2 lots placed", ur: "2 Lot لگانا", hi: "2 Lot लगाना", ar: "وضع 2 لوت" },
+  1316→        ],
+  1317→        correctIndex: 1,
+  1318→        explanation: { en: "Fib + Support/Resistance at same place = Confluence = strong zone.", ur: "Fib + Support/Resistance ایک جگہ = Confluence = طاقتور زون۔", hi: "Fib + Support/Resistance एक जगह = Confluence = मज़बूत ज़ोन।", ar: "Fib + الدعم/المقاومة في نفس المكان = Confluence = منطقة قوية." },
+  1319→      },
+  1320→      {
+  1321→        type: "MCQ",
+  1322→        prompt: { en: "If price comes to 61.8% and forms a Bullish Pin, the signal is?", ur: "قیمت 61.8% پر آ کر Bullish Pin بنائے تو سگنل؟", hi: "कीमत 61.8% पर आकर Bullish Pin बनाए तो सिग्नल?", ar: "إذا وصل السعر إلى 61.8% وكوّن Pin صاعد فالإشارة؟" },
+  1323→        options: [
+  1324→          { en: "Sell", ur: "Sell", hi: "Sell", ar: "بيع" },
+  1325→          { en: "Buy", ur: "Buy", hi: "Buy", ar: "شراء" },
+  1326→          { en: "Hold", ur: "Hold", hi: "Hold", ar: "انتظار" },
+  1327→          { en: "Close", ur: "Close", hi: "Close", ar: "إغلاق" },
+  1328→        ],
+  1329→        correctIndex: 1,
+  1330→        explanation: { en: "61.8% + Bullish Pin = Confluence = Buy signal.", ur: "61.8% + Bullish Pin = Confluence = Buy سگنل۔", hi: "61.8% + Bullish Pin = Confluence = Buy सिग्नल।", ar: "61.8% + Pin صاعد = Confluence = إشارة شراء." },
+  1331→      },
+  1332→    ],
+  1333→  },
+  1334→
+  1335→  // ===== LESSON 20: Price Action - Pin Bar, Engulfing =====
+  1336→  {
+  1337→    id: "eurusd-20",
+  1338→    order: 8,
+  1339→    title: {
+  1340→      en: "Price Action — Pin Bar & Engulfing | Without Indicators",
+  1341→      ur: "Price Action - Pin Bar, Engulfing | بغیر Indicator کے",
+  1342→      hi: "प्राइस एक्शन - पिन बार, एनगल्फिंग | बिना इंडिकेटर के",
+  1343→      ar: "حركة السعر - شمعة الدبوس والابتلاع | بدون مؤشرات",
+  1344→    },
+  1345→    summary: {
+  1346→      en: "Trade by reading candles only — no indicators needed.",
+  1347→      ur: "صرف کینڈل دیکھ کر ٹریڈ کریں — کوئی Indicator نہیں چاہیے۔",
+  1348→      hi: "केवल कैंडल देखकर ट्रेड करें — किसी इंडिकेटर की ज़रूरत नहीं।",
+  1349→      ar: "تداول بقراءة الشموع فقط — بدون مؤشرات.",
+  1350→    },
+  1351→    content: {
+  1352→      en: `## Price Action — Pin Bar & Engulfing | Without Indicators
+  1353→
+  1354→**Price Action** means "making decisions by just looking at candles". No indicators.
+  1355→
+  1356→### 1. Pin Bar
+  1357→Long wick + small body. Shows rejection.
+  1358→**Bullish Pin:** long wick below = sellers failed. Buy signal
+  1359→**Bearish Pin:** long wick above = buyers failed. Sell signal
+  1360→**Condition:** works 90% of the time when it forms at Support/Resistance.
+  1361→
+  1362→### 2. Engulfing
+  1363→**Bullish Engulfing:** a small red candle, then a big green candle that swallows the whole red = Buy
+  1364→**Bearish Engulfing:** a small green candle, then a big red candle that swallows the whole green = Sell
+  1365→
+  1366→### Golden Rule of Price Action
+  1367→Never trade on a single candle alone. Always look for confluence with S&R, Trend, or Fib.
+  1368→
+  1369→### Example — EUR/USD Daily
+  1370→Price reached 1.0800 Support. A Bearish Pin Bar formed there with a long wick above.
+  1371→The next candle was a Bearish Engulfing.
+  1372→**Signal:** Sell. SL = above the Pin Bar's high. TP = next Support`,
+  1373→      ur: `## Price Action - Pin Bar, Engulfing | بغیر Indicator کے
+  1374→
+  1375→Price Action کا مطلب ہے "صرف کینڈل دیکھ کر فیصلہ"۔ کوئی Indicator نہیں۔
+  1376→
+  1377→### 1. Pin Bar = پن بار
+  1378→لمبی Wick + چھوٹی Body۔ یہ ریجیکشن دکھاتی ہے۔
+  1379→**Bullish Pin:** نیچے لمبی Wick = Sellers فیل۔ Buy سگنل
+  1380→**Bearish Pin:** اوپر لمبی Wick = Buyers فیل۔ Sell سگنل
+  1381→**شرط:** Support/Resistance پر بنے تو 90% کام کرتی ہے۔
+  1382→
+  1383→### 2. Engulfing = نگل جانے والی کینڈل
+  1384→**Bullish Engulfing:** چھوٹی سرخ کینڈل کے بعد بڑی سبز کینڈل جو پوری سرخ کو نگل جائے = Buy
+  1385→**Bearish Engulfing:** چھوٹی سبز کے بعد بڑی سرخ جو پوری سبز کو نگل جائے = Sell
+  1386→
+  1387→### Price Action کا گولڈن رول
+  1388→کبھی اکیلی کینڈل پر ٹریڈ نہ کریں۔ ہمیشہ S&R, Trend, Fib کے ساتھ Confluence دیکھیں۔
+  1389→
+  1390→### مثال: EUR/USD Daily
+  1391→قیمت 1.0800 Support پر آئی۔ وہاں Bearish Pin Bar بنی اوپر لمبی Wick کے ساتھ۔
+  1392→اگلی کینڈل Bearish Engulfing بنی۔
+  1393→**سگنل:** Sell۔ SL = Pin Bar کی High کے اوپر۔ TP = اگلی Support`,
+  1394→      hi: `## प्राइस एक्शन - पिन बार, एनगल्फिंग | बिना इंडिकेटर के
+  1395→
+  1396→**Price Action** का मतलब है "केवल कैंडल देखकर फ़ैसला"। कोई इंडिकेटर नहीं।
+  1397→
+  1398→### 1. Pin Bar = पिन बार
+  1399→लंबी Wick + छोटी Body। यह रिजेक्शन दिखाती है।
+  1400→**Bullish Pin:** नीचे लंबी Wick = Sellers फ़ेल। Buy सिग्नल
+  1401→**Bearish Pin:** ऊपर लंबी Wick = Buyers फ़ेल। Sell सिग्नल
+  1402→**शर्त:** Support/Resistance पर बने तो 90% काम करती है।
+  1403→
+  1404→### 2. Engulfing = निगल जाने वाली कैंडल
+  1405→**Bullish Engulfing:** छोटी लाल कैंडल के बाद बड़ी हरी कैंडल जो पूरी लाल को निगल जाए = Buy
+  1406→**Bearish Engulfing:** छोटी हरी के बाद बड़ी लाल जो पूरी हरी को निगल जाए = Sell
+  1407→
+  1408→### Price Action का गोल्डन रूल
+  1409→कभी अकेली कैंडल पर ट्रेड न करें। हमेशा S&R, Trend, Fib के साथ Confluence देखें।
+  1410→
+  1411→### उदाहरण: EUR/USD Daily
+  1412→कीमत 1.0800 Support पर आई। वहाँ Bearish Pin Bar बनी ऊपर लंबी Wick के साथ।
+  1413→अगली कैंडल Bearish Engulfing बनी।
+  1414→**सिग्नल:** Sell। SL = Pin Bar की High के ऊपर। TP = अगली Support`,
+  1415→      ar: `## حركة السعر - شمعة الدبوس والابتلاع | بدون مؤشرات
+  1416→
+  1417→**حركة السعر** تعني "اتخاذ القرار بالنظر إلى الشموع فقط". بدون مؤشرات.
+  1418→
+  1419→### 1. شمعة الدبوس
+  1420→ظل طويل + جسم صغير. تُظهر الرفض.
+  1421→**الدبوس الصعودي:** ظل طويل بالأسفل = فشل البائعين. إشارة شراء
+  1422→**الدبوس الهبوطي:** ظل طويل بالأعلى = فشل المشترين. إشارة بيع
+  1423→**الشرط:** تعمل 90% من الوقت عند الدعم/المقاومة.
+  1424→
+  1425→### 2. الابتلاع
+  1426→**الابتلاع الصعودي:** شمعة حمراء صغيرة، ثم شمعة خضراء كبيرة تبتلع الحمراء بالكامل = شراء
+  1427→**الابتلاع الهبوطي:** شمعة خضراء صغيرة، ثم شمعة حمراء كبيرة تبتلع الخضراء بالكامل = بيع
+  1428→
+  1429→### القاعدة الذهبية لحركة السعر
+  1430→لا تتداول أبداً على شمعة واحدة فقط. ابحث دائماً عن تلاقي مع الدعم/المقاومة، الاتجاه، أو فيبوناتشي.
+  1431→
+  1432→### مثال: EUR/USD يومي
+  1433→السعر وصل إلى دعم 1.0800. تشكلت هناك شمعة دبوس هبوطية بظل طويل بالأعلى.
+  1434→الشمعة التالية كانت ابتلاع هبوطي.
+  1435→**الإشارة:** بيع. SL = فوق قمة الدبوس. الهدف = الدعم التالي`,
+  1436→    },
+  1437→    durationMin: 7,
+  1438→    isFree: true,
+  1439→    questions: [
+  1440→      {
+  1441→        type: "MCQ",
+  1442→        prompt: { en: "What is the identification of a Pin Bar?", ur: "Pin Bar کی پہچان کیا ہے؟", hi: "Pin Bar की पहचान क्या है?", ar: "ما هي علامة Pin Bar؟" },
+  1443→        options: [
+  1444→          { en: "Big body", ur: "بڑی Body", hi: "बड़ी Body", ar: "جسم كبير" },
+  1445→          { en: "Long wick + small body", ur: "لمبی Wick + چھوٹی Body", hi: "लंबी Wick + छोटी Body", ar: "ظل طويل + جسم صغير" },
+  1446→          { en: "Doji", ur: "Doji", hi: "Doji", ar: "دوجي" },
+  1447→          { en: "3 candles", ur: "3 کینڈل", hi: "3 कैंडल", ar: "3 شموع" },
+  1448→        ],
+  1449→        correctIndex: 1,
+  1450→        explanation: { en: "Pin Bar = long wick + small body (shows rejection).", ur: "Pin Bar = لمبی Wick + چھوٹی Body (ریجیکشن دکھاتی ہے)۔", hi: "Pin Bar = लंबी Wick + छोटी Body (अस्वीकरण दिखाती है)।", ar: "Pin Bar = ظل طويل + جسم صغير (يُظهر الرفض)." },
+  1451→      },
+  1452→      {
+  1453→        type: "MCQ",
+  1454→        prompt: { en: "Where is a Bullish Pin Bar best formed?", ur: "Bullish Pin Bar کہاں بنے تو سب سے بہتر ہے؟", hi: "Bullish Pin Bar कहाँ बने तो सबसे अच्छा है?", ar: "أين يتشكل Pin Bar الصاعد بأفضل صورة؟" },
+  1455→        options: [
+  1456→          { en: "At Resistance", ur: "Resistance پر", hi: "Resistance पर", ar: "عند المقاومة" },
+  1457→          { en: "At Support", ur: "Support پر", hi: "Support पर", ar: "عند الدعم" },
+  1458→          { en: "In the middle", ur: "بیچ میں", hi: "बीच में", ar: "في المنتصف" },
+  1459→          { en: "No difference", ur: "کوئی فرق نہیں", hi: "कोई फ़र्क नहीं", ar: "بلا فرق" },
+  1460→        ],
+  1461→        correctIndex: 1,
+  1462→        explanation: { en: "A Bullish Pin Bar formed at Support works 90% of the time.", ur: "Bullish Pin Bar Support پر بنے تو 90% کام کرتی ہے۔", hi: "Bullish Pin Bar Support पर बने तो 90% काम करती है।", ar: "Pin Bar الصاعد المتشكل عند الدعم يعمل 90% من الوقت." },
+  1463→      },
+  1464→      {
+  1465→        type: "MCQ",
+  1466→        prompt: { en: "What is a Bullish Engulfing?", ur: "Bullish Engulfing کیا ہے؟", hi: "Bullish Engulfing क्या है?", ar: "ما هو الابتلاع الصاعد؟" },
+  1467→        options: [
+  1468→          { en: "Small green, big red", ur: "چھوٹی سبز، بڑی سرخ", hi: "छोटी हरी, बड़ी लाल", ar: "خضراء صغيرة، حمراء كبيرة" },
+  1469→          { en: "Big green swallows small red", ur: "بڑی سبز، چھوٹی سرخ کو نگل لے", hi: "बड़ी हरी, छोटी लाल को निगल ले", ar: "خضراء كبيرة تبتلع حمراء صغيرة" },
+  1470→          { en: "2 Doji", ur: "2 Doji", hi: "2 Doji", ar: "2 دوجي" },
+  1471→          { en: "3 red candles", ur: "3 سرخ کینڈل", hi: "3 लाल कैंडल", ar: "3 شموع حمراء" },
+  1472→        ],
+  1473→        correctIndex: 1,
+  1474→        explanation: { en: "Bullish Engulfing = big green candle swallows small red = Buy.", ur: "Bullish Engulfing = بڑی سبز کینڈل چھوٹی سرخ کو نگل لے = Buy۔", hi: "Bullish Engulfing = बड़ी हरी कैंडल छोटी लाल को निगल ले = Buy।", ar: "الابتلاع الصاعد = شمعة خضراء كبيرة تبتلع حمراء صغيرة = Buy." },
+  1475→      },
+  1476→      {
+  1477→        type: "MCQ",
+  1478→        prompt: { en: "What is the Golden Rule of Price Action?", ur: "Price Action کا گولڈن رول کیا ہے؟", hi: "Price Action का गोल्डन रूल क्या है?", ar: "ما هي القاعدة الذهبية لـ Price Action؟" },
+  1479→        options: [
+  1480→          { en: "Trade on a single candle", ur: "اکیلی کینڈل پر ٹریڈ کریں", hi: "अकेली कैंडल पर ट्रेड करें", ar: "تداول على شمعة واحدة" },
+  1481→          { en: "Always use confluence", ur: "ہمیشہ Confluence کے ساتھ دیکھیں", hi: "हमेशा Confluence के साथ देखें", ar: "استخدم دائماً Confluence" },
+  1482→          { en: "Only look at wick", ur: "صرف Wick دیکھیں", hi: "सिर्फ़ Wick देखें", ar: "انظر إلى الظل فقط" },
+  1483→          { en: "Keep big lot", ur: "Lot بڑا رکھیں", hi: "Lot बड़ा रखें", ar: "ضع لوت كبير" },
+  1484→        ],
+  1485→        correctIndex: 1,
+  1486→        explanation: { en: "Price Action Golden Rule = always use Confluence (S&R, Trend, Fib).", ur: "Price Action کا گولڈن رول = ہمیشہ Confluence (S&R, Trend, Fib) کے ساتھ دیکھیں۔", hi: "Price Action का गोल्डन रूल = हमेशा Confluence (S&R, Trend, Fib) के साथ देखें।", ar: "القاعدة الذهبية لـ Price Action = استخدم دائماً Confluence (S&R, Trend, Fib)." },
+  1487→      },
+  1488→      {
+  1489→        type: "MCQ",
+  1490→        prompt: { en: "What does a Pin Bar with a long upper wick give?", ur: "اوپر لمبی Wick والی Pin Bar کیا دیتی ہے؟", hi: "ऊपर लंबी Wick वाली Pin Bar क्या देती है?", ar: "ماذا تعطي Pin Bar بظل علوي طويل؟" },
+  1491→        options: [
+  1492→          { en: "Buy signal", ur: "Buy سگنل", hi: "Buy सिग्नल", ar: "إشارة شراء" },
+  1493→          { en: "Sell signal", ur: "Sell سگنل", hi: "Sell सिग्नल", ar: "إشارة بيع" },
+  1494→          { en: "No signal", ur: "کوئی سگنل نہیں", hi: "कोई सिग्नल नहीं", ar: "بلا إشارة" },
+  1495→          { en: "TP level", ur: "TP لیول", hi: "TP स्तर", ar: "مستوى TP" },
+  1496→        ],
+  1497→        correctIndex: 1,
+  1498→        explanation: { en: "Pin Bar with long upper wick = Bearish Pin = Sell signal.", ur: "اوپر لمبی Wick والی Pin Bar = Bearish Pin = Sell سگنل۔", hi: "ऊपर लंबी Wick वाली Pin Bar = Bearish Pin = Sell सिग्नल।", ar: "Pin Bar بظل علوي طويل = Bearish Pin = إشارة بيع." },
+  1499→      },
+  1500→    ],
+  1501→  },
+  1502→
+  1503→  // ===== LESSON 21: Fundamental Analysis 1 - News, GDP, NFP =====
+  1504→  {
+  1505→    id: "eurusd-21",
+  1506→    order: 9,
+  1507→    title: {
+  1508→      en: "Fundamental Analysis 1: News, GDP, NFP",
+  1509→      ur: "Fundamental Analysis 1: News, GDP, NFP",
+  1510→      hi: "फंडामेंटल एनालिसिस 1: न्यूज़, GDP, NFP",
+  1511→      ar: "التحليل الأساسي 1: الأخبار، الناتج المحلي، NFP",
+  1512→    },
+  1513→    summary: {
+  1514→      en: "Trade based on real economic news — NFP, GDP and high-impact events.",
+  1515→      ur: "اصل معاشی خبروں پر ٹریڈ — NFP، GDP اور High-Impact نیوز۔",
+  1516→      hi: "असली आर्थिक न्यूज़ पर ट्रेड — NFP, GDP और High-Impact घटनाएँ।",
+  1517→      ar: "تداول بناءً على أخبار اقتصادية حقيقية — NFP، الناتج المحلي، والأحداث عالية التأثير.",
+  1518→    },
+  1519→    content: {
+  1520→      en: `## Fundamental Analysis 1: News, GDP, NFP
+  1521→
+  1522→**Fundamental Analysis** = "trading based on news". It asks: how is the country's economy doing?
+  1523→
+  1524→### 3 Big News That Move EUR/USD
+  1525→
+  1526→**1. NFP = Non-Farm Payrolls**
+  1527→Comes on the first Friday of every month in the US. How many new jobs were created.
+  1528→**Result:** Good NFP = USD strong = EUR/USD down. Bad NFP = USD weak = EUR/USD up.
+  1529→
+  1530→**2. GDP = Gross Domestic Product**
+  1531→The country's total production. Every 3 months.
+  1532→Good GDP = currency stronger.
+  1533→
+  1534→**3. High Impact News**
+  1535→Red-colored news on Forex Factory. CPI, Interest Rate Decision, FOMC.
+  1536→
+  1537→### News Trading Rules
+  1538→1. No trade 15 minutes before news
+  1539→2. Wait 30 minutes after news, then read the market direction
+  1540→3. Always use a Stop Loss because spread widens a lot
+  1541→
+  1542→### Example
+  1543→NFP came at 500K while expectation was 200K. Very good.
+  1544→**Result:** USD strong. EUR/USD dropped 50 pips in 1 minute.`,
+  1545→      ur: `## Fundamental Analysis 1: News, GDP, NFP
+  1546→
+  1547→Fundamental Analysis = "خبر کی بنیاد پر ٹریڈ"۔ یہ پوچھتا ہے کہ ملک کی معیشت کیسی ہے؟
+  1548→
+  1549→### 3 بڑی نیوز جو EUR/USD ہلاتی ہیں
+  1550→
+  1551→**1. NFP = Non Farm Payrolls**
+  1552→امریکہ میں ہر مہینے کی پہلی جمعہ کو آتا ہے۔ نئی نوکریاں کتنی بنیں۔
+  1553→**رزلٹ:** NFP اچھا = USD طاقتور = EUR/USD نیچے۔ NFP برا = USD کمزور = EUR/USD اوپر۔
+  1554→
+  1555→**2. GDP = Gross Domestic Product**
+  1556→ملک کی کل پیداوار۔ ہر 3 مہینے بعد۔
+  1557→GDP اچھا = کرنسی مضبوط۔
+  1558→
+  1559→**3. High Impact News**
+  1560→لال رنگ کی خبر Forex Factory پر۔ CPI, Interest Rate Decision, FOMC۔
+  1561→
+  1562→### نیوز ٹریڈنگ کا رول
+  1563→1. نیوز سے 15 منٹ پہلے کوئی Trade نہیں
+  1564→2. نیوز کے بعد 30 منٹ انتظار کریں پھر مارکیٹ کی سمت دیکھیں
+  1565→3. Stop Loss لازمی لگائیں کیونکہ Spread بہت بڑھ جاتا ہے
+  1566→
+  1567→### مثال
+  1568→NFP آیا 500K جبکہ Expectation تھی 200K۔ بہت اچھا۔
+  1569→**ریزلٹ:** USD مضبوط۔ EUR/USD 50 Pips نیچے 1 منٹ میں گرا۔`,
+  1570→      hi: `## फंडामेंटल एनालिसिस 1: न्यूज़, GDP, NFP
+  1571→
+  1572→**Fundamental Analysis** = "खबर की आधार पर ट्रेड"। यह पूछता है कि देश की अर्थव्यवस्था कैसी है?
+  1573→
+  1574→### 3 बड़ी न्यूज़ जो EUR/USD हिलाती हैं
+  1575→
+  1576→**1. NFP = Non-Farm Payrolls**
+  1577→अमेरिका में हर महीने की पहली शुक्रवार को आता है। कितनी नई नौकरियाँ बनीं।
+  1578→**परिणाम:** NFP अच्छा = USD मज़बूत = EUR/USD नीचे। NFP बुरा = USD कमज़ोर = EUR/USD ऊपर।
+  1579→
+  1580→**2. GDP = Gross Domestic Product**
+  1581→देश का कुल उत्पादन। हर 3 महीने में।
+  1582→GDP अच्छा = मुद्रा मज़बूत।
+  1583→
+  1584→**3. High Impact News**
+  1585→Forex Factory पर लाल रंग की खबरें। CPI, Interest Rate Decision, FOMC।
+  1586→
+  1587→### न्यूज़ ट्रेडिंग नियम
+  1588→1. न्यूज़ से 15 मिनट पहले कोई ट्रेड नहीं
+  1589→2. न्यूज़ के बाद 30 मिनट इंतज़ार करें फिर बाज़ार की दिशा देखें
+  1590→3. हमेशा Stop Loss लगाएँ क्योंकि Spread बहुत बढ़ जाता है
+  1591→
+  1592→### उदाहरण
+  1593→NFP 500K आया जबकि अनुमान 200K था। बहुत अच्छा।
+  1594→**परिणाम:** USD मज़बूत। EUR/USD 50 Pips नीचे 1 मिनट में गिरा।`,
+  1595→      ar: `## التحليل الأساسي 1: الأخبار، الناتج المحلي، NFP
+  1596→
+  1597→**التحليل الأساسي** = "التداول بناءً على الأخبار". يسأل: كيف اقتصاد البلد؟
+  1598→
+  1599→### 3 أخبار كبيرة تحرك EUR/USD
+  1600→
+  1601→**1. NFP = توظيف غير القطاع الزراعي**
+  1602→يأتي أول جمعة من كل شهر في أمريكا. كم وظيفة جديدة أُنشئت.
+  1603→**النتيجة:** NFP جيد = دولار قوي = EUR/USD هبوط. NFP سيء = دولار ضعيف = EUR/USD صعود.
+  1604→
+  1605→**2. GDP = الناتج المحلي الإجمالي**
+  1606→إجمالي إنتاج البلد. كل 3 أشهر.
+  1607→GDP جيد = عملة أقوى.
+  1608→
+  1609→**3. أخبار عالية التأثير**
+  1610→الأخبار الحمراء على Forex Factory. CPI، قرار سعر الفائدة، FOMC.
+  1611→
+  1612→### قواعد تداول الأخبار
+  1613→1. لا تداول قبل 15 دقيقة من الخبر
+  1614→2. انتظر 30 دقيقة بعد الخبر، ثم اقرأ اتجاه السوق
+  1615→3. استخدم دائماً Stop Loss لأن السبريد يتسع كثيراً
+  1616→
+  1617→### مثال
+  1618→جاء NFP عند 500K بينما التوقع كان 200K. جيد جداً.
+  1619→**النتيجة:** دولار قوي. EUR/USD هبط 50 نقطة في دقيقة واحدة.`,
+  1620→    },
+  1621→    durationMin: 7,
+  1622→    isFree: true,
+  1623→    questions: [
+  1624→      {
+  1625→        type: "MCQ",
+  1626→        prompt: { en: "When does NFP come?", ur: "NFP کب آتا ہے؟", hi: "NFP कब आता है?", ar: "متى يصدر NFP؟" },
+  1627→        options: [
+  1628→          { en: "Every Monday", ur: "ہر پیر", hi: "हर सोमवार", ar: "كل اثنين" },
+  1629→          { en: "First Friday of the month", ur: "مہینے کی پہلی جمعہ", hi: "महीने की पहली शुक्रवार", ar: "الجمعة الأولى من الشهر" },
+  1630→          { en: "Daily", ur: "روزانہ", hi: "रोज़ाना", ar: "يومياً" },
+  1631→          { en: "Once a year", ur: "سال میں 1 بار", hi: "साल में 1 बार", ar: "مرة في السنة" },
+  1632→        ],
+  1633→        correctIndex: 1,
+  1634→        explanation: { en: "NFP comes on the first Friday of every month in the US.", ur: "NFP امریکہ میں ہر مہینے کی پہلی جمعہ کو آتا ہے۔", hi: "NFP अमेरिका में हर महीने की पहली शुक्रवार को आता है।", ar: "يصدر NFP في الجمعة الأولى من كل شهر في أمريكا." },
+  1635→      },
+  1636→      {
+  1637→        type: "MCQ",
+  1638→        prompt: { en: "If NFP is good, what happens to EUR/USD?", ur: "NFP اچھا آیا تو EUR/USD کا کیا ہوگا؟", hi: "NFP अच्छा आया तो EUR/USD का क्या होगा?", ar: "إذا كان NFP جيداً، ماذا يحدث لـ EUR/USD؟" },
+  1639→        options: [
+  1640→          { en: "Will go up", ur: "اوپر جائے گا", hi: "ऊपर जाएगा", ar: "سيصعد" },
+  1641→          { en: "Will fall", ur: "نیچے گرے گا", hi: "नीचे गिरेगा", ar: "سيهبط" },
+  1642→          { en: "No difference", ur: "کوئی فرق نہیں", hi: "कोई फ़र्क नहीं", ar: "بلا فرق" },
+  1643→          { en: "Will close", ur: "بند ہو جائے گا", hi: "बंद हो जाएगा", ar: "سيغلق" },
+  1644→        ],
+  1645→        correctIndex: 1,
+  1646→        explanation: { en: "Good NFP = USD strong = EUR/USD will fall.", ur: "NFP اچھا = USD طاقتور = EUR/USD نیچے گرے گا۔", hi: "NFP अच्छा = USD मज़बूत = EUR/USD नीचे गिरेगा।", ar: "NFP جيد = USD قوي = EUR/USD سيهبط." },
+  1647→      },
+  1648→      {
+  1649→        type: "MCQ",
+  1650→        prompt: { en: "What does GDP tell us?", ur: "GDP کیا بتاتا ہے؟", hi: "GDP क्या बताता है?", ar: "ماذا يخبرنا GDP؟" },
+  1651→        options: [
+  1652→          { en: "Inflation", ur: "مہنگائی", hi: "महँगाई", ar: "التضخم" },
+  1653→          { en: "Country's total production", ur: "ملک کی کل پیداوار", hi: "देश की कुल उत्पादन", ar: "إجمالي إنتاج البلد" },
+  1654→          { en: "Interest rate", ur: "سود کی شرح", hi: "ब्याज दर", ar: "سعر الفائدة" },
+  1655→          { en: "Unemployment", ur: "بے روزگاری", hi: "बेरोज़गारी", ar: "البطالة" },
+  1656→        ],
+  1657→        correctIndex: 1,
+  1658→        explanation: { en: "GDP = Gross Domestic Product = country's total production.", ur: "GDP = Gross Domestic Product = ملک کی کل پیداوار۔", hi: "GDP = Gross Domestic Product = देश की कुल उत्पादन।", ar: "GDP = الناتج المحلي الإجمالي = إجمالي إنتاج البلد." },
+  1659→      },
+  1660→      {
+  1661→        type: "MCQ",
+  1662→        prompt: { en: "How long to wait before news trading?", ur: "نیوز ٹریڈنگ سے پہلے کتنی دیر انتظار کریں؟", hi: "News ट्रेडिंग से पहले कितनी देर इंतज़ार करें?", ar: "كم ننتظر قبل تداول الأخبار؟" },
+  1663→        options: [
+  1664→          { en: "5 minutes", ur: "5 منٹ", hi: "5 मिनट", ar: "5 دقائق" },
+  1665→          { en: "15 min before and 30 min after", ur: "15 منٹ پہلے اور 30 منٹ بعد", hi: "15 मिनट पहले और 30 मिनट बाद", ar: "15 دقيقة قبل و 30 دقيقة بعد" },
+  1666→          { en: "2 hours", ur: "2 گھنٹے", hi: "2 घंटे", ar: "ساعتان" },
+  1667→          { en: "Don't wait", ur: "انتظار نہ کریں", hi: "इंतज़ार न करें", ar: "لا تنتظر" },
+  1668→        ],
+  1669→        correctIndex: 1,
+  1670→        explanation: { en: "Don't trade 15 min before news, wait 30 min after.", ur: "نیوز سے 15 منٹ پہلے Trade نہیں، 30 منٹ بعد انتظار کریں۔", hi: "News से 15 मिनट पहले Trade नहीं, 30 मिनट बाद इंतज़ार करें।", ar: "لا تتداول 15 دقيقة قبل الأخبار، انتظر 30 دقيقة بعد." },
+  1671→      },
+  1672→      {
+  1673→        type: "MCQ",
+  1674→        prompt: { en: "What does a red colored news on Forex Factory mean?", ur: "Forex Factory پر لال رنگ کی خبر کیا ہوتی ہے؟", hi: "Forex Factory पर लाल रंग की ख़बर क्या होती है?", ar: "ماذا تعني الأخبار الحمراء على Forex Factory؟" },
+  1675→        options: [
+  1676→          { en: "Low importance", ur: "کم اہم", hi: "कम अहम", ar: "أهمية منخفضة" },
+  1677→          { en: "High Impact News", ur: "High Impact News", hi: "High Impact News", ar: "أخبار عالية التأثير" },
+  1678→          { en: "Fake news", ur: "جھوٹی خبر", hi: "झूठी ख़बर", ar: "أخبار كاذبة" },
+  1679→          { en: "Close news", ur: "بند کی خبر", hi: "बंद की ख़बर", ar: "أخبار الإغلاق" },
+  1680→        ],
+  1681→        correctIndex: 1,
+  1682→        explanation: { en: "Red color = High Impact News (CPI, Interest Rate, FOMC).", ur: "لال رنگ = High Impact News (CPI, Interest Rate, FOMC)۔", hi: "लाल रंग = High Impact News (CPI, Interest Rate, FOMC)।", ar: "اللون الأحمر = أخبار عالية التأثير (CPI, Interest Rate, FOMC)." },
+  1683→      },
+  1684→    ],
+  1685→  },
+  1686→
+  1687→  // ===== LESSON 22: Fundamental Analysis 2 - Interest Rate, CPI =====
+  1688→  {
+  1689→    id: "eurusd-22",
+  1690→    order: 10,
+  1691→    title: {
+  1692→      en: "Fundamental Analysis 2: Interest Rate & CPI",
+  1693→      ur: "Fundamental Analysis 2: Interest Rate, CPI",
+  1694→      hi: "फंडामेंटल एनालिसिस 2: ब्याज दर और CPI",
+  1695→      ar: "التحليل الأساسي 2: سعر الفائدة و CPI",
+  1696→    },
+  1697→    summary: {
+  1698→      en: "The two forces that truly decide a currency's price — Interest Rate and CPI.",
+  1699→      ur: "وہ 2 چیزیں جو کرنسی کی قیمت کا اصل فیصلہ کرتی ہیں — Interest Rate اور CPI۔",
+  1700→      hi: "वे 2 चीज़ें जो मुद्रा की कीमत का असली फ़ैसला करती हैं — Interest Rate और CPI।",
+  1701→      ar: "القوتان اللتان تقرران حقيقة سعر العملة — سعر الفائدة و CPI.",
+  1702→    },
+  1703→    content: {
+  1704→      en: `## Fundamental Analysis 2: Interest Rate & CPI
+  1705→
+  1706→These 2 things truly decide a currency's price.
+  1707→
+  1708→### 1. Interest Rate
+  1709→This is the biggest weapon. The Central Bank decides it.
+  1710→**Rule:** Interest Rate rises = currency stronger.
+  1711→Why? People will bring money to that country to earn more interest.
+  1712→
+  1713→**Example:** If the Fed raises rates and the ECB does not, then USD > EUR = EUR/USD goes down.
+  1714→
+  1715→### 2. CPI = Consumer Price Index = Inflation
+  1716→This tells us how much inflation there is.
+  1717→**Rule:** High CPI = Central Bank will raise rates = currency stronger.
+  1718→Low CPI = rates won't rise = currency weaker.
+  1719→
+  1720→### Fundamental + Technical = Complete Trader
+  1721→First read the news to know the direction. Then use Technical to find Entry.
+  1722→
+  1723→### Example — EUR/USD
+  1724→ECB said "we will raise rates".
+  1725→At the same time, on the chart price was at the 61.8% Fib Support.
+  1726→**Signal:** Buy. Both Fundamental and Technical were saying Buy.`,
+  1727→      ur: `## Fundamental Analysis 2: Interest Rate, CPI
+  1728→
+  1729→یہ 2 چیزیں کرنسی کی قیمت کا اصل فیصلہ کرتی ہیں۔
+  1730→
+  1731→### 1. Interest Rate = سود کی شرح
+  1732→یہ سب سے بڑا ہتھیار ہے۔ Central Bank فیصلہ کرتی ہے۔
+  1733→**رول:** Interest Rate بڑھے = کرنسی مضبوط۔
+  1734→کیوں؟ لوگ زیادہ سود کمانے اس ملک میں پیسہ لائیں گے۔
+  1735→
+  1736→**مثال:** اگر Fed Rate بڑھائے اور ECB نہ بڑھائے تو USD > EUR = EUR/USD نیچے جائے گا۔
+  1737→
+  1738→### 2. CPI = Consumer Price Index = مہنگائی
+  1739→یہ بتاتا ہے مہنگائی کتنی ہے۔
+  1740→**رول:** CPI زیادہ = Central Bank Rate بڑھائے گی = کرنسی مضبوط۔
+  1741→CPI کم = Rate نہیں بڑھے گا = کرنسی کمزور۔
+  1742→
+  1743→### Fundamental + Technical = مکمل ٹریڈر
+  1744→پہلے News دیکھیں کہ سمت کیا ہے۔ پھر Technical سے Entry ڈھونڈیں۔
+  1745→
+  1746→### مثال: EUR/USD
+  1747→ECB نے کہا "ہم Rate بڑھائیں گے"۔
+  1748→اسی وقت چارٹ پر قیمت 61.8% Fib Support پر تھی۔
+  1749→**سگنل:** Buy۔ Fund اور Tech دونوں Buy کہہ رہے تھے۔`,
+  1750→      hi: `## फंडामेंटल एनालिसिस 2: ब्याज दर और CPI
+  1751→
+  1752→ये 2 चीज़ें मुद्रा की कीमत का असली फ़ैसला करती हैं।
+  1753→
+  1754→### 1. Interest Rate = ब्याज दर
+  1755→यह सबसे बड़ा हथियार है। Central Bank फ़ैसला करती है।
+  1756→**नियम:** Interest Rate बढ़े = मुद्रा मज़बूत।
+  1757→क्यों? लोग ज़्यादा ब्याज कमाने उस देश में पैसा लाएँगे।
+  1758→
+  1759→**उदाहरण:** अगर Fed Rate बढ़ाए और ECB न बढ़ाए, तो USD > EUR = EUR/USD नीचे जाएगा।
+  1760→
+  1761→### 2. CPI = Consumer Price Index = महँगाई
+  1762→यह बताता है महँगाई कितनी है।
+  1763→**नियम:** CPI ज़्यादा = Central Bank Rate बढ़ाएगी = मुद्रा मज़बूत।
+  1764→CPI कम = Rate नहीं बढ़ेगा = मुद्रा कमज़ोर।
+  1765→
+  1766→### Fundamental + Technical = पूर्ण ट्रेडर
+  1767→पहले News देखें कि दिशा क्या है। फिर Technical से Entry ढूँढें।
+  1768→
+  1769→### उदाहरण: EUR/USD
+  1770→ECB ने कहा "हम Rate बढ़ाएँगे"।
+  1771→उसी समय चार्ट पर कीमत 61.8% Fib Support पर थी।
+  1772→**सिग्नल:** Buy। Fund और Tech दोनों Buy कह रहे थे।`,
+  1773→      ar: `## التحليل الأساسي 2: سعر الفائدة و CPI
+  1774→
+  1775→هاتان القوتان تقرران حقيقة سعر العملة.
+  1776→
+  1777→### 1. سعر الفائدة
+  1778→هذا أكبر سلاح. البنك المركزي يقرره.
+  1779→**القاعدة:** ارتفاع سعر الفائدة = عملة أقوى.
+  1780→لماذا؟ سيجلب الناس أموالهم إلى ذلك البلد لكسب فائدة أكبر.
+  1781→
+  1782→**مثال:** إذا رفع الاحتياطي الفيدرالي الأسعار ولم يرفعها البنك المركزي الأوروبي، فإن USD > EUR = EUR/USD يهبط.
+  1783→
+  1784→### 2. CPI = مؤشر أسعار المستهلك = التضخم
+  1785→يخبرنا بكمية التضخم.
+  1786→**القاعدة:** CPI مرتفع = البنك المركزي سيرفع الأسعار = عملة أقوى.
+  1787→CPI منخفض = لن تُرفع الأسعار = عملة أضعف.
+  1788→
+  1789→### الأساسي + الفني = متداول كامل
+  1790→اقرأ الأخبار أولاً لمعرفة الاتجاه. ثم استخدم الفني لإيجاد الدخول.
+  1791→
+  1792→### مثال: EUR/USD
+  1793→قال البنك المركزي الأوروبي "سنرفع الأسعار".
+  1794→في نفس الوقت، على الرسم كان السعر عند دعم فيبوناتشي 61.8%.
+  1795→**الإشارة:** شراء. الأساسي والفني كلاهما يقول شراء.`,
+  1796→    },
+  1797→    durationMin: 7,
+  1798→    isFree: true,
+  1799→    questions: [
+  1800→      {
+  1801→        type: "MCQ",
+  1802→        prompt: { en: "What is the effect on currency when Interest Rate rises?", ur: "Interest Rate بڑھنے سے کرنسی پر کیا اثر؟", hi: "Interest Rate बढ़ने से मुद्रा पर क्या असर?", ar: "ما تأثير ارتفاع سعر الفائدة على العملة؟" },
+  1803→        options: [
+  1804→          { en: "Becomes weaker", ur: "کمزور ہوتی ہے", hi: "कमज़ोर होती है", ar: "تضعف" },
+  1805→          { en: "Becomes stronger", ur: "مضبوط ہوتی ہے", hi: "मज़बूत होती है", ar: "تقوى" },
+  1806→          { en: "No effect", ur: "کوئی اثر نہیں", hi: "कोई असर नहीं", ar: "بلا تأثير" },
+  1807→          { en: "Closes", ur: "بند ہو جاتی ہے", hi: "बंद हो जाती है", ar: "تغلق" },
+  1808→        ],
+  1809→        correctIndex: 1,
+  1810→        explanation: { en: "Interest Rate rises = currency stronger (more money flows in).", ur: "Interest Rate بڑھے = کرنسی مضبوط (زیادہ پیسہ آتا ہے)۔", hi: "Interest Rate बढ़े = मुद्रा मज़बूत (ज़्यादा पैसा आता है)।", ar: "ارتفاع سعر الفائدة = عملة أقوى (تدفق أموال أكثر)." },
+  1811→      },
+  1812→      {
+  1813→        type: "MCQ",
+  1814→        prompt: { en: "What does CPI measure?", ur: "CPI کیا ماپتا ہے؟", hi: "CPI क्या नापता है?", ar: "ماذا يقيس CPI؟" },
+  1815→        options: [
+  1816→          { en: "Jobs", ur: "نوکریاں", hi: "नौकरियाँ", ar: "الوظائف" },
+  1817→          { en: "Inflation", ur: "مہنگائی", hi: "महँगाई", ar: "التضخم" },
+  1818→          { en: "GDP", ur: "GDP", hi: "GDP", ar: "GDP" },
+  1819→          { en: "Interest", ur: "سود", hi: "ब्याज", ar: "الفائدة" },
+  1820→        ],
+  1821→        correctIndex: 1,
+  1822→        explanation: { en: "CPI = Consumer Price Index = measures inflation.", ur: "CPI = Consumer Price Index = مہنگائی ماپتا ہے۔", hi: "CPI = Consumer Price Index = महँगाई नापता है।", ar: "CPI = مؤشر أسعار المستهلك = يقيس التضخم." },
+  1823→      },
+  1824→      {
+  1825→        type: "MCQ",
+  1826→        prompt: { en: "If CPI is high, what will the Central Bank do?", ur: "CPI زیادہ آئے تو Central Bank کیا کرے گی؟", hi: "CPI ज़्यादा आए तो Central Bank क्या करेगा?", ar: "إذا كان CPI مرتفعاً، ماذا سيفعل البنك المركزي؟" },
+  1827→        options: [
+  1828→          { en: "Lower rate", ur: "Rate کم کرے گی", hi: "Rate कम करेगा", ar: "يخفض السعر" },
+  1829→          { en: "Raise rate", ur: "Rate بڑھائے گی", hi: "Rate बढ़ाएगा", ar: "يرفع السعر" },
+  1830→          { en: "Do nothing", ur: "کچھ نہیں کرے گی", hi: "कुछ नहीं करेगा", ar: "لا يفعل شيئاً" },
+  1831→          { en: "Close market", ur: "مارکیٹ بند کر دے گی", hi: "बाज़ार बंद कर देगा", ar: "يغلق السوق" },
+  1832→        ],
+  1833→        correctIndex: 1,
+  1834→        explanation: { en: "High CPI = inflation = Central Bank will raise rate.", ur: "CPI زیادہ = مہنگائی = Central Bank Rate بڑھائے گی۔", hi: "CPI ज़्यादा = महँगाई = Central Bank Rate बढ़ाएगा।", ar: "CPI مرتفع = تضخم = البنك المركزي سيرفع السعر." },
+  1835→      },
+  1836→      {
+  1837→        type: "MCQ",
+  1838→        prompt: { en: "If Fed raises rate but ECB doesn't, then EUR/USD?", ur: "Fed Rate بڑھے اور ECB نہ بڑھے تو EUR/USD؟", hi: "Fed Rate बढ़े और ECB न बढ़ाए तो EUR/USD?", ar: "إذا رفع الفيدرالي الأسعار ولم يرفعها ECB فـ EUR/USD؟" },
+  1839→        options: [
+  1840→          { en: "Will go up", ur: "اوپر جائے گا", hi: "ऊपर जाएगा", ar: "سيصعد" },
+  1841→          { en: "Will go down", ur: "نیچے جائے گا", hi: "नीचे जाएगा", ar: "سيهبط" },
+  1842→          { en: "Will stay same", ur: "ایک جیسا رہے گا", hi: "एक जैसा रहेगा", ar: "سيبقى كما هو" },
+  1843→          { en: "Unknown", ur: "پتا نہیں", hi: "पता नहीं", ar: "غير معروف" },
+  1844→        ],
+  1845→        correctIndex: 1,
+  1846→        explanation: { en: "Fed raises rate, ECB doesn't = USD > EUR = EUR/USD down.", ur: "Fed Rate بڑھے، ECB نہ بڑھائے = USD > EUR = EUR/USD نیچے۔", hi: "Fed Rate बढ़े, ECB न बढ़ाए = USD > EUR = EUR/USD नीचे।", ar: "الفيدرالي يرفع والـ ECB لا = USD > EUR = EUR/USD هبوط." },
+  1847→      },
+  1848→      {
+  1849→        type: "MCQ",
+  1850→        prompt: { en: "How do you become a complete trader?", ur: "مکمل ٹریڈر کیسے بنتے ہیں؟", hi: "पूर्ण ट्रेडर कैसे बनते हैं?", ar: "كيف تصبح متداولاً كاملاً؟" },
+  1851→        options: [
+  1852→          { en: "Only Technical", ur: "صرف Technical", hi: "सिर्फ़ Technical", ar: "فقط الفني" },
+  1853→          { en: "Only Fundamental", ur: "صرف Fundamental", hi: "सिर्फ़ Fundamental", ar: "فقط الأساسي" },
+  1854→          { en: "Both Fundamental + Technical", ur: "Fundamental + Technical دونوں", hi: "Fundamental + Technical दोनों", ar: "الأساسي + الفني معاً" },
+  1855→          { en: "By guess", ur: "اندازے سے", hi: "अंदाज़े से", ar: "بالتخمين" },
+  1856→        ],
+  1857→        correctIndex: 2,
+  1858→        explanation: { en: "Complete trader uses both Fundamental (direction) + Technical (entry).", ur: "مکمل ٹریڈر = Fundamental (سمت) + Technical (Entry) دونوں استعمال کرتا ہے۔", hi: "पूर्ण ट्रेडर = Fundamental (दिशा) + Technical (Entry) दोनों इस्तेमाल करता है।", ar: "المتداول الكامل يستخدم الأساسي (الاتجاه) + الفني (الدخول) معاً." },
+  1859→      },
+  1860→    ],
+  1861→  },
+  1862→]
+  1863→
+  1864→export async function seedIntermediateLessons(db: PrismaClient) {
+  1865→  // Get the Intermediate category
+  1866→  const intermediate = await db.category.findUnique({ where: { slug: "intermediate" } })
+  1867→  if (!intermediate) throw new Error("Intermediate category not found — run main seed first")
+  1868→
+  1869→  // Delete old intermediate lessons + their quizzes/questions
+  1870→  const oldLessons = await db.lesson.findMany({ where: { categoryId: intermediate.id }, select: { id: true } })
+  1871→  if (oldLessons.length > 0) {
+  1872→    await db.lesson.deleteMany({ where: { id: { in: oldLessons.map((l) => l.id) } } })
+  1873→  }
+  1874→
+  1875→  let lessonCount = 0
+  1876→  let quizCount = 0
+  1877→
+  1878→  for (const ls of LESSONS) {
+  1879→    const lesson = await db.lesson.create({
+  1880→      data: {
+  1881→        id: ls.id,
+  1882→        categoryId: intermediate.id,
+  1883→        order: ls.order,
+  1884→        titleEn: ls.title.en, titleUr: ls.title.ur, titleHi: ls.title.hi, titleAr: ls.title.ar,
+  1885→        summaryEn: ls.summary.en, summaryUr: ls.summary.ur, summaryHi: ls.summary.hi, summaryAr: ls.summary.ar,
+  1886→        contentEn: ls.content.en, contentUr: ls.content.ur, contentHi: ls.content.hi, contentAr: ls.content.ar,
+  1887→        imageUrl: `/lessons/lesson-${ls.order + 12}.png`,
+  1888→        durationMin: ls.durationMin,
+  1889→        isPublished: true,
+  1890→        isFree: ls.isFree,
+  1891→      },
+  1892→    })
+  1893→
+  1894→    // Create quiz with questions
+  1895→    const quiz = await db.quiz.create({
+  1896→      data: { lessonId: lesson.id, passMark: 3 },
+  1897→    })
+  1898→
+  1899→    for (const q of ls.questions) {
+  1900→      await db.question.create({
+  1901→        data: {
+  1902→          quizId: quiz.id,
+  1903→          type: q.type,
+  1904→          promptEn: q.prompt.en, promptUr: q.prompt.ur, promptHi: q.prompt.hi, promptAr: q.prompt.ar,
+  1905→          option1En: q.options[0].en, option1Ur: q.options[0].ur, option1Hi: q.options[0].hi, option1Ar: q.options[0].ar,
+  1906→          option2En: q.options[1].en, option2Ur: q.options[1].ur, option2Hi: q.options[1].hi, option2Ar: q.options[1].ar,
+  1907→          option3En: q.options[2].en, option3Ur: q.options[2].ur, option3Hi: q.options[2].hi, option3Ar: q.options[2].ar,
+  1908→          option4En: q.options[3].en, option4Ur: q.options[3].ur, option4Hi: q.options[3].hi, option4Ar: q.options[3].ar,
+  1909→          correctIndex: q.correctIndex,
+  1910→          explanationEn: q.explanation.en, explanationUr: q.explanation.ur, explanationHi: q.explanation.hi, explanationAr: q.explanation.ar,
+  1911→        },
+  1912→      })
+  1913→    }
+  1914→    lessonCount++
+  1915→    quizCount++
+  1916→  }
+  1917→
+  1918→  return { lessons: lessonCount, quizzes: quizCount, questions: LESSONS.reduce((a, l) => a + l.questions.length, 0) }
+  1919→}
+  1920→
