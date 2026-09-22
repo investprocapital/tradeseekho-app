@@ -110,7 +110,7 @@ export default function Home() {
                   <p className="py-8 text-center text-sm text-muted-foreground">No lessons yet.</p>
                 ) : (
                   visibleLessons.map((l, i) => (
-                    <LessonRow key={l.id} lesson={l} lang={lang} isPro={isPro} seqLocked={i > 0 && !visibleLessons[i - 1].passed} onOpen={() => openLesson(l.id)} onPro={() => setProOpen(true)} />
+                    <LessonRow key={l.id} lesson={l} lang={lang} isPro={isPro} seqLocked={!isPro && i > 0 && !visibleLessons[i - 1].passed} onOpen={() => openLesson(l.id)} onPro={() => setProOpen(true)} />
                   ))
                 )}
               </div>

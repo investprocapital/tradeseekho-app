@@ -128,6 +128,18 @@ export async function getCurrentUserId(): Promise<string> {
   return id && id.length > 0 ? id : "local-learner"
 }
 
+/** Check if the current user has active Pro status (all lessons unlocked). */
+export async function isUserPro(): Promise<boolean> {
+  const userId = await getCurrentUserId()
+  if (userId === "local-learner") return false
+  const user = await db.user.findUnique({ where: { id: userId }, select: { proStatus: true, proExpiresAt: true } })
+  if (!user) return false
+  if (user.proStatus !== "active") return false
+  // If there's an expiry date and it's in the past, Pro has expired
+  if (user.proExpiresAt && user.proExpiresAt < new Date()) return false
+  return true
+}
+
 /** Hash a password with bcrypt (10 rounds). */
 export async function hashPassword(plain: string): Promise<string> {
   return bcrypt.hash(plain, 10)

@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server"
 import { db } from "@/lib/db"
-import { getCurrentUserId } from "@/lib/auth"
+import { getCurrentUserId, isUserPro } from "@/lib/auth"
 import type { LessonDetailDTO, PublicQuizDTO } from "@/lib/types"
 
 export const dynamic = "force-dynamic"
@@ -12,6 +12,7 @@ export async function GET(
 ) {
   const { id } = await params
   const userId = await getCurrentUserId()
+  const pro = await isUserPro()
 
   const lesson = await db.lesson.findUnique({
     where: { id },
@@ -32,8 +33,9 @@ export async function GET(
   const nextSibling = idx < siblings.length - 1 ? siblings[idx + 1] : null
 
   // Lock rule: a lesson is locked if it has a previous sibling whose quiz has NOT been passed.
+  // Pro users: all lessons unlocked.
   let locked = false
-  if (prevSibling) {
+  if (!pro && prevSibling) {
     const prevQuiz = await db.quiz.findUnique({ where: { lessonId: prevSibling.id } })
     if (prevQuiz) {
       const prevProg = await db.progress.findUnique({

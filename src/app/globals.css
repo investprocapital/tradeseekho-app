@@ -216,6 +216,20 @@ html[lang="ur"] .no-select {
   width: 8px;
   height: 8px;
 }
+
+/* Fix: Sheet overlay should be fully opaque on mobile so background list doesn't show through */
+[data-slot="sheet-overlay"] {
+  background: rgb(0, 0, 0) !important;
+  opacity: 0.6 !important;
+}
+
+/* Fix: Sheet content must be full-width on mobile (override default w-3/4) */
+@media (max-width: 640px) {
+  [data-slot="sheet-content"] {
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+}
 .ts-scroll::-webkit-scrollbar-thumb {
   background: color-mix(in oklch, var(--brand) 35%, transparent);
   border-radius: 999px;

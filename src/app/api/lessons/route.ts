@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server"
 import { db } from "@/lib/db"
-import { getCurrentUserId } from "@/lib/auth"
+import { getCurrentUserId, isUserPro } from "@/lib/auth"
 import type { CategoryDTO, LessonListItemDTO } from "@/lib/types"
 
 export const dynamic = "force-dynamic"
@@ -9,6 +9,7 @@ export async function GET(req: Request) {
   const { searchParams } = new URL(req.url)
   const category = searchParams.get("category") // slug or "all"
   const userId = await getCurrentUserId()
+  const pro = await isUserPro()
 
   const [categories, lessons] = await Promise.all([
     db.category.findMany({ orderBy: { order: "asc" } }),
@@ -46,7 +47,7 @@ export async function GET(req: Request) {
       order: l.order,
       orderInCategory: Math.max(1, orderInCategory),
       isPublished: l.isPublished,
-        isFree: l.isFree,
+        isFree: pro ? true : l.isFree,  // Pro users: all lessons are free
       hasQuiz: !!l.quiz,
       passed: prog?.passed ?? false,
       completed: prog?.completed ?? false,

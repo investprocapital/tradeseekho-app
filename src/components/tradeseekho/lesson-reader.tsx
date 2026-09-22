@@ -76,6 +76,7 @@ export function LessonReader() {
       <SheetContent
         side="right"
         className="flex h-full w-full flex-col gap-0 p-0 sm:max-w-2xl lg:max-w-3xl"
+        style={{ width: "100%", maxWidth: "100%" }}
         onContextMenu={(e) => e.preventDefault()}
         onInteractOutside={(e) => { if (zoomImage) e.preventDefault() }}
         onPointerDownOutside={(e) => { if (zoomImage) e.preventDefault() }}
@@ -167,12 +168,12 @@ export function LessonReader() {
               >
                 {lesson.imageUrl && (
                   <div
-                    className="relative mb-5 overflow-hidden rounded-xl cursor-zoom-in"
+                    className="relative mb-5 overflow-hidden rounded-xl cursor-zoom-in w-full"
                     onClick={() => setZoomImage(lesson.imageUrl!)}
                     onDoubleClick={() => setZoomImage(lesson.imageUrl!)}
                   >
-                    <img src={lesson.imageUrl} alt="" className="h-48 w-full object-cover no-select" draggable={false} />
-                    <div className="absolute bottom-2 right-2 rounded-full bg-background/80 px-2 py-0.5 text-[10px] font-bold text-muted-foreground">🔍 Tap or double-click to zoom</div>
+                    <img src={lesson.imageUrl} alt="" className="h-44 sm:h-52 w-full object-cover no-select" draggable={false} />
+                    <div className="absolute bottom-2 right-2 max-w-[80%] rounded-full bg-background/80 px-2 py-1 text-[10px] font-bold text-muted-foreground text-center">🔍 Tap or double-click to zoom</div>
                   </div>
                 )}
                 {pick(lesson.content).trim() ? (
