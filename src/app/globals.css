@@ -155,7 +155,10 @@
 /* Urdu typography — Nastaliq font */
 .font-urdu {
   font-family: var(--font-urdu);
-  line-height: 2.1;
+  line-height: 2.3;
+  word-spacing: 0.02em;
+  overflow-wrap: break-word;
+  word-break: break-word;
 }
 
 /* Arabic typography — Naskh Arabic font (NOT Nastaliq) */
@@ -163,11 +166,15 @@
   font-family: var(--font-noto-naskh-arabic), "Noto Naskh Arabic", "Segoe UI", "Traditional Arabic", serif;
   line-height: 2.0;
   direction: rtl;
+  overflow-wrap: break-word;
+  word-break: break-word;
 }
 
 [dir="rtl"] .prose-tradeseekho {
   direction: rtl;
   text-align: right;
+  overflow-wrap: break-word;
+  word-break: break-word;
 }
 
 /* Arabic language: override .font-urdu to use Naskh Arabic instead of Nastaliq */
@@ -183,7 +190,10 @@ html[lang="ur"] .font-urdu,
 html[lang="ur"] .prose-tradeseekho,
 html[lang="ur"] .no-select {
   font-family: var(--font-noto-nastaliq), var(--font-poppins), serif !important;
-  line-height: 2.1;
+  line-height: 2.3;
+  word-spacing: 0.02em;
+  overflow-wrap: break-word;
+  word-break: break-word;
 }
 
 /* Security: lesson content must be read-only — no selection, no copy */
@@ -254,4 +264,32 @@ html[lang="ur"] .no-select {
   unicode-bidi: isolate;
   direction: ltr;
   display: inline-block;
+}
+
+/* Urdu/Arabic prose: ensure long words wrap and don't overflow */
+[dir="rtl"] .prose-tradeseekho p,
+[dir="rtl"] .prose-tradeseekho li,
+[dir="rtl"] .prose-tradeseekho h2,
+[dir="rtl"] .prose-tradeseekho h3,
+[dir="rtl"] .prose-tradeseekho blockquote,
+[dir="rtl"] .prose-tradeseekho td,
+[dir="rtl"] .prose-tradeseekho th {
+  overflow-wrap: break-word;
+  word-break: break-word;
+  hyphens: auto;
+}
+
+/* Quiz options in Urdu/Arabic: wrap long text, no horizontal scroll */
+html[lang="ur"] button,
+html[lang="ar"] button,
+html[lang="ur"] [class*="rounded-lg"],
+html[lang="ar"] [class*="rounded-lg"] {
+  overflow-wrap: break-word;
+  word-break: break-word;
+}
+
+/* Lesson reader body: allow horizontal scroll as fallback if content still overflows */
+.no-select {
+  overflow-x: auto;
+  max-width: 100%;
 }

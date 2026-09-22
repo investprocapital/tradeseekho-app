@@ -934,8 +934,26 @@ If you risk $10 and your stop is 20 pips away, and 1 pip on a micro lot ≈ $0.1
     create: { id: 'local-learner', role: 'student' },
   })
 
-  console.log('✅ Seed complete.')
-  console.log(`   Categories: 3 | Lessons: ${lessonCount} | Quizzes: ${quizCount}`)
+  // ---------- Replace generic lessons with EUR/USD Beginner (12) + Intermediate (10) ----------
+  // The base seed above creates 6 generic lessons. Now we replace the Beginner
+  // and Intermediate categories with the full EUR/USD curriculum (22 lessons total).
+  const { seedEurUsdLessons } = await import("./seed-eurusd")
+  const { seedIntermediateLessons } = await import("./seed-intermediate")
+  const eur = await seedEurUsdLessons(db)
+  const inter = await seedIntermediateLessons(db)
 
-  return { categories: 3, lessons: lessonCount, quizzes: quizCount }
+  const finalLessons = await db.lesson.count()
+  const finalQuizzes = await db.quiz.count()
+  await db.appStats.upsert({
+    where: { id: 'singleton' },
+    update: { totalLessons: finalLessons, totalQuizzes: finalQuizzes },
+    create: { id: 'singleton', totalLessons: finalLessons, totalQuizzes: finalQuizzes },
+  })
+
+  console.log('✅ Seed complete.')
+  console.log(`   Categories: 3 | Lessons: ${finalLessons} | Quizzes: ${finalQuizzes}`)
+  console.log(`   EUR/USD Beginner: ${eur.lessons} lessons + ${eur.questions} questions`)
+  console.log(`   EUR/USD Intermediate: ${inter.lessons} lessons + ${inter.questions} questions`)
+
+  return { categories: 3, lessons: finalLessons, quizzes: finalQuizzes }
 }

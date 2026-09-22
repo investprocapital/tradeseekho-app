@@ -50,7 +50,7 @@ export async function GET() {
       type: "new_lesson",
       title: "New lesson published 📚",
       body: `“${l.titleEn}” is now available in ${l.category.slug}.`,
-      createdAt: l.createdAt.toISOString(),
+      createdAt: l.createdAt ? l.createdAt.toISOString() : new Date().toISOString(),
     })
   }
 

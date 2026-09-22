@@ -1,6 +1,7 @@
 "use client"
 
 import { useMemo, useRef, useEffect, useState } from "react"
+import { createPortal } from "react-dom"
 import ReactMarkdown from "react-markdown"
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet"
 import { Button } from "@/components/ui/button"
@@ -76,6 +77,9 @@ export function LessonReader() {
         side="right"
         className="flex h-full w-full flex-col gap-0 p-0 sm:max-w-2xl lg:max-w-3xl"
         onContextMenu={(e) => e.preventDefault()}
+        onInteractOutside={(e) => { if (zoomImage) e.preventDefault() }}
+        onPointerDownOutside={(e) => { if (zoomImage) e.preventDefault() }}
+        onEscapeKeyDown={(e) => { if (zoomImage) e.preventDefault() }}
       >
         {lesson ? (
           <>
@@ -303,12 +307,22 @@ function ZoomLightbox({ src, onClose }: { src: string; onClose: () => void }) {
     setPos(p)
   }
 
+  // Reset to 100%
+  const reset = () => {
+    applyScale(1)
+    setRotation(0)
+  }
+
   // Native touch event listeners (most reliable for multi-touch on mobile)
   useEffect(() => {
     const el = containerRef.current
     if (!el) return
 
     const onTouchStart = (e: TouchEvent) => {
+      // Ignore touches that begin on a control button (let the button handle it)
+      const target = e.target as HTMLElement
+      if (target.closest("[data-zoom-control]")) return
+
       if (e.touches.length === 2) {
         const dx = e.touches[0].clientX - e.touches[1].clientX
         const dy = e.touches[0].clientY - e.touches[1].clientY
@@ -379,43 +393,81 @@ function ZoomLightbox({ src, onClose }: { src: string; onClose: () => void }) {
     }
   }, [onClose])
 
-  return (
+  // ESC closes the lightbox (reader stays open)
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        e.stopPropagation()
+        onClose()
+      }
+    }
+    window.addEventListener("keydown", onKey)
+    return () => window.removeEventListener("keydown", onKey)
+  }, [onClose])
+
+  // Render in a portal at document.body so the lightbox is always on top of
+  // the Radix Sheet portal (escapes any ancestor stacking context) and its
+  // control buttons can never be shadowed by the reader's header buttons.
+  return createPortal(
     <motion.div
       initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
       ref={containerRef}
-      className="fixed inset-0 z-[200] flex items-center justify-center bg-black"
+      className="fixed inset-0 z-[300] flex items-center justify-center bg-black"
       style={{ touchAction: "none" }}
     >
-      {/* Top bar: close + rotate + zoom controls */}
-      <div className="absolute left-0 right-0 top-0 z-20 flex items-center justify-between p-4">
+      {/* Top bar: close + rotate + zoom controls.
+          stopPropagation on pointer/touch so the container's pinch/pan/swipe
+          logic never runs when the user is interacting with a control. */}
+      <div
+        className="absolute left-0 right-0 top-0 z-20 flex items-center justify-between p-4"
+        onPointerDown={(e) => e.stopPropagation()}
+        onTouchStart={(e) => e.stopPropagation()}
+        onClick={(e) => e.stopPropagation()}
+      >
         <button
-          className="flex h-10 w-10 items-center justify-center rounded-full bg-white/10 text-white"
-          onClick={onClose}
+          data-zoom-control
+          type="button"
+          className="flex h-11 w-11 items-center justify-center rounded-full bg-white/15 text-white active:scale-90"
+          onClick={(e) => { e.stopPropagation(); onClose() }}
           aria-label="Close"
         >
           <X className="h-6 w-6" />
         </button>
-        <div className="flex gap-2">
+        <div className="flex items-center gap-2">
           <button
-            className="flex h-10 w-10 items-center justify-center rounded-full bg-white/10 text-white text-lg font-bold"
-            onClick={() => applyScale(scaleRef.current - 0.5)}
+            data-zoom-control
+            type="button"
+            className="flex h-11 w-11 items-center justify-center rounded-full bg-white/15 text-white text-2xl font-bold leading-none active:scale-90"
+            onClick={(e) => { e.stopPropagation(); applyScale(scaleRef.current - 0.5) }}
             aria-label="Zoom out"
           >
             −
           </button>
-          <span className="flex h-10 items-center rounded-full bg-white/10 px-3 text-xs font-bold text-white">
-            {Math.round(scale * 100)}%
-          </span>
+          {/* Percentage badge — tap to reset to 100% */}
           <button
-            className="flex h-10 w-10 items-center justify-center rounded-full bg-white/10 text-white text-lg font-bold"
-            onClick={() => applyScale(scaleRef.current + 0.5)}
+            data-zoom-control
+            type="button"
+            className="flex h-11 min-w-[64px] items-center justify-center rounded-full bg-white/15 px-3 text-xs font-bold text-white active:scale-95"
+            onClick={(e) => { e.stopPropagation(); reset() }}
+            aria-label="Reset to 100%"
+            title="Reset to 100%"
+          >
+            {Math.round(scale * 100)}%
+          </button>
+          <button
+            data-zoom-control
+            type="button"
+            className="flex h-11 w-11 items-center justify-center rounded-full bg-white/15 text-white text-2xl font-bold leading-none active:scale-90"
+            onClick={(e) => { e.stopPropagation(); applyScale(scaleRef.current + 0.5) }}
             aria-label="Zoom in"
           >
             +
           </button>
           <button
-            className="flex h-10 w-10 items-center justify-center rounded-full bg-white/10 text-white"
-            onClick={() => setRotation((r) => r + 90)}
+            data-zoom-control
+            type="button"
+            className="flex h-11 w-11 items-center justify-center rounded-full bg-white/15 text-white active:scale-90"
+            onClick={(e) => { e.stopPropagation(); setRotation((r) => r + 90) }}
             aria-label="Rotate"
           >
             <RefreshCw className="h-5 w-5" />
@@ -425,8 +477,8 @@ function ZoomLightbox({ src, onClose }: { src: string; onClose: () => void }) {
 
       {/* Hint */}
       {scale === 1 && (
-        <div className="pointer-events-none absolute bottom-6 left-1/2 -translate-x-1/2 text-center text-xs text-white/40">
-          <p>Pinch · Double tap · Swipe down to close · Use +/− buttons</p>
+        <div className="pointer-events-none absolute bottom-6 left-1/2 -translate-x-1/2 whitespace-nowrap text-center text-xs text-white/50">
+          <p>Pinch · Double tap · Swipe down to close · Tap % to reset</p>
         </div>
       )}
 
@@ -445,6 +497,7 @@ function ZoomLightbox({ src, onClose }: { src: string; onClose: () => void }) {
         }}
         draggable={false}
       />
-    </motion.div>
+    </motion.div>,
+    document.body
   )
 }

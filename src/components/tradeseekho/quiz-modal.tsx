@@ -30,6 +30,8 @@ export function QuizContent({ lesson, quiz }: { lesson: LessonDetailDTO; quiz: P
   const total = quiz.questions.length
   const answered = quiz.questions.filter((q) => answers[q.id] !== undefined).length
   const allAnswered = total > 0 && answered === total
+  const urduFontClass = lang === "ur" ? "font-urdu" : lang === "ar" ? "font-arabic" : ""
+  const urduLineStyle = lang === "ur" || lang === "ar" ? { lineHeight: 2.2, wordBreak: "break-word", overflowWrap: "break-word" } : undefined
 
   const onSubmit = async () => {
     if (!allAnswered) return
@@ -115,7 +117,7 @@ export function QuizContent({ lesson, quiz }: { lesson: LessonDetailDTO; quiz: P
                   <span className="mt-0.5 inline-flex h-6 min-w-6 items-center justify-center rounded-md bg-brand px-1.5 text-xs font-bold text-brand-foreground">
                     {i + 1}
                   </span>
-                  <p className={`text-[15px] font-semibold leading-snug text-foreground ${rtlFont}`}>
+                  <p className={`flex-1 text-[15px] font-semibold leading-snug text-foreground ${urduFontClass}`} style={urduLineStyle}>
                     {pick(q.prompt)}
                   </p>
                 </div>
@@ -126,20 +128,20 @@ export function QuizContent({ lesson, quiz }: { lesson: LessonDetailDTO; quiz: P
                       <button
                         key={oi}
                         onClick={() => setAnswers((a) => ({ ...a, [q.id]: oi }))}
-                        className={`flex items-center gap-2.5 rounded-lg border px-3 py-2.5 text-start text-sm transition ${
+                        className={`flex items-start gap-2.5 rounded-lg border px-3 py-2.5 text-start text-sm transition ${
                           selected
                             ? "border-brand bg-brand-muted text-foreground"
                             : "border-border bg-background hover:border-brand/50 hover:bg-muted/40"
                         }`}
                       >
                         <span
-                          className={`inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full border-2 text-[10px] font-bold ${
+                          className={`mt-0.5 inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full border-2 text-[10px] font-bold ${
                             selected ? "border-brand bg-brand text-brand-foreground" : "border-muted-foreground/40 text-muted-foreground"
                           }`}
                         >
                           {String.fromCharCode(65 + oi)}
                         </span>
-                        <span className={urduFont ? "font-urdu" : ""}>{pick(opt)}</span>
+                        <span className={`flex-1 ${urduFontClass}`} style={urduLineStyle}>{pick(opt)}</span>
                       </button>
                     )
                   })}
@@ -234,6 +236,9 @@ function QuizResults({
 }) {
   const t = useT()
   const pick = usePick()
+  const lang = useStore((s) => s.lang)
+  const urduFontClass = lang === "ur" ? "font-urdu" : lang === "ar" ? "font-arabic" : ""
+  const urduLineStyle = lang === "ur" || lang === "ar" ? { lineHeight: 2.2, wordBreak: "break-word", overflowWrap: "break-word" } : undefined
   return (
     <div className="space-y-4">
       <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
@@ -251,19 +256,19 @@ function QuizResults({
               }`}>
                 {correct ? <Check className="h-3.5 w-3.5" /> : <X className="h-3.5 w-3.5" />}
               </span>
-              <p className={`flex-1 text-[15px] font-semibold leading-snug text-foreground ${rtlFont}`}>
+              <p className={`flex-1 text-[15px] font-semibold leading-snug text-foreground ${urduFontClass}`} style={urduLineStyle}>
                 {pick(q.prompt)}
               </p>
             </div>
             <div className="mt-3 space-y-1.5 ps-8">
-              <div className="text-sm">
+              <div className={`text-sm ${urduFontClass}`} style={urduLineStyle}>
                 <span className="text-muted-foreground">{t("quiz.correctAnswer")}: </span>
-                <span className={`font-bold text-brand ${rtlFont}`}>
+                <span className="font-bold text-brand">
                   {String.fromCharCode(65 + correctIdx)}. {pick(q.options[correctIdx])}
                 </span>
               </div>
               {expl && (expl.en || expl.ur || expl.hi || expl.ar) && (
-                <div className={`rounded-lg bg-muted/60 p-2.5 text-sm text-muted-foreground ${rtlFont}`}>
+                <div className={`rounded-lg bg-muted/60 p-2.5 text-sm text-muted-foreground ${urduFontClass}`} style={urduLineStyle}>
                   <span className="font-semibold text-foreground">{t("quiz.explanation")}: </span>
                   {pick(expl)}
                 </div>

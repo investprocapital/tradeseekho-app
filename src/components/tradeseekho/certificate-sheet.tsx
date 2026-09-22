@@ -14,6 +14,7 @@ export function CertificateSheet() {
   const t = useT()
   const lang = useStore((s) => s.lang)
   const rtlFont = lang === "ur" ? "font-urdu" : lang === "ar" ? "font-arabic" : ""
+  const urduFont = lang === "ur" || lang === "ar"
   const certOpen = useStore((s) => s.certOpen)
   const setCertOpen = useStore((s) => s.setCertOpen)
   const { data, isLoading } = useCertificates()
