@@ -251,12 +251,13 @@ function QuizResults({
         const correctIdx = result.correctIndices[i]
         const expl = result.explanations[i]
         return (
-          <div key={q.id} className={`rounded-xl border-2 bg-card p-4 ${correct ? "border-brand/50" : "border-destructive/50"}`}>
+          <div key={q.id} className={`rounded-xl border-2 bg-card p-4 ${correct ? "border-green-500" : "border-red-500"}`}>
             <div className="flex items-start gap-3">
-              <span className={`mt-0.5 inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-base font-bold text-white shadow-md ${
-                correct ? "bg-brand" : "bg-destructive"
-              }`}>
-                {correct ? <Check className="h-5 w-5" strokeWidth={3} /> : <X className="h-5 w-5" strokeWidth={3} />}
+              <span
+                className="mt-0.5 inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-white shadow-md text-lg font-bold"
+                style={{ backgroundColor: correct ? "#00c853" : "#e53935" }}
+              >
+                {correct ? "✓" : "✗"}
               </span>
               <p className={`flex-1 text-[15px] font-semibold leading-snug text-foreground ${urduFontClass}`} style={urduLineStyle}>
                 {pick(q.prompt)}
