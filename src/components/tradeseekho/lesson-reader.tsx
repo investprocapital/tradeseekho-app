@@ -3,13 +3,12 @@
 import { useMemo, useRef, useEffect, useState } from "react"
 import { createPortal } from "react-dom"
 import ReactMarkdown from "react-markdown"
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet"
+import { Sheet, SheetContent, SheetTitle, SheetDescription } from "@/components/ui/sheet"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Progress } from "@/components/ui/progress"
-import { ScrollArea } from "@/components/ui/scroll-area"
 import { Separator } from "@/components/ui/separator"
-import { Bookmark, X, ArrowRight, BarChart3, Lock, CheckCircle2, BookOpen, RefreshCw } from "lucide-react"
+import { Bookmark, X, ArrowLeft, ArrowRight, BarChart3, Lock, CheckCircle2, BookOpen, RefreshCw } from "lucide-react"
 import { motion, AnimatePresence } from "framer-motion"
 import { useStore, useT } from "@/lib/store"
 import { useLessonDetail, useToggleBookmark } from "./use-data"
@@ -84,82 +83,84 @@ export function LessonReader() {
       >
         {lesson ? (
           <>
-            {/* Header */}
-            <SheetHeader className="flex flex-row items-start justify-between gap-3 border-b border-border p-5 pr-4">
-              <div className="min-w-0 flex-1">
-                <div className="flex flex-wrap items-center gap-2">
-                  <Badge style={{ background: lesson.category.color || "var(--brand)" }} className="text-white">
-                    {pick(lesson.category.name)}
-                  </Badge>
-                  <span className="text-xs font-semibold text-muted-foreground">
-                    {t("lesson.lessonNofM", { n: lesson.orderInCategory, m: lesson.totalInCategory })}
-                  </span>
-                </div>
-                <SheetTitle className={`mt-2 pr-8 text-2xl font-extrabold leading-tight ${rtlFont}`}>
-                  {pick(lesson.title)}
-                </SheetTitle>
-                <SheetDescription className={`mt-1 ${rtlFont}`}>
-                  {pick(lesson.summary)}
-                </SheetDescription>
-                {/* Language switcher buttons */}
-                <div className="mt-3 flex gap-1.5">
-                  {LANG_ORDER.map((code) => (
-                    <button
-                      key={code}
-                      onClick={() => setLang(code)}
-                      className={`rounded-md px-2.5 py-1 text-[11px] font-bold transition ${
-                        lang === code
-                          ? "bg-brand text-brand-foreground"
-                          : "bg-muted text-muted-foreground hover:bg-muted/70"
-                      } ${LANGS[code].dir === "rtl" ? "font-urdu text-xs" : ""}`}
-                    >
-                      {LANGS[code].native}
-                    </button>
-                  ))}
-                </div>
-              </div>
-              <div className="flex items-center gap-1">
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-9 w-9"
-                  aria-label={t("nav.bookmarks")}
-                  onClick={() => {
-                    toggleBookmark(lesson.id)
-                    mutBm.mutate({ lessonId: lesson.id, add: !bookmarks.includes(lesson.id) })
-                    toast(bookmarks.includes(lesson.id) ? t("toast.unbookmarked") : t("toast.bookmarked"))
-                  }}
-                >
-                  <Bookmark className={`h-5 w-5 ${bookmarks.includes(lesson.id) ? "fill-gold text-gold" : ""}`} />
-                </Button>
-                <Button variant="ghost" size="icon" className="h-9 w-9" onClick={closeLesson} aria-label={t("action.close")}>
-                  <X className="h-5 w-5" />
-                </Button>
-              </div>
-            </SheetHeader>
-
             {showQuiz && quiz ? (
               <QuizContent lesson={lesson} quiz={quiz} />
             ) : (
             <>
-            {/* Progress bar */}
-            <div className="border-b border-border bg-muted/40 px-5 py-3">
-              <div className="flex items-center justify-between text-[11px] font-semibold text-muted-foreground">
-                <span>{t("lesson.lessonNofM", { n: lesson.orderInCategory, m: lesson.totalInCategory })}</span>
-                <span>{Math.round((lesson.orderInCategory / Math.max(1, lesson.totalInCategory)) * 100)}%</span>
-              </div>
-              <Progress
-                value={(lesson.orderInCategory / Math.max(1, lesson.totalInCategory)) * 100}
-                className="mt-2 h-1.5"
-              />
-            </div>
-
-            {/* Body — read-only, non-selectable, scrollable */}
+            {/* Full-page scrollable area — header + progress + body all scroll together */}
             <div
               className="flex-1 overflow-y-auto overscroll-contain"
               style={{ WebkitOverflowScrolling: "touch", minHeight: 0 }}
               onContextMenu={(e) => e.preventDefault()}
             >
+              {/* Header (scrolls with content) */}
+              <div className="flex flex-row items-start justify-between gap-3 p-5 pr-4">
+                <div className="min-w-0 flex-1">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <Badge style={{ background: lesson.category.color || "var(--brand)" }} className="text-white">
+                      {pick(lesson.category.name)}
+                    </Badge>
+                    <span className="text-xs font-semibold text-muted-foreground">
+                      {t("lesson.lessonNofM", { n: lesson.orderInCategory, m: lesson.totalInCategory })}
+                    </span>
+                  </div>
+                  <SheetTitle className={`mt-2 pr-8 text-2xl font-extrabold leading-tight ${rtlFont}`}>
+                    {pick(lesson.title)}
+                  </SheetTitle>
+                  <SheetDescription className={`mt-1 ${rtlFont}`}>
+                    {pick(lesson.summary)}
+                  </SheetDescription>
+                  {/* Language switcher buttons */}
+                  <div className="mt-3 flex gap-1.5">
+                    {LANG_ORDER.map((code) => (
+                      <button
+                        key={code}
+                        onClick={() => setLang(code)}
+                        className={`rounded-md px-2.5 py-1 text-[11px] font-bold transition ${
+                          lang === code
+                            ? "bg-brand text-brand-foreground"
+                            : "bg-muted text-muted-foreground hover:bg-muted/70"
+                        } ${LANGS[code].dir === "rtl" ? "font-urdu text-xs" : ""}`}
+                      >
+                        {LANGS[code].native}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                <div className="flex items-center gap-1">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-9 w-9"
+                    aria-label={t("nav.bookmarks")}
+                    onClick={() => {
+                      toggleBookmark(lesson.id)
+                      mutBm.mutate({ lessonId: lesson.id, add: !bookmarks.includes(lesson.id) })
+                      toast(bookmarks.includes(lesson.id) ? t("toast.unbookmarked") : t("toast.bookmarked"))
+                    }}
+                  >
+                    <Bookmark className={`h-5 w-5 ${bookmarks.includes(lesson.id) ? "fill-gold text-gold" : ""}`} />
+                  </Button>
+                  {/* Back arrow — closes the lesson reader and returns to lessons list */}
+                  <Button variant="ghost" size="icon" className="h-9 w-9" onClick={closeLesson} aria-label="Back to lessons">
+                    <ArrowLeft className="h-5 w-5 rtl:rotate-180" />
+                  </Button>
+                </div>
+              </div>
+
+              {/* Progress bar (scrolls with content) */}
+              <div className="px-5 py-3">
+                <div className="flex items-center justify-between text-[11px] font-semibold text-muted-foreground">
+                  <span>{t("lesson.lessonNofM", { n: lesson.orderInCategory, m: lesson.totalInCategory })}</span>
+                  <span>{Math.round((lesson.orderInCategory / Math.max(1, lesson.totalInCategory)) * 100)}%</span>
+                </div>
+                <Progress
+                  value={(lesson.orderInCategory / Math.max(1, lesson.totalInCategory)) * 100}
+                  className="mt-2 h-1.5"
+                />
+              </div>
+
+              {/* Body — read-only, non-selectable */}
               <div
                 className={`no-select mx-auto max-w-2xl px-5 py-6 ${rtlFont}`}
                 style={lang === "ur" ? { fontFamily: "var(--font-noto-nastaliq), var(--font-poppins), serif" } : lang === "ar" ? { fontFamily: "var(--font-noto-naskh-arabic), serif" } : undefined}
@@ -217,7 +218,7 @@ export function LessonReader() {
               </div>
             </div>
 
-            {/* Footer CTA */}
+            {/* Footer CTA (fixed at bottom) */}
             <div className="border-t border-border bg-background p-4">
               {quiz ? (
                 lesson.locked ? (
