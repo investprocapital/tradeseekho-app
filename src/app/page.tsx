@@ -144,9 +144,11 @@ export default function Home() {
                 ) : quizLessons.length === 0 ? (
                   <p className="py-8 text-center text-sm text-muted-foreground">No quizzes available yet.</p>
                 ) : (
-                  quizLessons.map((l) => (
-                    <QuizRow key={l.id} lesson={l} lang={lang} isPro={isPro} onOpen={() => openLesson(l.id)} onPro={() => setProOpen(true)} />
-                  ))
+                  quizLessons.map((l, i) => {
+                    const lessonIdx = lessons.indexOf(l)
+                    const seqLocked = !isPro && lessonIdx > 0 && !lessons[lessonIdx - 1].passed
+                    return <QuizRow key={l.id} lesson={l} lang={lang} isPro={isPro} seqLocked={seqLocked} onOpen={() => openLesson(l.id)} onPro={() => setProOpen(true)} />
+                  })
                 )}
               </div>
             </section>
@@ -252,12 +254,20 @@ function LessonRow({ lesson, lang, isPro, onOpen, onPro, seqLocked }: { lesson: 
   )
 }
 
-function QuizRow({ lesson, lang, isPro, onOpen, onPro }: { lesson: LessonListItemDTO; lang: string; isPro: boolean; onOpen: () => void; onPro: () => void }) {
+function QuizRow({ lesson, lang, isPro, seqLocked, onOpen, onPro }: { lesson: LessonListItemDTO; lang: string; isPro: boolean; seqLocked?: boolean; onOpen: () => void; onPro: () => void }) {
   const proLocked = !lesson.isFree && !isPro
+  const isLocked = proLocked || seqLocked
   return (
     <button
-      onClick={() => proLocked ? onPro() : onOpen()}
-      className={`flex items-center gap-3 rounded-xl border border-border bg-card p-3 text-start transition ${proLocked ? "opacity-70" : "hover:border-brand/50"}`}
+      onClick={() => {
+        if (proLocked) { onPro(); return }
+        if (seqLocked) {
+          toast(lang === "ur" || lang === "ar" ? "براہ کرم پہلا سبق مکمل کریں" : lang === "hi" ? "कृपया पिछला पाठ पूर्ण करें" : "Please complete the previous lesson first")
+          return
+        }
+        onOpen()
+      }}
+      className={`flex items-center gap-3 rounded-xl border border-border bg-card p-3 text-start transition ${isLocked ? "opacity-60" : "hover:border-brand/50"}`}
     >
       <span className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-white" style={{ background: lesson.categoryColor || "var(--brand)" }}>
         <BarChart3 className="h-4 w-4" />
@@ -265,14 +275,14 @@ function QuizRow({ lesson, lang, isPro, onOpen, onPro }: { lesson: LessonListIte
       <div className="min-w-0 flex-1">
         <div className="truncate text-sm font-bold">{lesson.title[lang] || lesson.title.en}</div>
         <div className="text-[11px] text-muted-foreground">
-          {lesson.passed ? "✓ Passed" : proLocked ? "PRO" : lesson.orderInCategory > 1 && !lesson.passed ? "Locked" : "Ready"}
+          {lesson.passed ? "✓ Passed" : proLocked ? "PRO" : seqLocked ? "Locked" : "Ready"}
         </div>
       </div>
       {proLocked ? (
         <span className="inline-flex items-center gap-1 rounded-full bg-gold/20 px-2 py-0.5 text-[10px] font-bold text-gold-foreground">
           <Crown className="h-3 w-3" /> PRO
         </span>
-      ) : lesson.passed ? <CheckCircle2 className="h-4 w-4 text-brand" /> : lesson.orderInCategory > 1 && !lesson.passed ? <Lock className="h-4 w-4 text-muted-foreground" /> : <ChevronRight className="h-4 w-4 text-brand" />}
+      ) : lesson.passed ? <CheckCircle2 className="h-4 w-4 text-brand" /> : seqLocked ? <Lock className="h-4 w-4 text-muted-foreground" /> : <ChevronRight className="h-4 w-4 text-brand" />}
     </button>
   )
 }
