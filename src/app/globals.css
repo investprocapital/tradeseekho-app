@@ -138,6 +138,15 @@
 @layer base {
   * {
     @apply border-border outline-ring/50;
+    box-sizing: border-box;
+  }
+  html {
+    @apply border-border outline-ring/50;
+    box-sizing: border-box;
+    overflow-x: hidden;
+    width: 100%;
+    max-width: 100vw;
+    scroll-behavior: smooth;
   }
   body {
     @apply bg-background text-foreground;
@@ -146,18 +155,19 @@
     touch-action: manipulation;
     -ms-touch-action: manipulation;
     -webkit-tap-highlight-color: transparent;
+    overflow-x: hidden;
+    width: 100%;
+    max-width: 100vw;
   }
   /* All buttons/links: no double-tap zoom delay, no tap highlight */
   button, a, [role="button"] {
     touch-action: manipulation;
     -webkit-tap-highlight-color: transparent;
   }
-  html {
-    scroll-behavior: smooth;
-  }
   /* RTL: mirror padding helpers gracefully */
   [dir="rtl"] body {
     text-align: right;
+    overflow-x: hidden;
   }
 }
 

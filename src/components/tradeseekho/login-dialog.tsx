@@ -52,9 +52,12 @@ export function LoginDialog() {
   const google = () => { setBusy(true); void signIn("google", { callbackUrl: "/" }) }
 
   return (
-    <Dialog open={loginOpen} onOpenChange={(v) => { if (!busy) { setLoginOpen(v); if (!v) reset() } }}>
+    <Dialog open={loginOpen} onOpenChange={(v) => { if (!busy && v) { setLoginOpen(true) } /* only allow opening, not closing via outside click when unauth */ }}>
       <DialogContent
         showCloseButton={false}
+        onPointerDownOutside={(e) => e.preventDefault()}
+        onEscapeKeyDown={(e) => e.preventDefault()}
+        onInteractOutside={(e) => e.preventDefault()}
         className="!fixed !inset-0 !z-[100] !top-0 !left-0 !flex !max-h-none !w-full !max-w-none !translate-x-0 !translate-y-0 !flex-col !overflow-hidden !border-0 !rounded-none !p-0 !bg-[#070F2B]"
         style={{ borderRadius: 0, position: "fixed", inset: 0, width: "100vw", height: "100vh", maxWidth: "none", transform: "none", top: 0, left: 0 }}
       >

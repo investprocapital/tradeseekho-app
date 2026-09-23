@@ -1,5 +1,7 @@
 "use client"
 
+import { useEffect } from "react"
+import { useSession } from "next-auth/react"
 import { motion } from "framer-motion"
 import { Sprout, LineChart, Trophy, CheckCircle2, Award, BookOpen, Crown, ArrowRight, Lock, BarChart3, ChevronRight } from "lucide-react"
 import { useStore } from "@/lib/store"
@@ -27,6 +29,9 @@ import type { LucideIcon } from "lucide-react"
 const LEVEL_ICONS: Record<string, LucideIcon> = { Sprout, LineChart, Trophy }
 
 export default function Home() {
+  const { data: session, status } = useSession()
+  const setLoginOpen = useStore((s) => s.setLoginOpen)
+  const loginOpen = useStore((s) => s.loginOpen)
   const activeCategory = useStore((s) => s.activeCategorySlug)
   const showAdmin = useStore((s) => s.showAdmin)
   const lang = useStore((s) => s.lang)
@@ -38,6 +43,13 @@ export default function Home() {
   const { data: proMe } = useProMe()
   const isPro = proMe?.proStatus === "active"
   const { data, isLoading } = useLessonsBundle("all")
+
+  // Auth gate: if user is not logged in, show Login dialog automatically
+  useEffect(() => {
+    if (status === "unauthenticated" && !loginOpen) {
+      setLoginOpen(true)
+    }
+  }, [status, loginOpen, setLoginOpen])
 
   const lessons = data?.lessons ?? []
   const categories = data?.categories ?? []
