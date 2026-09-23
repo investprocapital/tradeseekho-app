@@ -203,6 +203,8 @@ export function QuizContent({ lesson, quiz }: { lesson: LessonDetailDTO; quiz: P
 
 function ScoreBanner({ result, urduFont }: { result: QuizSubmitResult; urduFont: boolean }) {
   const t = useT()
+  const lang = useStore((s) => s.lang)
+  const rtlFont = lang === "ur" ? "font-urdu" : lang === "ar" ? "font-arabic" : ""
   const pct = Math.round((result.score / result.total) * 100)
   return (
     <motion.div
