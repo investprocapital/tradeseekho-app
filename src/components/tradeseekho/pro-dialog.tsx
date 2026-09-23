@@ -1,6 +1,7 @@
 "use client"
 
 import { useRef, useState } from "react"
+import { useQuery } from "@tanstack/react-query"
 import { useSession } from "next-auth/react"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
@@ -9,17 +10,28 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
-import { Crown, Copy, Upload, Loader2, AlertCircle, CheckCircle2, Clock, Smartphone, Image as ImageIcon } from "lucide-react"
+import { Crown, Copy, Upload, Loader2, AlertCircle, CheckCircle2, Clock, Smartphone, Image as ImageIcon, CreditCard } from "lucide-react"
 import { useStore } from "@/lib/store"
 import { useProMe, useSubmitProRequest } from "./use-data"
 import { toast } from "sonner"
 
-const METHODS = [
-  { id: "JazzCash", label: "JazzCash", number: "03XX-XXXXXXX", color: "#ED1C24", accent: "bg-[#ED1C24]" },
-  { id: "Easypaisa", label: "Easypaisa", number: "03XX-XXXXXXX", color: "#00B14F", accent: "bg-[#00B14F]" },
-] as const
+interface ProSettings {
+  usdPrice: number
+  pkrRate: number
+  pkrPrice: number
+  jazzcashNumber: string
+  easypaisaNumber: string
+  cardEnabled: boolean
+  cardInstructions: string
+}
 
-const PRO_PRICE = 500 // PKR — adjust as needed
+async function fetchProSettings(): Promise<ProSettings> {
+  const res = await fetch("/api/pro/settings")
+  if (!res.ok) throw new Error("failed")
+  return res.json()
+}
+
+type Method = "JazzCash" | "Easypaisa" | "Card"
 
 export function ProDialog() {
   const open = useStore((s) => s.proOpen)
@@ -28,9 +40,14 @@ export function ProDialog() {
   const { data: session } = useSession()
   const { data: proMe, isLoading } = useProMe()
   const submit = useSubmitProRequest()
+  const { data: settings } = useQuery<ProSettings>({
+    queryKey: ["pro-settings"],
+    queryFn: fetchProSettings,
+    staleTime: 60_000,
+  })
 
-  const [method, setMethod] = useState<"JazzCash" | "Easypaisa">("JazzCash")
-  const [amount, setAmount] = useState(String(PRO_PRICE))
+  const [method, setMethod] = useState<Method>("JazzCash")
+  const [amount, setAmount] = useState("")
   const [note, setNote] = useState("")
   const [file, setFile] = useState<File | null>(null)
   const [filePreview, setFilePreview] = useState<string | null>(null)
@@ -39,6 +56,21 @@ export function ProDialog() {
 
   const isPro = proMe?.proStatus === "active"
   const isPending = proMe?.proStatus === "pending"
+
+  const usdPrice = settings?.usdPrice ?? 5
+  const pkrRate = settings?.pkrRate ?? 280
+  const pkrPrice = settings?.pkrPrice ?? Math.round(usdPrice * pkrRate)
+  const displayAmount = amount || String(pkrPrice)
+
+  const methods: { id: Method; label: string; color: string; accent: string; icon: any }[] = [
+    { id: "JazzCash", label: "JazzCash", color: "#ED1C24", accent: "bg-[#ED1C24]", icon: Smartphone },
+    { id: "Easypaisa", label: "Easypaisa", color: "#00B14F", accent: "bg-[#00B14F]", icon: Smartphone },
+  ]
+  if (settings?.cardEnabled !== false) {
+    methods.push({ id: "Card", label: "Visa / Debit Card", color: "#1A1F71", accent: "bg-[#1A1F71]", icon: CreditCard })
+  }
+
+  const currentNumber = method === "JazzCash" ? settings?.jazzcashNumber : method === "Easypaisa" ? settings?.easypaisaNumber : ""
 
   const onFile = (e: React.ChangeEvent<HTMLInputElement>) => {
     const f = e.target.files?.[0]
@@ -58,9 +90,9 @@ export function ProDialog() {
       setLoginOpen(true)
       return
     }
-    if (!file) { setErr("Please upload a payment screenshot."); return }
+    if (method !== "Card" && !file) { setErr("Please upload a payment screenshot."); return }
     try {
-      await submit.mutateAsync({ method, amount: Number(amount) || 0, note, file })
+      await submit.mutateAsync({ method, amount: Number(displayAmount) || 0, note, file })
       toast.success("Payment submitted!", { description: "We'll review and activate Pro within 24h." })
       setFile(null); setFilePreview(null); setNote("")
     } catch (e2: any) {
@@ -118,50 +150,68 @@ export function ProDialog() {
 
               {/* Price */}
               <div className="rounded-xl border border-border bg-card p-3 text-center">
-                <div className="text-3xl font-extrabold text-foreground">Rs {PRO_PRICE}<span className="text-sm font-medium text-muted-foreground">/lifetime</span></div>
-                <p className="mt-1 text-[11px] text-muted-foreground">One-time manual payment • No auto-renewal</p>
+                <div className="text-3xl font-extrabold text-foreground">${usdPrice}<span className="text-sm font-medium text-muted-foreground"> USD</span></div>
+                <div className="mt-1 text-sm font-bold text-brand">≈ Rs {pkrPrice} PKR</div>
+                <p className="mt-1 text-[11px] text-muted-foreground">One-time payment • Lifetime access • No auto-renewal</p>
               </div>
 
               {/* Method selection */}
               <div>
                 <Label className="mb-2 block text-xs font-bold uppercase tracking-wide text-muted-foreground">1. Choose payment method</Label>
-                <div className="grid grid-cols-2 gap-2">
-                  {METHODS.map((m) => (
-                    <button
-                      key={m.id}
-                      type="button"
-                      onClick={() => setMethod(m.id)}
-                      className={`flex items-center gap-2 rounded-xl border-2 p-3 text-start transition ${method === m.id ? "border-brand bg-brand-muted/40" : "border-border hover:bg-muted/40"}`}
-                    >
-                      <span className={`inline-flex h-8 w-8 items-center justify-center rounded-lg text-white ${m.accent}`}>
-                        <Smartphone className="h-4 w-4" />
-                      </span>
-                      <div>
-                        <div className="text-sm font-bold">{m.label}</div>
-                        <div className="text-[10px] text-muted-foreground">Tap to select</div>
-                      </div>
-                    </button>
-                  ))}
+                <div className={`grid gap-2 ${methods.length > 2 ? "grid-cols-1" : "grid-cols-2"}`}>
+                  {methods.map((m) => {
+                    const Icon = m.icon
+                    return (
+                      <button
+                        key={m.id}
+                        type="button"
+                        onClick={() => setMethod(m.id)}
+                        className={`flex items-center gap-2 rounded-xl border-2 p-3 text-start transition ${method === m.id ? "border-brand bg-brand-muted/40" : "border-border hover:bg-muted/40"}`}
+                      >
+                        <span className={`inline-flex h-8 w-8 items-center justify-center rounded-lg text-white ${m.accent}`}>
+                          <Icon className="h-4 w-4" />
+                        </span>
+                        <div>
+                          <div className="text-sm font-bold">{m.label}</div>
+                          <div className="text-[10px] text-muted-foreground">Tap to select</div>
+                        </div>
+                      </button>
+                    )
+                  })}
                 </div>
               </div>
 
-              {/* Number to send to */}
-              <div className="rounded-xl border border-dashed border-border bg-muted/30 p-3">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <div className="text-[11px] uppercase tracking-wide text-muted-foreground">Send Rs {amount || PRO_PRICE} to</div>
-                    <div className="font-mono text-base font-bold text-foreground">{METHODS.find((m) => m.id === method)?.number}</div>
-                    <div className="text-[10px] text-muted-foreground">{method} • TradeSeekho</div>
+              {/* Number to send to (JazzCash / Easypaisa) OR Card instructions */}
+              {method === "Card" ? (
+                <div className="rounded-xl border border-dashed border-border bg-muted/30 p-3">
+                  <div className="flex items-start gap-2">
+                    <CreditCard className="mt-0.5 h-5 w-5 shrink-0 text-[#1A1F71]" />
+                    <div className="flex-1">
+                      <div className="text-[11px] uppercase tracking-wide text-muted-foreground">Card Payment</div>
+                      <div className="text-sm font-bold text-foreground">{settings?.cardInstructions || "Contact admin on WhatsApp for card payment link"}</div>
+                      <div className="mt-1 text-[10px] text-muted-foreground">Pay ${usdPrice} USD via secure card link</div>
+                    </div>
                   </div>
-                  <Button type="button" size="sm" variant="outline" className="gap-1.5" onClick={() => copy(METHODS.find((m) => m.id === method)?.number || "")}>
-                    <Copy className="h-3.5 w-3.5" /> Copy
-                  </Button>
                 </div>
-              </div>
+              ) : (
+                <div className="rounded-xl border border-dashed border-border bg-muted/30 p-3">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <div className="text-[11px] uppercase tracking-wide text-muted-foreground">Send Rs {displayAmount} to</div>
+                      <div className="font-mono text-base font-bold text-foreground">{currentNumber}</div>
+                      <div className="text-[10px] text-muted-foreground">{method} • TradeSeekho</div>
+                    </div>
+                    <Button type="button" size="sm" variant="outline" className="gap-1.5" onClick={() => copy(currentNumber || "")}>
+                      <Copy className="h-3.5 w-3.5" /> Copy
+                    </Button>
+                  </div>
+                </div>
+              )}
 
               <Separator />
 
-              {/* Screenshot upload */}
+              {/* Screenshot upload (not required for Card method) */}
+              {method !== "Card" && (
               <div>
                 <Label className="mb-2 block text-xs font-bold uppercase tracking-wide text-muted-foreground">2. Upload payment screenshot</Label>
                 <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={onFile} />
@@ -178,6 +228,7 @@ export function ProDialog() {
                   </button>
                 )}
               </div>
+              )}
 
               {/* Optional note */}
               <div className="space-y-1.5">

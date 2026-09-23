@@ -204,6 +204,18 @@ model AdSettings {
   updatedAt            DateTime @updatedAt
 }
 
+// Pro payment settings — editable from Admin Panel
+model ProSettings {
+  id              String   @id @default("singleton")
+  usdPrice        Float    @default(5)     // Price in USD
+  pkrRate         Float    @default(280)   // 1 USD = X PKR (admin editable)
+  jazzcashNumber  String   @default("03XX-XXXXXXX")
+  easypaisaNumber String   @default("03XX-XXXXXXX")
+  cardEnabled     Boolean  @default(true)  // Show Visa/Debit Card option
+  cardInstructions String  @default("Contact admin on WhatsApp for card payment link")
+  updatedAt       DateTime @updatedAt
+}
+
 model AppStats {
   id             String  @id @default("singleton")
   totalDownloads Int     @default(0)

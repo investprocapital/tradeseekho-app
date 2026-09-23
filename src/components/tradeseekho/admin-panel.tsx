@@ -5,7 +5,7 @@ import { motion } from "framer-motion"
 import {
   Download, Users, BookOpen, BarChart3, Shield, Lock, LogOut, Eye,
   Plus, Pencil, Trash2, Save, Send, Megaphone, Check, ChevronRight, ArrowLeft,
-  Crown, X, Upload,
+  Crown, X, Upload, CreditCard,
 } from "lucide-react"
 import {
   Card, CardContent, CardHeader, CardTitle, CardDescription,
@@ -38,6 +38,7 @@ import {
   useAdminLessonDetail, useSaveLesson, useDeleteLesson, useSaveQuiz,
   useAdminQuiz, useAdminStats, useSaveStats, useAdminAds, useSaveAds,
   useAdminProRequests, useApproveProRequest, useRejectProRequest,
+  useProSettings, useSaveProSettings,
 } from "./admin-data"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 
@@ -113,6 +114,7 @@ export function AdminPanel() {
             <TabsTrigger value="lessons" className="gap-1 whitespace-nowrap"><BookOpen className="h-4 w-4" /><span className="hidden xs:inline sm:inline">Lessons</span></TabsTrigger>
             <TabsTrigger value="quizzes" className="gap-1 whitespace-nowrap"><BarChart3 className="h-4 w-4" /><span className="hidden xs:inline sm:inline">Quizzes</span></TabsTrigger>
             <TabsTrigger value="ads" className="gap-1 whitespace-nowrap"><Megaphone className="h-4 w-4" /><span className="hidden xs:inline sm:inline">Ads</span></TabsTrigger>
+            <TabsTrigger value="payment" className="gap-1 whitespace-nowrap"><CreditCard className="h-4 w-4" /><span className="hidden xs:inline sm:inline">Payment</span></TabsTrigger>
             <TabsTrigger value="pro" className="gap-1 whitespace-nowrap"><Crown className="h-4 w-4" /><span className="hidden xs:inline sm:inline">Pro</span></TabsTrigger>
           </TabsList>
         </div>
@@ -120,6 +122,7 @@ export function AdminPanel() {
         <TabsContent value="lessons" className="mt-5"><LessonsTab /></TabsContent>
         <TabsContent value="quizzes" className="mt-5"><QuizzesTab /></TabsContent>
         <TabsContent value="ads" className="mt-5"><AdsTab /></TabsContent>
+        <TabsContent value="payment" className="mt-5"><PaymentSettingsTab /></TabsContent>
         <TabsContent value="pro" className="mt-5"><ProRequestsTab /></TabsContent>
       </Tabs>
     </div>
@@ -1032,6 +1035,109 @@ function ProRequestsTab() {
           <img src={preview} alt="screenshot" className="max-h-[90vh] max-w-full rounded-lg" />
         </div>
       )}
+    </div>
+  )
+}
+
+/* ---------------- Payment Settings ---------------- */
+function PaymentSettingsTab() {
+  const { data, isLoading } = useProSettings()
+  const save = useSaveProSettings()
+
+  const [usdPrice, setUsdPrice] = useState("5")
+  const [pkrRate, setPkrRate] = useState("280")
+  const [jazzcash, setJazzcash] = useState("")
+  const [easypaisa, setEasypaisa] = useState("")
+  const [cardEnabled, setCardEnabled] = useState(true)
+  const [cardInstructions, setCardInstructions] = useState("")
+  const [loaded, setLoaded] = useState(false)
+
+  // Sync local inputs when server data arrives
+  if (data && !loaded) {
+    setUsdPrice(String(data.usdPrice))
+    setPkrRate(String(data.pkrRate))
+    setJazzcash(data.jazzcashNumber)
+    setEasypaisa(data.easypaisaNumber)
+    setCardEnabled(data.cardEnabled)
+    setCardInstructions(data.cardInstructions)
+    setLoaded(true)
+  }
+
+  const onSave = async () => {
+    try {
+      await save.mutateAsync({
+        usdPrice: Number(usdPrice) || 5,
+        pkrRate: Number(pkrRate) || 280,
+        jazzcashNumber: jazzcash,
+        easypaisaNumber: easypaisa,
+        cardEnabled,
+        cardInstructions,
+      })
+      toast.success("Payment settings saved!")
+    } catch {
+      toast.error("Failed to save. Try again.")
+    }
+  }
+
+  const pkrPrice = Math.round((Number(usdPrice) || 5) * (Number(pkrRate) || 280))
+
+  return (
+    <div className="space-y-4">
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2"><CreditCard className="h-5 w-5 text-brand" /> Payment Settings</CardTitle>
+          <CardDescription>Set Pro price, PKR exchange rate, and payment method numbers.</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {/* Price */}
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-1.5">
+              <label className="text-xs font-bold uppercase tracking-wide text-muted-foreground">USD Price ($)</label>
+              <Input type="number" step="0.01" value={usdPrice} onChange={(e) => setUsdPrice(e.target.value)} className="h-10" />
+            </div>
+            <div className="space-y-1.5">
+              <label className="text-xs font-bold uppercase tracking-wide text-muted-foreground">PKR Rate (1 USD = ?)</label>
+              <Input type="number" value={pkrRate} onChange={(e) => setPkrRate(e.target.value)} className="h-10" />
+            </div>
+          </div>
+          <div className="rounded-lg bg-brand-muted/30 p-3 text-center">
+            <span className="text-sm font-bold text-brand">Auto-calculated PKR: Rs {pkrPrice}</span>
+            <span className="ml-2 text-xs text-muted-foreground">(${usdPrice} × {pkrRate})</span>
+          </div>
+
+          {/* JazzCash */}
+          <div className="space-y-1.5">
+            <label className="text-xs font-bold uppercase tracking-wide text-muted-foreground">JazzCash Number</label>
+            <Input value={jazzcash} onChange={(e) => setJazzcash(e.target.value)} placeholder="03XX-XXXXXXX" className="h-10" />
+          </div>
+
+          {/* Easypaisa */}
+          <div className="space-y-1.5">
+            <label className="text-xs font-bold uppercase tracking-wide text-muted-foreground">Easypaisa Number</label>
+            <Input value={easypaisa} onChange={(e) => setEasypaisa(e.target.value)} placeholder="03XX-XXXXXXX" className="h-10" />
+          </div>
+
+          {/* Card option */}
+          <div className="flex items-center justify-between rounded-lg border border-border p-3">
+            <div>
+              <div className="text-sm font-bold">Visa / Debit Card option</div>
+              <div className="text-[11px] text-muted-foreground">Show 3rd payment method to users</div>
+            </div>
+            <Switch checked={cardEnabled} onCheckedChange={setCardEnabled} />
+          </div>
+          {cardEnabled && (
+            <div className="space-y-1.5">
+              <label className="text-xs font-bold uppercase tracking-wide text-muted-foreground">Card Payment Instructions</label>
+              <Textarea value={cardInstructions} onChange={(e) => setCardInstructions(e.target.value)} rows={2} placeholder="e.g. Contact admin on WhatsApp for card payment link" className="text-sm" />
+            </div>
+          )}
+
+          <Button className="h-10 w-full gap-2 bg-brand font-bold text-brand-foreground hover:bg-brand/90" onClick={onSave} disabled={save.isPending}>
+            {save.isPending ? <Save className="h-4 w-4 animate-pulse" /> : <Save className="h-4 w-4" />}
+            Save Payment Settings
+          </Button>
+        </CardContent>
+      </Card>
     </div>
   )
 }

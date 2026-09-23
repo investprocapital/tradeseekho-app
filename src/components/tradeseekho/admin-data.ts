@@ -244,3 +244,34 @@ export function useRejectProRequest() {
     onSuccess: () => qc.invalidateQueries({ queryKey: ["admin-pro"] }),
   })
 }
+
+export interface ProSettingsData {
+  usdPrice: number
+  pkrRate: number
+  jazzcashNumber: string
+  easypaisaNumber: string
+  cardEnabled: boolean
+  cardInstructions: string
+}
+
+export function useProSettings() {
+  return useQuery<ProSettingsData>({
+    queryKey: ["admin-pro-settings"],
+    queryFn: () => j(fetch("/api/admin/pro-settings").then((r) => r)),
+  })
+}
+
+export function useSaveProSettings() {
+  const qc = useQueryClient()
+  return useMutation<ProSettingsData, Error, ProSettingsData>({
+    mutationFn: async (data) => {
+      const res = await fetch("/api/admin/pro-settings", {
+        method: "PUT",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify(data),
+      })
+      return j(Promise.resolve(res))
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["admin-pro-settings"] }),
+  })
+}
