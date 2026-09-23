@@ -41,7 +41,7 @@ export function Header() {
   const setLang = useStore((s) => s.setLang)
 
   return (
-    <header className="sticky top-0 z-40 w-full border-b border-border/70 bg-background/85 backdrop-blur supports-[backdrop-filter]:bg-background/70">
+    <header className="shrink-0 z-40 w-full border-b border-border/70 bg-background/85 backdrop-blur supports-[backdrop-filter]:bg-background/70">
       <div className="mx-auto flex h-12 w-full max-w-3xl items-center gap-1 px-2 sm:gap-2 sm:px-3">
         {/* Home button (TradeSeekho crystal T logo) */}
         <button

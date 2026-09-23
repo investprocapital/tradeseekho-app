@@ -15,7 +15,7 @@ export function Footer() {
   if (!showBanner) return null
 
   return (
-    <footer className="mt-auto border-t border-border bg-card">
+    <footer className="mt-6 border-t border-border bg-card">
       {/* Pro CTA / status banner */}
       <div className="flex items-center justify-between gap-3 bg-gradient-to-r from-gold/10 to-brand-muted/20 px-3 py-2">
         <div className="flex min-w-0 items-center gap-2">

@@ -61,10 +61,10 @@ export default function Home() {
   const quizLessons = lessons.filter((l) => l.hasQuiz)
 
   return (
-    <div className="flex min-h-screen flex-col bg-background">
+    <div className="flex h-screen flex-col overflow-hidden bg-background">
       <Header />
 
-      <main className="mx-auto w-full max-w-3xl flex-1 px-3 py-4 sm:px-4">
+      <main className="mx-auto w-full max-w-3xl flex-1 overflow-y-auto overscroll-contain px-3 py-4 sm:px-4" style={{ WebkitOverflowScrolling: "touch", minHeight: 0 }}>
         {showAdmin ? (
           <AdminPanel />
         ) : bottomTab === "home" ? (
@@ -152,9 +152,9 @@ export default function Home() {
             </section>
           </>
         ) : null}
+        <Footer />
       </main>
 
-      <Footer />
       <BottomNav />
 
       {/* Overlays */}
