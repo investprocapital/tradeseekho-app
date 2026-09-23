@@ -251,18 +251,18 @@ function QuizResults({
         const correctIdx = result.correctIndices[i]
         const expl = result.explanations[i]
         return (
-          <div key={q.id} className="rounded-xl border border-border bg-card p-4">
-            <div className="flex items-start gap-2">
-              <span className={`mt-0.5 inline-flex h-6 min-w-6 items-center justify-center rounded-md text-xs font-bold text-white ${
+          <div key={q.id} className={`rounded-xl border-2 bg-card p-4 ${correct ? "border-brand/50" : "border-destructive/50"}`}>
+            <div className="flex items-start gap-3">
+              <span className={`mt-0.5 inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-base font-bold text-white shadow-md ${
                 correct ? "bg-brand" : "bg-destructive"
               }`}>
-                {correct ? <Check className="h-3.5 w-3.5" /> : <X className="h-3.5 w-3.5" />}
+                {correct ? <Check className="h-5 w-5" strokeWidth={3} /> : <X className="h-5 w-5" strokeWidth={3} />}
               </span>
               <p className={`flex-1 text-[15px] font-semibold leading-snug text-foreground ${urduFontClass}`} style={urduLineStyle}>
                 {pick(q.prompt)}
               </p>
             </div>
-            <div className="mt-3 space-y-1.5 ps-8">
+            <div className="mt-3 space-y-1.5 ps-11">
               <div className={`text-sm ${urduFontClass}`} style={urduLineStyle}>
                 <span className="text-muted-foreground">{t("quiz.correctAnswer")}: </span>
                 <span className="font-bold text-brand">
