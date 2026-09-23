@@ -142,6 +142,15 @@
   body {
     @apply bg-background text-foreground;
     font-feature-settings: "rlig" 1, "calt" 1;
+    /* Prevent double-tap zoom on mobile — buttons should switch tabs, not zoom */
+    touch-action: manipulation;
+    -ms-touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+  }
+  /* All buttons/links: no double-tap zoom delay, no tap highlight */
+  button, a, [role="button"] {
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
   }
   html {
     scroll-behavior: smooth;
