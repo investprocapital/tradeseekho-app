@@ -5,18 +5,13 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Switch } from "@/components/ui/switch"
 import { Separator } from "@/components/ui/separator"
-import { Button } from "@/components/ui/button"
-import { Bell, Globe, Shield, Moon, Sun, ShieldCheck, User as UserIcon } from "lucide-react"
+import { Bell, Shield, Moon, Sun, User as UserIcon } from "lucide-react"
 import { useStore } from "@/lib/store"
-import { LANG_ORDER, LANGS } from "@/lib/i18n"
 
 export function SettingsSheet() {
   const open = useStore((s) => s.settingsOpen)
   const setOpen = useStore((s) => s.setSettingsOpen)
-  const lang = useStore((s) => s.lang)
-  const setLang = useStore((s) => s.setLang)
   const setEditProfileOpen = useStore((s) => s.setEditProfileOpen)
-  const setShowAdmin = useStore((s) => s.setShowAdmin)
   const { theme, setTheme } = useTheme()
 
   return (
@@ -26,7 +21,7 @@ export function SettingsSheet() {
           <SheetTitle className="flex items-center gap-2 text-xl font-extrabold">
             <Shield className="h-5 w-5 text-brand" /> Settings
           </SheetTitle>
-          <SheetDescription>Language, theme, notifications & account.</SheetDescription>
+          <SheetDescription>Theme, notifications & account.</SheetDescription>
         </SheetHeader>
 
         <ScrollArea className="ts-scroll flex-1">
@@ -35,32 +30,6 @@ export function SettingsSheet() {
             <Section title="Account">
               <Row icon={UserIcon} label="Edit profile" hint="Change name & password"
                 onClick={() => { setOpen(false); setEditProfileOpen(true) }} />
-              <Row icon={ShieldCheck} label="Admin panel" hint="Manage lessons, quizzes & ads"
-                onClick={() => { setOpen(false); setShowAdmin(true) }} />
-            </Section>
-
-            <Separator className="my-3" />
-
-            {/* Language */}
-            <Section title="Language">
-              <div className="px-3 py-2">
-                <div className="mb-2 flex items-center gap-2 text-sm font-bold">
-                  <Globe className="h-4 w-4 text-brand" /> Language
-                </div>
-                <div className="grid grid-cols-2 gap-2">
-                  {LANG_ORDER.map((code) => (
-                    <button
-                      key={code}
-                      onClick={() => setLang(code)}
-                      className={`rounded-lg border px-3 py-2 text-start text-sm font-bold transition ${
-                        lang === code ? "border-brand bg-brand-muted text-brand" : "border-border hover:bg-muted/40"
-                      } ${LANGS[code].dir === "rtl" ? "font-urdu text-base" : ""}`}
-                    >
-                      {LANGS[code].native}
-                    </button>
-                  ))}
-                </div>
-              </div>
             </Section>
 
             <Separator className="my-3" />

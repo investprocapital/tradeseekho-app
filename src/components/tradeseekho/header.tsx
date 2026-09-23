@@ -59,27 +59,6 @@ export function Header() {
           </span>
         </button>
 
-        {/* Edit Profile (avatar with edit icon — opens Edit Profile dialog) */}
-        <Button
-          variant="ghost"
-          size="sm"
-          className="group relative ml-0.5 h-8 gap-1.5 rounded-full px-0.5"
-          onClick={() => setEditProfileOpen(true)}
-          aria-label="Edit Profile"
-        >
-          <span className="relative inline-block">
-            <Avatar className="h-7 w-7 border border-border">
-              <AvatarImage src={userImage ?? undefined} alt="" />
-              <AvatarFallback className="bg-brand text-[10px] font-bold text-brand-foreground">
-                {initial}
-              </AvatarFallback>
-            </Avatar>
-            <span className="pointer-events-none absolute -bottom-0.5 -right-0.5 inline-flex h-3.5 w-3.5 items-center justify-center rounded-full bg-brand text-white ring-2 ring-background">
-              <Edit3 className="h-2 w-2" />
-            </span>
-          </span>
-        </Button>
-
         <div className="flex-1" />
 
         {/* Search */}
