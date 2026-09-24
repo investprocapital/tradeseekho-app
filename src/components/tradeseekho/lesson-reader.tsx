@@ -209,7 +209,7 @@ export function LessonReader() {
                 )}
 
                 {/* TradingView EUR/USD live chart (300px, interactive) */}
-                <TradingViewChart height={300} />
+                <TradingViewChart height={300} lessonId={lesson.id} />
 
                 {/* AdMob banner inside the reader (web + mobile + iOS) */}
                 <div className="mt-4">
