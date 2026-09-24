@@ -204,6 +204,19 @@ model AdSettings {
   updatedAt            DateTime @updatedAt
 }
 
+// Broker banner ads — 3 rotating ads, admin-editable
+model BrokerAd {
+  id        String   @id @default(cuid())
+  slot      Int      @unique // 1, 2, 3
+  name      String   @default("Broker Ad")
+  text      String   @default("Trade with Exness - Instant Deposit & Withdrawal")
+  btnText   String   @default("Open Account")
+  link      String   @default("#")
+  enabled   Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
 // Pro payment settings — editable from Admin Panel
 model ProSettings {
   id              String   @id @default("singleton")

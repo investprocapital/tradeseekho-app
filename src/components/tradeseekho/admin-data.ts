@@ -275,3 +275,38 @@ export function useSaveProSettings() {
     onSuccess: () => qc.invalidateQueries({ queryKey: ["admin-pro-settings"] }),
   })
 }
+
+export interface BrokerAdData {
+  id?: string
+  slot: number
+  name: string
+  text: string
+  btnText: string
+  link: string
+  enabled: boolean
+}
+
+export function useBrokerAds() {
+  return useQuery<{ ads: BrokerAdData[] }>({
+    queryKey: ["admin-broker-ads"],
+    queryFn: () => j(fetch("/api/admin/broker-ads").then((r) => r)),
+  })
+}
+
+export function useSaveBrokerAds() {
+  const qc = useQueryClient()
+  return useMutation<{ ads: BrokerAdData[] }, Error, { ads: BrokerAdData[] }>({
+    mutationFn: async (data) => {
+      const res = await fetch("/api/admin/broker-ads", {
+        method: "PUT",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify(data),
+      })
+      return j(Promise.resolve(res))
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["admin-broker-ads"] })
+      qc.invalidateQueries({ queryKey: ["broker-ads"] })
+    },
+  })
+}

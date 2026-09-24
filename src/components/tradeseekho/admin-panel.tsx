@@ -39,6 +39,7 @@ import {
   useAdminQuiz, useAdminStats, useSaveStats, useAdminAds, useSaveAds,
   useAdminProRequests, useApproveProRequest, useRejectProRequest,
   useProSettings, useSaveProSettings,
+  useBrokerAds, useSaveBrokerAds,
 } from "./admin-data"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 
@@ -114,6 +115,7 @@ export function AdminPanel() {
             <TabsTrigger value="lessons" className="gap-1 whitespace-nowrap"><BookOpen className="h-4 w-4" /><span className="hidden xs:inline sm:inline">Lessons</span></TabsTrigger>
             <TabsTrigger value="quizzes" className="gap-1 whitespace-nowrap"><BarChart3 className="h-4 w-4" /><span className="hidden xs:inline sm:inline">Quizzes</span></TabsTrigger>
             <TabsTrigger value="ads" className="gap-1 whitespace-nowrap"><Megaphone className="h-4 w-4" /><span className="hidden xs:inline sm:inline">Ads</span></TabsTrigger>
+            <TabsTrigger value="broker-ads" className="gap-1 whitespace-nowrap"><Megaphone className="h-4 w-4" /><span className="hidden xs:inline sm:inline">Broker Ads</span></TabsTrigger>
             <TabsTrigger value="payment" className="gap-1 whitespace-nowrap"><CreditCard className="h-4 w-4" /><span className="hidden xs:inline sm:inline">Payment</span></TabsTrigger>
             <TabsTrigger value="pro" className="gap-1 whitespace-nowrap"><Crown className="h-4 w-4" /><span className="hidden xs:inline sm:inline">Pro</span></TabsTrigger>
           </TabsList>
@@ -122,6 +124,7 @@ export function AdminPanel() {
         <TabsContent value="lessons" className="mt-5"><LessonsTab /></TabsContent>
         <TabsContent value="quizzes" className="mt-5"><QuizzesTab /></TabsContent>
         <TabsContent value="ads" className="mt-5"><AdsTab /></TabsContent>
+        <TabsContent value="broker-ads" className="mt-5"><BrokerAdsTab /></TabsContent>
         <TabsContent value="payment" className="mt-5"><PaymentSettingsTab /></TabsContent>
         <TabsContent value="pro" className="mt-5"><ProRequestsTab /></TabsContent>
       </Tabs>
@@ -1135,6 +1138,85 @@ function PaymentSettingsTab() {
           <Button className="h-10 w-full gap-2 bg-brand font-bold text-brand-foreground hover:bg-brand/90" onClick={onSave} disabled={save.isPending}>
             {save.isPending ? <Save className="h-4 w-4 animate-pulse" /> : <Save className="h-4 w-4" />}
             Save Payment Settings
+          </Button>
+        </CardContent>
+      </Card>
+    </div>
+  )
+}
+
+/* ---------------- Broker Ads ---------------- */
+function BrokerAdsTab() {
+  const { data, isLoading } = useBrokerAds()
+  const save = useSaveBrokerAds()
+
+  const [ads, setAds] = useState<Array<{
+    id?: string; slot: number; name: string; text: string; btnText: string; link: string; enabled: boolean
+  }>>([])
+  const [loaded, setLoaded] = useState(false)
+
+  if (data && !loaded) {
+    setAds(data.ads.map((a: any) => ({ ...a })))
+    setLoaded(true)
+  }
+
+  const update = (slot: number, field: string, value: string | boolean) => {
+    setAds((prev) => prev.map((a) => a.slot === slot ? { ...a, [field]: value } : a))
+  }
+
+  const onSave = async () => {
+    try {
+      await save.mutateAsync({ ads })
+      toast.success("Broker ads saved!")
+    } catch {
+      toast.error("Failed to save. Try again.")
+    }
+  }
+
+  if (isLoading) return <p className="py-6 text-center text-sm text-muted-foreground">Loading...</p>
+
+  return (
+    <div className="space-y-4">
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2"><Megaphone className="h-5 w-5 text-brand" /> Broker Ad Banners</CardTitle>
+          <CardDescription>Manage rotating broker ads shown on homepage. Ads auto-rotate every 10 seconds.</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {ads.map((ad, i) => (
+            <div key={ad.slot} className="rounded-xl border border-border p-4 space-y-3">
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-bold">Ad Slot {ad.slot}</span>
+                <div className="flex items-center gap-2">
+                  <span className="text-[11px] text-muted-foreground">{ad.enabled ? "ON" : "OFF"}</span>
+                  <Switch checked={ad.enabled} onCheckedChange={(v) => update(ad.slot, "enabled", v)} />
+                </div>
+              </div>
+              <div className="grid gap-2">
+                <div className="space-y-1">
+                  <label className="text-[11px] font-bold uppercase tracking-wide text-muted-foreground">Broker Name</label>
+                  <Input value={ad.name} onChange={(e) => update(ad.slot, "name", e.target.value)} className="h-9" placeholder="e.g. Exness" />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-[11px] font-bold uppercase tracking-wide text-muted-foreground">Ad Text</label>
+                  <Input value={ad.text} onChange={(e) => update(ad.slot, "text", e.target.value)} className="h-9" placeholder="e.g. Trade with Exness - Instant Deposit" />
+                </div>
+                <div className="grid grid-cols-2 gap-2">
+                  <div className="space-y-1">
+                    <label className="text-[11px] font-bold uppercase tracking-wide text-muted-foreground">Button Text</label>
+                    <Input value={ad.btnText} onChange={(e) => update(ad.slot, "btnText", e.target.value)} className="h-9" placeholder="e.g. Open Account" />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-[11px] font-bold uppercase tracking-wide text-muted-foreground">Link (URL)</label>
+                    <Input value={ad.link} onChange={(e) => update(ad.slot, "link", e.target.value)} className="h-9" placeholder="https://..." />
+                  </div>
+                </div>
+              </div>
+            </div>
+          ))}
+          <Button className="h-10 w-full gap-2 bg-brand font-bold text-brand-foreground hover:bg-brand/90" onClick={onSave} disabled={save.isPending}>
+            {save.isPending ? <Save className="h-4 w-4 animate-pulse" /> : <Save className="h-4 w-4" />}
+            Save Broker Ads
           </Button>
         </CardContent>
       </Card>
