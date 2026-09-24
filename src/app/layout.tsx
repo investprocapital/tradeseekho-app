@@ -29,7 +29,7 @@ const notoNaskhArabic = Noto_Naskh_Arabic({
 export const metadata: Metadata = {
   metadataBase: new URL("https://tradeseekho.com"),
   title: {
-    default: "TradeSeekho — Learn Forex & Crypto in Urdu, English, Hindi & Arabic",
+    default: "TradeSeekho PK - Learn Trading",
     template: "%s · TradeSeekho",
   },
   manifest: "/manifest.json",
