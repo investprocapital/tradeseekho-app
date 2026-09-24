@@ -8,7 +8,6 @@ import { useStore } from "@/lib/store"
 import { useLessonsBundle, useProMe } from "@/components/tradeseekho/use-data"
 import { Header } from "@/components/tradeseekho/header"
 import { Footer } from "@/components/tradeseekho/footer"
-import { AdBanner } from "@/components/tradeseekho/ad-banner"
 import { BrokerAdBanner } from "@/components/tradeseekho/broker-ad-banner"
 import { BottomNav } from "@/components/tradeseekho/bottom-nav"
 import { LessonReader } from "@/components/tradeseekho/lesson-reader"
@@ -92,8 +91,6 @@ export default function Home() {
                 )}
               </div>
             </section>
-
-            <AdBanner />
           </>
         ) : bottomTab === "lessons" ? (
           <>
@@ -157,10 +154,7 @@ export default function Home() {
         ) : null}
         <Footer />
 
-        {/* Broker Ad Banner — below Pro card (rotates every 10s) */}
-        <BrokerAdBanner />
-
-        {/* Broker Ad Banner — fixed above bottom nav */}
+        {/* Broker Ad Banner — fixed above bottom nav (rotates every 10s: Exness → XM → OctaFX) */}
         <div className="shrink-0 border-t border-border/50 bg-background/95 px-2 py-1.5">
           <BrokerAdBanner fixed />
         </div>
