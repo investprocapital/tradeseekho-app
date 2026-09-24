@@ -104,7 +104,7 @@ export function LoginDialog() {
                   {/* Logo — BIG, CENTERED, with glow */}
                   <div className="mb-3 flex flex-col items-center">
                     <div className="relative" style={{ filter: "drop-shadow(0 0 20px rgba(0, 208, 156, 0.3))" }}>
-                      <img src="/tradeseekho-logo.png" alt="TradeSeekho" className="h-[70px] w-[70px] rounded-2xl" />
+                      <img src="/tradeseekho-logo.png" alt="TradeSeekho PK" className="h-[70px] w-[70px] rounded-2xl" />
                     </div>
                     <span className="mt-2 text-xl font-extrabold"><span className="text-white">Trade</span><span className="text-[#00D09C]">Seekho</span></span>
                   </div>
@@ -178,7 +178,7 @@ export function LoginDialog() {
                     {/* Green glow behind girl */}
                     <div className="pointer-events-none absolute bottom-4 left-1/2 h-32 w-44 -translate-x-1/2 rounded-full bg-[#00D09C] opacity-20 blur-[50px]" />
                     <div className="relative z-10">
-                      <img src="/login-girl-transparent.png" alt="TradeSeekho trader girl"
+                      <img src="/login-girl-transparent.png" alt="TradeSeekho PK trader girl"
                         className="w-full object-contain"
                         style={{ height: "260px", filter: "brightness(1.2) contrast(1.05) drop-shadow(0 0 10px rgba(0,208,156,0.12))" }} />
                       {/* Floating green forex candlestick in girl's raised hand area */}
@@ -209,7 +209,7 @@ export function LoginDialog() {
                   </button>
                   <div className="mb-4 flex flex-col items-center">
                     <div className="relative" style={{ filter: "drop-shadow(0 0 20px rgba(0, 208, 156, 0.3))" }}>
-                      <img src="/tradeseekho-logo.png" alt="TradeSeekho" className="h-[60px] w-[60px] rounded-2xl" />
+                      <img src="/tradeseekho-logo.png" alt="TradeSeekho PK" className="h-[60px] w-[60px] rounded-2xl" />
                     </div>
                     <span className="mt-2 text-lg font-extrabold"><span className="text-white">Trade</span><span className="text-[#00D09C]">Seekho</span></span>
                   </div>

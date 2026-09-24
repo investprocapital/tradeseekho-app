@@ -35,7 +35,7 @@ export function Footer() {
               </>
             ) : (
               <>
-                <p className="truncate text-[11px] font-bold text-foreground">TradeSeekho Pro</p>
+                <p className="truncate text-[11px] font-bold text-foreground">TradeSeekho PK Pro</p>
                 <p className="truncate text-[9px] text-muted-foreground">JazzCash / Easypaisa</p>
               </>
             )}

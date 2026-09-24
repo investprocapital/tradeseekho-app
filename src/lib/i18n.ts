@@ -23,7 +23,7 @@ export const LANG_ORDER: Lang[] = ["en", "ur", "hi", "ar"]
 type Dict = Record<string, string>
 
 const en: Dict = {
-  "app.name": "TradeSeekho",
+  "app.name": "TradeSeekho PK",
   "app.tagline": "Learn Forex & Crypto — the smart way.",
   "app.subtitle": "Structured lessons, instant quizzes, and real trading skills. In Urdu, English, Hindi & Arabic.",
   "nav.home": "Home",
@@ -128,7 +128,7 @@ const en: Dict = {
   "admin.correct": "Correct",
   "admin.explanation": "Explanation",
   "footer.madeWith": "Built for learners, by learners.",
-  "footer.rights": "© {year} TradeSeekho. All rights reserved.",
+  "footer.rights": "© {year} TradeSeekho PK. All rights reserved.",
   "footer.ad": "Ad",
   "toast.bookmarked": "Lesson bookmarked",
   "toast.unbookmarked": "Bookmark removed",

@@ -108,7 +108,7 @@ export function ProDialog() {
       <DialogContent className="max-h-[92vh] max-w-md overflow-y-auto p-0">
         <DialogHeader className="border-b border-border bg-gradient-to-br from-gold/15 to-brand-muted/30 p-5">
           <DialogTitle className="flex items-center gap-2 text-xl font-extrabold">
-            <Crown className="h-5 w-5 text-gold" /> TradeSeekho Pro
+            <Crown className="h-5 w-5 text-gold" /> TradeSeekho PK Pro
           </DialogTitle>
           <DialogDescription>
             Unlock all lessons, ad-free experience & certificates.
@@ -123,7 +123,7 @@ export function ProDialog() {
                 <Crown className="h-8 w-8 text-gold" />
               </span>
               <h3 className="text-lg font-extrabold text-foreground">You're Pro! 🎉</h3>
-              <p className="text-sm text-muted-foreground">Thanks for supporting TradeSeekho. Enjoy unlimited access.</p>
+              <p className="text-sm text-muted-foreground">Thanks for supporting TradeSeekho PK. Enjoy unlimited access.</p>
             </div>
           ) : isPending ? (
             <div className="flex flex-col items-center gap-3 py-8 text-center">
@@ -199,7 +199,7 @@ export function ProDialog() {
                     <div>
                       <div className="text-[11px] uppercase tracking-wide text-muted-foreground">Send Rs {displayAmount} to</div>
                       <div className="font-mono text-base font-bold text-foreground">{currentNumber}</div>
-                      <div className="text-[10px] text-muted-foreground">{method} • TradeSeekho</div>
+                      <div className="text-[10px] text-muted-foreground">{method} • TradeSeekho PK</div>
                     </div>
                     <Button type="button" size="sm" variant="outline" className="gap-1.5" onClick={() => copy(currentNumber || "")}>
                       <Copy className="h-3.5 w-3.5" /> Copy

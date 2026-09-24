@@ -626,7 +626,7 @@ Account: $10k-$20k Funded. Target: Monthly $500-$1000 withdrawal. Now you are a 
 ### Final Advice
 For 1 year: 1 Pair EUR/USD, 1 Session (London), 1 Setup (OB+FVG). Don't change the strategy.
 
-### Congratulations! You Are a TradeSeekho Graduate! 🎓`,
+### Congratulations! You Are a TradeSeekho PK Graduate! 🎓`,
       ur: `## 1 Saal Ka Career Roadmap | $100 سے Pro تک
 
 یہ آپ کا final roadmap ہے۔ اس کو screenshot لیں۔
@@ -646,7 +646,7 @@ Account: $10k-$20k Funded۔ Target: Monthly $500-$1000 withdrawal۔ اب آپ Pr
 ### Aakhri Naseehat
 1 saal tak 1 Pair EUR/USD، 1 Session (London)، 1 Setup (OB+FVG)۔ Strategy مت بدلو۔
 
-### Mubarak Ho! Aap TradeSeekho Graduate Hain! 🎓`,
+### Mubarak Ho! Aap TradeSeekho PK Graduate Hain! 🎓`,
       hi: `## 1 साल का करियर रोडमैप | $100 से Pro तक
 
 यह आपका final roadmap है। इसको screenshot लें।
@@ -666,7 +666,7 @@ Account: $10k-$20k Funded। Target: Monthly $500-$1000 withdrawal। अब आ
 ### आख़िरी नसीहत
 1 साल तक 1 Pair EUR/USD, 1 Session (London), 1 Setup (OB+FVG)। Strategy मत बदलो।
 
-### मुबारक हो! आप TradeSeekho Graduate हैं! 🎓`,
+### मुबारक हो! आप TradeSeekho PK Graduate हैं! 🎓`,
       ar: `## خارطة طريق مهنة سنة واحدة | من $100 إلى الاحتراف
 
 هذه خارطة طريقك النهائية. التقط لقطة شاشة.

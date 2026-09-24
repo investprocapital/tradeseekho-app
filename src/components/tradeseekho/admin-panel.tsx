@@ -91,7 +91,7 @@ export function AdminPanel() {
           </span>
           <div>
             <h1 className="text-xl font-extrabold tracking-tight">{t("admin.title")}</h1>
-            <p className="text-xs text-muted-foreground">TradeSeekho v1.0</p>
+            <p className="text-xs text-muted-foreground">TradeSeekho PK v1.0</p>
           </div>
         </div>
         <div className="flex items-center gap-2">

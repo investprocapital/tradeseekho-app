@@ -26,7 +26,7 @@ export function Splash({ onDone }: { onDone: () => void }) {
           {/* Splash image — covers most of the screen */}
           <img
             src="/splash.jpg"
-            alt="TradeSeekho"
+            alt="TradeSeekho PK"
             className="h-full w-full object-cover"
             style={{ objectPosition: "center top" }}
           />

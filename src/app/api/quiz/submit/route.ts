@@ -106,7 +106,7 @@ export async function POST(req: Request) {
         create: {
           userId,
           categorySlug: lesson.category.slug,
-          userName: "TradeSeekho Learner",
+          userName: "TradeSeekho PK Learner",
           lessonsPassed: siblings.length,
           totalLessons: siblings.length,
           scoreSum,

@@ -49,13 +49,13 @@ export function Header() {
           className="relative shrink-0 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
           aria-label={t("nav.home")}
         >
-          <img src="/tradeseekho-logo.png" alt="TradeSeekho" className="h-8 w-8 rounded-lg" />
+          <img src="/tradeseekho-logo.png" alt="TradeSeekho PK" className="h-8 w-8 rounded-lg" />
         </button>
 
         {/* Brand text (desktop only) */}
         <button onClick={() => { setShowAdmin(false); setBottomTab("home") }} className="hidden flex-col leading-none sm:flex" aria-label={t("nav.home")}>
           <span className="text-sm font-extrabold tracking-tight text-foreground">
-            Trade<span className="text-brand">Seekho</span>
+            TradeSeekho <span className="text-brand">PK</span>
           </span>
         </button>
 

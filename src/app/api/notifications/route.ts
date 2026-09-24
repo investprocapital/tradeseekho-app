@@ -68,7 +68,7 @@ export async function GET() {
     out.push({
       id: "welcome",
       type: "welcome",
-      title: "Welcome to TradeSeekho 👋",
+      title: "Welcome to TradeSeekho PK 👋",
       body: "Start with the Beginner level and pass the first quiz to unlock the next lesson.",
       createdAt: new Date().toISOString(),
     })

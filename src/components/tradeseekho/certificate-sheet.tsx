@@ -86,7 +86,7 @@ function CertificateCard({
             <Award className="h-5 w-5" />
           </span>
           <div>
-            <div className="text-[11px] font-bold uppercase tracking-[0.18em] text-gold-foreground/80">TradeSeekho</div>
+            <div className="text-[11px] font-bold uppercase tracking-[0.18em] text-gold-foreground/80">TradeSeekho PK</div>
             <div className="text-xs font-bold capitalize">{cert.categorySlug} Level</div>
           </div>
         </div>
@@ -99,7 +99,7 @@ function CertificateCard({
         <h3 className="mt-1 text-center text-xl font-extrabold text-foreground">{cert.userName}</h3>
         <p className="mt-2 text-center text-xs text-muted-foreground">
           has successfully completed the <span className="font-bold capitalize text-foreground">{cert.categorySlug}</span> level
-          of the TradeSeekho Forex &amp; Crypto learning program.
+          of the TradeSeekho PK Forex &amp; Crypto learning program.
         </p>
 
         <div className="mt-4 grid grid-cols-3 gap-2 text-center">

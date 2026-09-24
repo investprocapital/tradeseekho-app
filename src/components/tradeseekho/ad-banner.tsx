@@ -22,7 +22,7 @@ export function AdBanner({ compact = false }: { compact?: boolean }) {
       <div className="flex items-center justify-between gap-2 border-y border-border bg-muted/40 px-3 py-1.5">
         <div className="flex min-w-0 items-center gap-2">
           <Megaphone className="h-3.5 w-3.5 shrink-0 text-gold" />
-          <span className="truncate text-[10px] font-bold text-muted-foreground">Ad · TradeSeekho Pro — unlock all lessons</span>
+          <span className="truncate text-[10px] font-bold text-muted-foreground">Ad · TradeSeekho PK Pro — unlock all lessons</span>
         </div>
         <button onClick={() => setProOpen(true)} className="shrink-0 rounded-full bg-brand px-2 py-0.5 text-[9px] font-bold text-brand-foreground">
           Get Pro
@@ -45,7 +45,7 @@ export function AdBanner({ compact = false }: { compact?: boolean }) {
             <Megaphone className="h-5 w-5" />
           </span>
           <div className="min-w-0 leading-tight">
-            <p className="truncate text-sm font-bold text-foreground">TradeSeekho Pro — ad-free + all lessons</p>
+            <p className="truncate text-sm font-bold text-foreground">TradeSeekho PK Pro — ad-free + all lessons</p>
             <p className="truncate text-[11px] text-muted-foreground">
               {ads?.bannerUnitId?.startsWith("ca-app-pub-") ? "AdMob Banner" : "Sponsored"} · tap to upgrade
             </p>

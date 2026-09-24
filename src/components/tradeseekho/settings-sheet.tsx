@@ -63,7 +63,7 @@ export function SettingsSheet() {
             </Section>
 
             <div className="px-3 py-4 text-center text-[11px] text-muted-foreground">
-              TradeSeekho v1.0 · Made for learners
+              TradeSeekho PK v1.0 · Made for learners
             </div>
           </div>
         </ScrollArea>
