@@ -106,7 +106,7 @@ export function LoginDialog() {
                     <div className="relative" style={{ filter: "drop-shadow(0 0 20px rgba(0, 208, 156, 0.3))" }}>
                       <img src="/tradeseekho-logo.png" alt="TradeSeekho PK" className="h-[70px] w-[70px] rounded-2xl" />
                     </div>
-                    <span className="mt-2 text-xl font-extrabold"><span className="text-white">Trade</span><span className="text-[#00D09C]">Seekho</span></span>
+                    <span className="mt-2 text-xl font-extrabold"><span className="text-white">TradeSeekho</span> <span className="text-[#00D09C]">PK</span></span>
                   </div>
                   <h2 className="text-2xl font-extrabold text-white">Welcome Back</h2>
                   <p className="mt-1 text-sm text-white/50">Login to your account to continue</p>
@@ -211,7 +211,7 @@ export function LoginDialog() {
                     <div className="relative" style={{ filter: "drop-shadow(0 0 20px rgba(0, 208, 156, 0.3))" }}>
                       <img src="/tradeseekho-logo.png" alt="TradeSeekho PK" className="h-[60px] w-[60px] rounded-2xl" />
                     </div>
-                    <span className="mt-2 text-lg font-extrabold"><span className="text-white">Trade</span><span className="text-[#00D09C]">Seekho</span></span>
+                    <span className="mt-2 text-lg font-extrabold"><span className="text-white">TradeSeekho</span> <span className="text-[#00D09C]">PK</span></span>
                   </div>
                   <h2 className="text-2xl font-extrabold text-white">{view === "signup" ? "Create Account" : "Welcome Back"}</h2>
                   <p className="mt-1 text-sm text-white/50">{view === "signup" ? "Sign up to start learning" : "Login to your account to continue"}</p>
