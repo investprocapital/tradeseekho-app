@@ -78,6 +78,8 @@ export const authOptions: NextAuthOptions = {
   callbacks: {
     async signIn({ user, account }) {
       // For Google: ensure a User row exists (create on first sign-in).
+      // If a user with the same email already exists (from email/password signup),
+      // use that existing account — NO duplicates.
       if (account?.provider === "google" && user.email) {
         const exists = await db.user.findUnique({ where: { email: user.email } })
         if (!exists) {
@@ -87,6 +89,13 @@ export const authOptions: NextAuthOptions = {
               name: user.name ?? null,
               image: (user as { image?: string }).image ?? null,
             },
+          })
+        }
+        // If exists but has no image, update with Google image
+        if (exists && !exists.image && (user as { image?: string }).image) {
+          await db.user.update({
+            where: { id: exists.id },
+            data: { image: (user as { image?: string }).image ?? null, name: exists.name || user.name },
           })
         }
       }

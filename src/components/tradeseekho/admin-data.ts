@@ -310,3 +310,34 @@ export function useSaveBrokerAds() {
     },
   })
 }
+
+export interface AdminUser {
+  id: string
+  email: string
+  name: string
+  password: string
+  authMethod: string
+  role: string
+  proStatus: string
+  proMethod: string | null
+  proNote: string | null
+  joinedAt: string
+  passedQuizzes: number
+  totalLessons: number
+  deviceInfo: string
+}
+
+export function useAdminUsers(search?: string, filter?: string) {
+  let queryKey = ["admin-users"]
+  let url = "/api/admin/users"
+  const params = new URLSearchParams()
+  if (search) { params.set("search", search); queryKey.push(search) }
+  if (filter && filter !== "all") { params.set("filter", filter); queryKey.push(filter) }
+  const qs = params.toString()
+  if (qs) url += "?" + qs
+
+  return useQuery<{ users: AdminUser[]; total: number }>({
+    queryKey,
+    queryFn: () => j(fetch(url).then((r) => r)),
+  })
+}

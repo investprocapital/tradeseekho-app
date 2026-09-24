@@ -5,7 +5,7 @@ import { motion } from "framer-motion"
 import {
   Download, Users, BookOpen, BarChart3, Shield, Lock, LogOut, Eye,
   Plus, Pencil, Trash2, Save, Send, Megaphone, Check, ChevronRight, ArrowLeft,
-  Crown, X, Upload, CreditCard,
+  Crown, X, Upload, CreditCard, Search,
 } from "lucide-react"
 import {
   Card, CardContent, CardHeader, CardTitle, CardDescription,
@@ -40,6 +40,7 @@ import {
   useAdminProRequests, useApproveProRequest, useRejectProRequest,
   useProSettings, useSaveProSettings,
   useBrokerAds, useSaveBrokerAds,
+  useAdminUsers,
 } from "./admin-data"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 
@@ -112,6 +113,7 @@ export function AdminPanel() {
         <div className="overflow-x-auto pb-1">
           <TabsList className="flex w-max gap-1">
             <TabsTrigger value="dashboard" className="gap-1 whitespace-nowrap"><BarChart3 className="h-4 w-4" /><span className="hidden xs:inline sm:inline">Dashboard</span></TabsTrigger>
+            <TabsTrigger value="users" className="gap-1 whitespace-nowrap"><Users className="h-4 w-4" /><span className="hidden xs:inline sm:inline">Users</span></TabsTrigger>
             <TabsTrigger value="lessons" className="gap-1 whitespace-nowrap"><BookOpen className="h-4 w-4" /><span className="hidden xs:inline sm:inline">Lessons</span></TabsTrigger>
             <TabsTrigger value="quizzes" className="gap-1 whitespace-nowrap"><BarChart3 className="h-4 w-4" /><span className="hidden xs:inline sm:inline">Quizzes</span></TabsTrigger>
             <TabsTrigger value="ads" className="gap-1 whitespace-nowrap"><Megaphone className="h-4 w-4" /><span className="hidden xs:inline sm:inline">Ads</span></TabsTrigger>
@@ -121,6 +123,7 @@ export function AdminPanel() {
           </TabsList>
         </div>
         <TabsContent value="dashboard" className="mt-5"><DashboardTab /></TabsContent>
+        <TabsContent value="users" className="mt-5"><UsersTab /></TabsContent>
         <TabsContent value="lessons" className="mt-5"><LessonsTab /></TabsContent>
         <TabsContent value="quizzes" className="mt-5"><QuizzesTab /></TabsContent>
         <TabsContent value="ads" className="mt-5"><AdsTab /></TabsContent>
@@ -1219,6 +1222,115 @@ function BrokerAdsTab() {
             Save Broker Ads
           </Button>
         </CardContent>
+      </Card>
+    </div>
+  )
+}
+
+/* ---------------- Users / Clients ---------------- */
+function UsersTab() {
+  const [search, setSearch] = useState("")
+  const [filter, setFilter] = useState("all")
+  const { data, isLoading } = useAdminUsers(search, filter)
+
+  const users = data?.users ?? []
+  const proCount = users.filter((u) => u.proStatus === "active").length
+
+  return (
+    <div className="space-y-4">
+      {/* Stats */}
+      <div className="grid grid-cols-3 gap-2">
+        <div className="rounded-xl border border-border bg-card p-3 text-center">
+          <div className="text-2xl font-extrabold text-foreground">{data?.total ?? 0}</div>
+          <div className="text-[10px] uppercase tracking-wide text-muted-foreground">Total Users</div>
+        </div>
+        <div className="rounded-xl border border-gold/30 bg-gold/5 p-3 text-center">
+          <div className="text-2xl font-extrabold text-gold-foreground">{proCount}</div>
+          <div className="text-[10px] uppercase tracking-wide text-muted-foreground">Pro Users</div>
+        </div>
+        <div className="rounded-xl border border-border bg-card p-3 text-center">
+          <div className="text-2xl font-extrabold text-foreground">{(data?.total ?? 0) - proCount}</div>
+          <div className="text-[10px] uppercase tracking-wide text-muted-foreground">Free Users</div>
+        </div>
+      </div>
+
+      {/* Search + Filter */}
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <Input
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Search by email or name..."
+            className="h-10 pl-9"
+          />
+        </div>
+        <div className="flex gap-1.5">
+          <button
+            onClick={() => setFilter("all")}
+            className={`rounded-lg px-3 py-2 text-xs font-bold transition ${filter === "all" ? "bg-brand text-brand-foreground" : "bg-muted text-muted-foreground"}`}
+          >All</button>
+          <button
+            onClick={() => setFilter("pro")}
+            className={`rounded-lg px-3 py-2 text-xs font-bold transition ${filter === "pro" ? "bg-gold text-gold-foreground" : "bg-muted text-muted-foreground"}`}
+          >Pro Only</button>
+          <button
+            onClick={() => setFilter("free")}
+            className={`rounded-lg px-3 py-2 text-xs font-bold transition ${filter === "free" ? "bg-brand text-brand-foreground" : "bg-muted text-muted-foreground"}`}
+          >Free Only</button>
+        </div>
+      </div>
+
+      {/* Users Table */}
+      <Card>
+        <ScrollArea className="ts-scroll max-h-[60vh] overflow-x-auto">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Email</TableHead>
+                <TableHead>Name</TableHead>
+                <TableHead className="hidden md:table-cell">Auth</TableHead>
+                <TableHead className="hidden md:table-cell">Password (hash)</TableHead>
+                <TableHead>Pro Status</TableHead>
+                <TableHead className="hidden lg:table-cell">Pro Method / TID</TableHead>
+                <TableHead className="hidden md:table-cell">Joined</TableHead>
+                <TableHead>Quiz</TableHead>
+                <TableHead className="hidden lg:table-cell">Device</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {isLoading ? (
+                <TableRow><TableCell colSpan={9} className="py-6 text-center text-muted-foreground">Loading...</TableCell></TableRow>
+              ) : users.length === 0 ? (
+                <TableRow><TableCell colSpan={9} className="py-6 text-center text-muted-foreground">No users found.</TableCell></TableRow>
+              ) : users.map((u) => (
+                <TableRow key={u.id} className="hover:bg-muted/30">
+                  <TableCell className="font-semibold text-xs">{u.email}</TableCell>
+                  <TableCell className="text-xs">{u.name}</TableCell>
+                  <TableCell className="hidden md:table-cell text-xs text-muted-foreground whitespace-nowrap">{u.authMethod}</TableCell>
+                  <TableCell className="hidden md:table-cell text-[10px] font-mono text-muted-foreground whitespace-nowrap">{u.password}</TableCell>
+                  <TableCell>
+                    {u.proStatus === "active" ? (
+                      <Badge className="bg-gold/20 text-gold-foreground text-[10px]">PRO</Badge>
+                    ) : u.proStatus === "pending" ? (
+                      <Badge variant="secondary" className="text-[10px]">Pending</Badge>
+                    ) : (
+                      <Badge variant="outline" className="text-[10px]">Free</Badge>
+                    )}
+                  </TableCell>
+                  <TableCell className="hidden lg:table-cell text-xs text-muted-foreground whitespace-nowrap">
+                    {u.proMethod ? `${u.proMethod}${u.proNote ? " · " + u.proNote.slice(0, 20) : ""}` : "-"}
+                  </TableCell>
+                  <TableCell className="hidden md:table-cell text-xs text-muted-foreground whitespace-nowrap">
+                    {new Date(u.joinedAt).toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" })}
+                  </TableCell>
+                  <TableCell className="text-xs font-bold whitespace-nowrap">{u.passedQuizzes}/{u.totalLessons}</TableCell>
+                  <TableCell className="hidden lg:table-cell text-xs text-muted-foreground">{u.deviceInfo}</TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </ScrollArea>
       </Card>
     </div>
   )
