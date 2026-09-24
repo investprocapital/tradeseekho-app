@@ -81,15 +81,32 @@ export default function Home() {
               <h2 className="mb-2 px-1 text-base font-extrabold tracking-tight text-foreground">
                 {lang === "ur" || lang === "ar" ? "اپنا لیول منتخب کریں" : lang === "hi" ? "अपना स्तर चुनें" : "Choose Your Level"}
               </h2>
-              <div className="grid gap-2.5">
-                {isLoading ? (
-                  <><Skeleton className="h-20 rounded-2xl" /><Skeleton className="h-20 rounded-2xl" /><Skeleton className="h-20 rounded-2xl" /></>
-                ) : (
-                  categories.map((c, i) => (
-                    <LevelBox key={c.id} category={c} index={i} lessons={lessons.filter((l) => l.categoryId === c.id)} onOpen={() => { setActiveCategory(c.slug); setBottomTab("lessons") }} />
-                  ))
-                )}
-              </div>
+              {isLoading ? (
+                <div className="grid grid-cols-2 gap-2.5">
+                  <Skeleton className="h-28 rounded-2xl" /><Skeleton className="h-28 rounded-2xl" />
+                </div>
+              ) : categories.length >= 3 ? (
+                <>
+                  {/* Row 1: Beginner + Intermediate side-by-side (50/50) */}
+                  <div className="grid grid-cols-2 gap-2.5">
+                    {categories.slice(0, 2).map((c, i) => (
+                      <LevelBox key={c.id} category={c} index={i} compact lessons={lessons.filter((l) => l.categoryId === c.id)} onOpen={() => { setActiveCategory(c.slug); setBottomTab("lessons") }} />
+                    ))}
+                  </div>
+                  {/* Row 2: Advanced full width */}
+                  <div className="mt-2.5">
+                    {categories.slice(2).map((c, i) => (
+                      <LevelBox key={c.id} category={c} index={i + 2} lessons={lessons.filter((l) => l.categoryId === c.id)} onOpen={() => { setActiveCategory(c.slug); setBottomTab("lessons") }} />
+                    ))}
+                  </div>
+                </>
+              ) : (
+                <div className="grid grid-cols-2 gap-2.5">
+                  {categories.map((c, i) => (
+                    <LevelBox key={c.id} category={c} index={i} compact lessons={lessons.filter((l) => l.categoryId === c.id)} onOpen={() => { setActiveCategory(c.slug); setBottomTab("lessons") }} />
+                  ))}
+                </div>
+              )}
             </section>
           </>
         ) : bottomTab === "lessons" ? (
@@ -188,15 +205,41 @@ function ProgressMini({ icon: Icon, value, label, color }: { icon: any; value: s
 }
 
 function LevelBox({
-  category, index, lessons, onOpen,
+  category, index, lessons, onOpen, compact = false,
 }: {
-  category: CategoryDTO; index: number; lessons: { id: string; passed: boolean; orderInCategory: number; title: { en: string; ur: string; hi: string; ar: string } }[]; onOpen: () => void
+  category: CategoryDTO; index: number; lessons: { id: string; passed: boolean; orderInCategory: number; title: { en: string; ur: string; hi: string; ar: string } }[]; onOpen: () => void; compact?: boolean
 }) {
   const lang = useStore((s) => s.lang)
   const Icon = LEVEL_ICONS[category.icon || ""] || BookOpen
   const total = lessons.length
   const done = lessons.filter((l) => l.passed).length
   const pct = total ? Math.round((done / total) * 100) : 0
+
+  if (compact) {
+    return (
+      <motion.button
+        initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3, delay: index * 0.06 }}
+        onClick={onOpen}
+        className="group flex flex-col items-center gap-2 overflow-hidden rounded-2xl border-2 p-3 text-center transition-all hover:-translate-y-0.5"
+        style={{ borderColor: `${category.color || "#00c853"}40`, background: `linear-gradient(135deg, ${category.color || "#00c853"}10, transparent)` }}
+      >
+        <span className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-white shadow" style={{ background: category.color || "#00c853" }}>
+          <Icon className="h-5 w-5" />
+        </span>
+        <div className="w-full">
+          <h3 className={`text-sm font-extrabold leading-tight ${lang === "ur" || lang === "ar" ? "font-urdu" : ""}`}>{category.name[lang] || category.name.en}</h3>
+          <span className="mt-0.5 inline-block rounded-full bg-background/70 px-1.5 py-0.5 text-[9px] font-bold text-muted-foreground">{done}/{total}</span>
+        </div>
+        <div className="h-1 w-full overflow-hidden rounded-full bg-muted">
+          <div className="h-full rounded-full transition-all" style={{ width: `${pct}%`, background: category.color || "var(--brand)" }} />
+        </div>
+        <span className="inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[10px] font-bold text-white shadow-sm transition group-hover:scale-105" style={{ background: category.color || "var(--brand)" }}>
+          {done > 0 ? "Continue" : "Start"}
+          <ArrowRight className="h-3 w-3 rtl:rotate-180" />
+        </span>
+      </motion.button>
+    )
+  }
 
   return (
     <motion.button
