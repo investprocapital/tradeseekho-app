@@ -84,14 +84,15 @@ export function QuizContent({ lesson, quiz }: { lesson: LessonDetailDTO; quiz: P
         {showAd && (
           <motion.div
             initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-            className="absolute inset-0 z-50 flex flex-col items-center justify-center gap-4 bg-foreground/95 p-6 text-center"
+            className="absolute inset-0 z-50 flex flex-col items-center justify-center gap-4 bg-[#0A1929] p-6 text-center"
           >
             <Megaphone className="h-10 w-10 text-gold" />
-            <p className="text-background/80 text-sm">{t("footer.ad")} · AdMob</p>
+            <p className="text-sm font-bold text-white">Better Trades, Learn Skills</p>
+            <p className="text-xs text-white/50">TradeSeekho PK · Sponsored</p>
             <Button variant="secondary" size="sm" className="mt-2" onClick={() => setShowAd(false)}>
               {t("action.skip")} →
             </Button>
-            {result?.passed && <span className="text-[11px] text-brand">🎉 {t("toast.quizPassed")}</span>}
+            {result?.passed && <span className="text-[11px] font-bold text-brand">🎉 {t("toast.quizPassed")}</span>}
           </motion.div>
         )}
       </AnimatePresence>
