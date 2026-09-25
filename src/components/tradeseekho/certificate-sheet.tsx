@@ -70,6 +70,8 @@ function CertificateCard({
   }
   urduFont: boolean
 }) {
+  const lang = useStore((s) => s.lang)
+  const rtlFont = lang === "ur" ? "font-urdu" : lang === "ar" ? "font-arabic" : ""
   const pct = cert.scoreTotal ? Math.round((cert.scoreSum / cert.scoreTotal) * 100) : 0
   const date = new Date(cert.issuedAt).toLocaleDateString(undefined, { year: "numeric", month: "long", day: "numeric" })
 

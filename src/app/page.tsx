@@ -172,7 +172,7 @@ export default function Home() {
         <Footer />
 
         {/* Broker Ad Banner — fixed above bottom nav (rotates every 10s: Exness → XM → OctaFX) */}
-        <div className="shrink-0 border-t border-border/50 bg-background/95 px-2 py-1.5">
+        <div className="shrink-0 mb-2 border-t border-border/50 bg-background/95 px-2 py-1.5">
           <BrokerAdBanner fixed />
         </div>
       </main>
