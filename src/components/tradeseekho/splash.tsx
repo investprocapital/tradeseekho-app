@@ -25,14 +25,14 @@ export function Splash({ onDone }: { onDone: () => void }) {
           style={{ backgroundColor: "#0A1929" }}
         >
           {/* Top section: Logo + Brand name + Tagline */}
-          <div className="flex flex-col items-center pt-[12vh]">
+          <div className="flex flex-col items-center pt-[8vh]">
             <motion.img
               src="/tradeseekho-logo.png"
               alt="TradeSeekho PK"
               initial={{ scale: 0.8, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               transition={{ duration: 0.6, ease: "easeOut" }}
-              className="h-20 w-20 sm:h-24 sm:w-24"
+              className="h-28 w-28 sm:h-32 sm:w-32"
               draggable={false}
             />
             <motion.p
