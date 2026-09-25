@@ -3,12 +3,11 @@
 import { useEffect, useRef, useState } from "react"
 
 /**
- * TradingView Advanced Chart — FREE with Draw Tools + Auto indicators per lesson
- * Uses tv.js so left-side toolbar with drawing tools is available.
- * Auto-loads indicators based on lesson ID (e.g. beginner_6 → Support/Resistance).
- *
- * Performance: Loads lazily (only when visible), uses IntersectionObserver,
- * and shows a lightweight placeholder until the chart is ready.
+ * TradingView Chart — embed widget with draw tools + auto indicators per lesson
+ * Uses embed-widget-advanced-chart.js (reliable, always works).
+ * Draw tools available via hide_side_toolbar: false.
+ * Auto-loads indicators based on lesson ID.
+ * Lazy loading: only loads when scrolled into view.
  */
 
 // Lesson-specific chart configs: auto indicators per lesson
@@ -69,7 +68,7 @@ export function TradingViewChart({ height = 300, lessonId }: { height?: number; 
   const [isLoaded, setIsLoaded] = useState(false)
   const visibilityRef = useRef<HTMLDivElement>(null)
 
-  // Lazy load: only init chart when the container is visible (IntersectionObserver)
+  // Lazy load: only init chart when visible
   useEffect(() => {
     const observer = new IntersectionObserver(
       (entries) => {
@@ -84,7 +83,7 @@ export function TradingViewChart({ height = 300, lessonId }: { height?: number; 
     return () => observer.disconnect()
   }, [])
 
-  // Load chart only when visible
+  // Load chart when visible
   useEffect(() => {
     if (!isVisible || !containerRef.current) return
     containerRef.current.innerHTML = ""
@@ -102,58 +101,43 @@ export function TradingViewChart({ height = 300, lessonId }: { height?: number; 
     const configKey = level && lessonNum ? `${level}_${lessonNum}` : ""
     const config = lessonChartConfig[configKey] || { symbol: "FX:EURUSD", studies: [], interval: "15" }
 
-    const widgetDiv = document.createElement("div")
-    widgetDiv.style.height = "100%"
-    widgetDiv.style.width = "100%"
+    // Create widget container
+    const widgetContainer = document.createElement("div")
+    widgetContainer.className = "tradingview-widget-container"
+    widgetContainer.style.height = "100%"
+    widgetContainer.style.width = "100%"
 
-    const outerContainer = document.createElement("div")
-    outerContainer.className = "tradingview-widget-container"
-    outerContainer.style.height = "100%"
-    outerContainer.style.width = "100%"
-    outerContainer.appendChild(widgetDiv)
+    // Create embed script with config
+    const script = document.createElement("script")
+    script.src = "https://s3.tradingview.com/external-embedding/embed-widget-advanced-chart.js"
+    script.async = true
+    script.type = "text/javascript"
+    script.innerHTML = JSON.stringify({
+      autosize: true,
+      symbol: config.symbol,
+      interval: config.interval,
+      timezone: "Asia/Karachi",
+      theme: "dark",
+      style: "1",
+      locale: "en",
+      enable_publishing: false,
+      allow_symbol_change: true,
+      hide_side_toolbar: false, // ← DRAW TOOLS VISIBLE (left toolbar)
+      hide_top_toolbar: false,
+      hide_legend: false,
+      save_image: false,
+      calendar: false,
+      studies: config.studies, // ← AUTO INDICATORS PER LESSON
+      support_host: "https://www.tradingview.com",
+    })
 
-    containerRef.current.appendChild(outerContainer)
+    widgetContainer.appendChild(script)
+    containerRef.current.appendChild(widgetContainer)
 
-    // Check if tv.js is already loaded
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    if ((window as any).TradingView) {
-      initWidget()
-    } else {
-      const script = document.createElement("script")
-      script.src = "https://s.tradingview.com/tv.js"
-      script.async = true
-      script.type = "text/javascript"
-      script.onload = initWidget
-      document.head.appendChild(script)
-    }
-
-    function initWidget() {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const TV = (window as any).TradingView
-      if (!TV) return
-
-      const uniqueId = `tv_chart_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`
-      widgetDiv.id = uniqueId
-
-      new TV.widget({
-        autosize: true,
-        symbol: config.symbol,
-        interval: config.interval,
-        timezone: "Asia/Karachi",
-        theme: "dark",
-        style: "1",
-        locale: "en",
-        enable_publishing: false,
-        allow_symbol_change: true,
-        hide_side_toolbar: false,
-        studies: config.studies,
-        container_id: uniqueId,
-        support_host: "https://www.tradingview.com",
-      })
-      setIsLoaded(true)
-    }
-
+    // Mark as loaded after a short delay (embed script renders async)
+    const timer = setTimeout(() => setIsLoaded(true), 1500)
     return () => {
+      clearTimeout(timer)
       if (containerRef.current) containerRef.current.innerHTML = ""
     }
   }, [isVisible, lessonId])
