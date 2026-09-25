@@ -22,7 +22,7 @@ export function Splash({ onDone }: { onDone: () => void }) {
           exit={{ opacity: 0 }}
           transition={{ duration: 0.4 }}
           className="fixed inset-0 z-[200] flex flex-col items-center justify-center overflow-hidden"
-          style={{ backgroundColor: "#0A1929" }}
+          style={{ backgroundColor: "#050D17" }}
         >
           {/* Top section: Logo + Brand name + Tagline */}
           <div className="flex flex-col items-center pt-[8vh]">
