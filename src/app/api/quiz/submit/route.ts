@@ -73,9 +73,12 @@ export async function POST(req: Request) {
   const user = await db.user.findUnique({ where: { id: userId } })
   lessonsCompleted = user?.lessonsCompleted ?? 0
 
-  // AdMob interstitial: show every 2nd completed lesson
+  // Ad interstitial: show every N completed lessons (configurable from admin)
   // Ensure user row exists (local-learner might not exist on fresh DB)
   const ads = await db.adSettings.findUnique({ where: { id: "singleton" } })
+  const adFrequency = ads?.adFrequency ?? 4
+  // For web: show if AdSense enabled. For native app: show if AdMob enabled.
+  // Both use interstitialEnabled as master switch.
   const interstitialEnabled = ads?.interstitialEnabled ?? true
   // Ensure user exists
   let userRow = await db.user.findUnique({ where: { id: userId } })
@@ -83,8 +86,8 @@ export async function POST(req: Request) {
     userRow = await db.user.create({ data: { id: userId, role: "student" } })
   }
   lessonsCompleted = userRow.lessonsCompleted
-  // Show interstitial every 2 lessons completed (2, 4, 6, 8...)
-  const showInterstitial = interstitialEnabled && isFirstPass && lessonsCompleted >= 2 && lessonsCompleted % 2 === 0
+  // Show interstitial every N lessons completed (N, 2N, 3N...)
+  const showInterstitial = interstitialEnabled && isFirstPass && lessonsCompleted >= adFrequency && lessonsCompleted % adFrequency === 0
 
   // Certificate: if this lesson's level is now fully passed, issue one (idempotent)
   let certificateId: string | null = null

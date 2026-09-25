@@ -197,10 +197,16 @@ model Certificate {
 
 model AdSettings {
   id                   String   @id @default("singleton")
+  // Legacy (kept for backward compat)
   bannerEnabled        Boolean  @default(true)
   interstitialEnabled  Boolean  @default(true)
   bannerUnitId         String   @default("ca-app-pub-DEMO/BANNER")
   interstitialUnitId   String   @default("ca-app-pub-DEMO/INTERSTITIAL")
+  // New ad network switches
+  admobEnabled         Boolean  @default(false)  // Native App Ads (APK/Play Store) — Default OFF
+  adsenseEnabled       Boolean  @default(true)   // Web Ads (PC/Mobile Browser/iPhone) — Default ON
+  autoMode             Boolean  @default(true)   // Auto Switch Mode — one network at a time
+  adFrequency          Int      @default(4)      // Show ad every N questions
   updatedAt            DateTime @updatedAt
 }
 

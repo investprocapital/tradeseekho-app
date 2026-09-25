@@ -918,6 +918,68 @@ function AdsTab() {
         </CardContent>
       </Card>
 
+      <Card className="sm:col-span-2">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-base"><Megaphone className="h-5 w-5 text-brand" /> Ad Network Settings</CardTitle>
+          <CardDescription>Control which ad network shows on which platform.</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          {/* AdMob Switch */}
+          <div className="flex items-center justify-between rounded-lg border border-border p-3">
+            <div>
+              <div className="text-sm font-bold">AdMob (Native App Ads)</div>
+              <div className="text-xs text-muted-foreground">For Android APK / Play Store App. Default: OFF</div>
+            </div>
+            <Switch
+              checked={form.admobEnabled || false}
+              onCheckedChange={(v) => {
+                setForm((f) => f && ({ ...f, admobEnabled: v, ...(f.autoMode && v ? { adsenseEnabled: false } : {}) }))
+              }}
+            />
+          </div>
+
+          {/* AdSense Switch */}
+          <div className="flex items-center justify-between rounded-lg border border-border p-3">
+            <div>
+              <div className="text-sm font-bold">AdSense (Web Ads)</div>
+              <div className="text-xs text-muted-foreground">For PC / Mobile Browser / iPhone. Default: ON</div>
+            </div>
+            <Switch
+              checked={form.adsenseEnabled ?? true}
+              onCheckedChange={(v) => {
+                setForm((f) => f && ({ ...f, adsenseEnabled: v, ...(f.autoMode && v ? { admobEnabled: false } : {}) }))
+              }}
+            />
+          </div>
+
+          {/* Auto Mode Switch */}
+          <div className="flex items-center justify-between rounded-lg border border-border p-3">
+            <div>
+              <div className="text-sm font-bold">Auto Switch Mode</div>
+              <div className="text-xs text-muted-foreground">One network at a time. Turning one ON auto-turns the other OFF.</div>
+            </div>
+            <Switch
+              checked={form.autoMode ?? true}
+              onCheckedChange={(v) => setForm((f) => f && ({ ...f, autoMode: v }))}
+            />
+          </div>
+
+          {/* Ad Frequency */}
+          <div className="space-y-1.5">
+            <Label className="text-xs">Ad Frequency (show ad every N lessons)</Label>
+            <Input
+              type="number"
+              value={form.adFrequency ?? 4}
+              onChange={(e) => setForm((f) => f && ({ ...f, adFrequency: Number(e.target.value) || 4 }))}
+              className="h-9"
+              min={1}
+              max={10}
+            />
+            <p className="text-[10px] text-muted-foreground">Default: 4 (ad shows after every 4th completed lesson)</p>
+          </div>
+        </CardContent>
+      </Card>
+
       <div className="sm:col-span-2 flex justify-end">
         <Button className="gap-1.5 bg-brand font-bold text-brand-foreground hover:bg-brand/90" onClick={saveAds} disabled={save.isPending || isLoading}>
           <Save className="h-4 w-4" /> {t("action.save")}
@@ -932,6 +994,10 @@ type AdminAdsForm = {
   interstitialEnabled: boolean
   bannerUnitId: string
   interstitialUnitId: string
+  admobEnabled?: boolean
+  adsenseEnabled?: boolean
+  autoMode?: boolean
+  adFrequency?: number
 }
 
 /* ---------------- Pro Requests ---------------- */
