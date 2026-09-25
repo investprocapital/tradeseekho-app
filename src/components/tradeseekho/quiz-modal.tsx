@@ -123,7 +123,7 @@ export function QuizContent({ lesson, quiz }: { lesson: LessonDetailDTO; quiz: P
       {/* Body */}
       <div className="flex-1 overflow-y-auto overscroll-contain p-5" style={{ WebkitOverflowScrolling: "touch", minHeight: 0 }}>
         {result ? (
-          <QuizResults quiz={quiz} result={result} urduFont={urduFont} />
+          <QuizResults quiz={quiz} result={result} urduFont={urduFont} userAnswers={quiz.questions.map((q) => answers[q.id] ?? -1)} />
         ) : (
           <div className="space-y-6">
             {quiz.questions.map((q, i) => (
@@ -245,11 +245,12 @@ function ScoreBanner({ result, urduFont }: { result: QuizSubmitResult; urduFont:
 }
 
 function QuizResults({
-  quiz, result, urduFont,
+  quiz, result, urduFont, userAnswers,
 }: {
   quiz: PublicQuizDTO
   result: QuizSubmitResult
   urduFont: boolean
+  userAnswers: number[]
 }) {
   const t = useT()
   const pick = usePick()
@@ -264,7 +265,9 @@ function QuizResults({
       {quiz.questions.map((q, i) => {
         const correct = result.correctFlags[i]
         const correctIdx = result.correctIndices[i]
+        const userAns = userAnswers[i] ?? -1
         const expl = result.explanations[i]
+        const isWrong = !correct && userAns >= 0
         return (
           <div key={q.id} className={`rounded-xl border-2 bg-card p-4 ${correct ? "border-green-500" : "border-red-500"}`}>
             <div className="flex items-start gap-3">
@@ -278,13 +281,24 @@ function QuizResults({
                 {pick(q.prompt)}
               </p>
             </div>
-            <div className="mt-3 space-y-1.5 ps-11">
+            <div className="mt-3 space-y-2 ps-11">
+              {/* Show user's answer if wrong */}
+              {isWrong && (
+                <div className={`text-sm ${urduFontClass}`} style={urduLineStyle}>
+                  <span className="text-destructive font-semibold">Your Answer: </span>
+                  <span className="text-destructive">
+                    {String.fromCharCode(65 + userAns)}. {pick(q.options[userAns])}
+                  </span>
+                </div>
+              )}
+              {/* Correct answer */}
               <div className={`text-sm ${urduFontClass}`} style={urduLineStyle}>
-                <span className="text-muted-foreground">{t("quiz.correctAnswer")}: </span>
+                <span className={isWrong ? "text-muted-foreground" : "text-muted-foreground"}>{isWrong ? "Correct Answer: " : `${t("quiz.correctAnswer")}: `}</span>
                 <span className="font-bold text-brand">
                   {String.fromCharCode(65 + correctIdx)}. {pick(q.options[correctIdx])}
                 </span>
               </div>
+              {/* Explanation */}
               {expl && (expl.en || expl.ur || expl.hi || expl.ar) && (
                 <div className={`rounded-lg bg-muted/60 p-2.5 text-sm text-muted-foreground ${urduFontClass}`} style={urduLineStyle}>
                   <span className="font-semibold text-foreground">{t("quiz.explanation")}: </span>
