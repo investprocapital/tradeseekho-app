@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from "framer-motion"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Progress } from "@/components/ui/progress"
-import { Check, X, Trophy, RefreshCw, ArrowRight, Sparkles, Megaphone, Award } from "lucide-react"
+import { Check, X, Trophy, RefreshCw, ArrowRight, Sparkles, Megaphone, Award, Gift, Star } from "lucide-react"
 import { useStore, useT } from "@/lib/store"
 import { useSubmitQuiz } from "./use-data"
 import { usePick } from "./localize"
@@ -26,6 +26,7 @@ export function QuizContent({ lesson, quiz }: { lesson: LessonDetailDTO; quiz: P
   const [answers, setAnswers] = useState<Record<string, number>>({})
   const [result, setResult] = useState<QuizSubmitResult | null>(null)
   const [showAd, setShowAd] = useState(false)
+  const [showCelebration, setShowCelebration] = useState(false)
 
   const total = quiz.questions.length
   const answered = quiz.questions.filter((q) => answers[q.id] !== undefined).length
@@ -39,6 +40,9 @@ export function QuizContent({ lesson, quiz }: { lesson: LessonDetailDTO; quiz: P
     try {
       const res = await submit.mutateAsync({ lessonId: quiz.lessonId, answers: arr })
       setResult(res)
+      if (res.passed) {
+        setShowCelebration(true)
+      }
       if (res.showInterstitial) {
         setShowAd(true)
       } else {
@@ -65,6 +69,16 @@ export function QuizContent({ lesson, quiz }: { lesson: LessonDetailDTO; quiz: P
 
   return (
     <div className="relative flex h-full flex-col">
+      {/* Celebration popup */}
+      {showCelebration && result && (
+        <CelebrationPopup
+          result={result}
+          onClose={closeQuiz}
+          onNext={onNext}
+          onRetry={onRetry}
+        />
+      )}
+
       {/* Interstitial ad */}
       <AnimatePresence>
         {showAd && (
@@ -281,5 +295,165 @@ function QuizResults({
         )
       })}
     </div>
+  )
+}
+
+/* ---------------- Celebration Popup ---------------- */
+function CelebrationPopup({
+  result,
+  onClose,
+  onNext,
+  onRetry,
+}: {
+  result: QuizSubmitResult
+  onClose: () => void
+  onNext: () => void
+  onRetry: () => void
+}) {
+  const pct = Math.round((result.score / result.total) * 100)
+  const isPerfect = result.score === result.total
+
+  const lang = useStore((s) => s.lang)
+  const motivationalMessages: Record<string, { title: string; sub: string }> = {
+    en: { title: "Congratulations! 🎉", sub: "Amazing! You unlocked the next lesson — Keep Growing!" },
+    ur: { title: "مبارک ہو! 🎉", sub: "شاندار! اگلا سبق کھل گیا — آگے بڑھتے رہیں!" },
+    hi: { title: "बधाई हो! 🎉", sub: "ज़बरदस्त! अगला पाठ खुल गया — आगे बढ़ते रहें!" },
+    ar: { title: "تهانينا! 🎉", sub: "رائع! لقد فتحت الدرس التالي — استمر في النمو!" },
+  }
+  const msg = motivationalMessages[lang] || motivationalMessages.en
+  const hasCert = !!result.certificateId
+
+  return (
+    <AnimatePresence>
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        className="fixed inset-0 z-[300] flex items-center justify-center p-4"
+        style={{ backgroundColor: "rgba(0,0,0,0.7)", backdropFilter: "blur(8px)" }}
+        onClick={onClose}
+      >
+        <motion.div
+          initial={{ scale: 0.7, opacity: 0, y: 30 }}
+          animate={{ scale: 1, opacity: 1, y: 0 }}
+          exit={{ scale: 0.7, opacity: 0, y: 30 }}
+          transition={{ type: "spring", stiffness: 260, damping: 22 }}
+          className="relative w-full max-w-sm overflow-hidden rounded-3xl border-2 border-gold/40 bg-gradient-to-b from-[#0A1929] to-[#050D17] p-6 text-center shadow-2xl"
+          onClick={(e) => e.stopPropagation()}
+        >
+          {/* Confetti / Stars animation */}
+          <div className="pointer-events-none absolute inset-0 overflow-hidden">
+            {Array.from({ length: 12 }).map((_, i) => (
+              <motion.div
+                key={i}
+                initial={{ opacity: 1, y: -20, x: Math.random() * 300 - 150 }}
+                animate={{ opacity: [1, 1, 0], y: [-20, 400], x: Math.random() * 300 - 150, rotate: Math.random() * 360 }}
+                transition={{ duration: 2 + Math.random(), delay: Math.random() * 0.5, repeat: Infinity, repeatDelay: 1 }}
+                className="absolute text-lg"
+                style={{ left: "50%", top: "10%" }}
+              >
+                {["🎉", "⭐", "✨", "🎊", "🌟"][i % 5]}
+              </motion.div>
+            ))}
+          </div>
+
+          {/* Trophy / Gift icon with pulse animation */}
+          <motion.div
+            initial={{ scale: 0 }}
+            animate={{ scale: 1, rotate: [0, -10, 10, -5, 0] }}
+            transition={{ delay: 0.2, type: "spring", stiffness: 200 }}
+            className="mx-auto mb-4 flex h-20 w-20 items-center justify-center rounded-full bg-gradient-to-br from-gold/30 to-brand/20 shadow-lg"
+          >
+            {hasCert ? <Award className="h-10 w-10 text-gold" /> : isPerfect ? <Trophy className="h-10 w-10 text-gold" /> : <Gift className="h-10 w-10 text-gold" />}
+          </motion.div>
+
+          {/* Score circle */}
+          <motion.div
+            initial={{ scale: 0 }}
+            animate={{ scale: 1 }}
+            transition={{ delay: 0.3, type: "spring", stiffness: 200 }}
+            className="mx-auto mb-3 flex h-16 w-16 items-center justify-center rounded-full border-4 border-brand bg-brand/20"
+          >
+            <span className="text-2xl font-extrabold text-brand">{pct}%</span>
+          </motion.div>
+
+          {/* Title */}
+          <motion.h2
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.4 }}
+            className="text-xl font-extrabold text-white"
+          >
+            {msg.title}
+          </motion.h2>
+
+          {/* Subtitle */}
+          <motion.p
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.5 }}
+            className="mt-1.5 text-sm text-white/60"
+          >
+            {msg.sub}
+          </motion.p>
+
+          {/* Score detail */}
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.6 }}
+            className="mt-3 flex items-center justify-center gap-3 text-xs text-white/40"
+          >
+            <span className="flex items-center gap-1"><Check className="h-3.5 w-3.5 text-brand" /> {result.score} Correct</span>
+            <span className="flex items-center gap-1"><X className="h-3.5 w-3.5 text-destructive" /> {result.total - result.score} Wrong</span>
+            <span className="flex items-center gap-1"><Star className="h-3.5 w-3.5 text-gold" /> {result.score}/{result.total}</span>
+          </motion.div>
+
+          {/* Certificate badge */}
+          {hasCert && (
+            <motion.div
+              initial={{ opacity: 0, scale: 0.8 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ delay: 0.7 }}
+              className="mt-3 rounded-xl border-2 border-gold/50 bg-gold/10 p-2.5"
+            >
+              <p className="text-xs font-bold text-gold">🏆 Certificate Earned!</p>
+              <p className="text-[10px] text-white/50">You completed the {result.certificateSlug} level</p>
+            </motion.div>
+          )}
+
+          {/* Buttons */}
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.8 }}
+            className="mt-5 flex gap-2"
+          >
+            <Button
+              variant="outline"
+              className="h-12 flex-1 gap-2 border-white/20 font-bold text-white hover:bg-white/10"
+              onClick={() => { onRetry() }}
+            >
+              <RefreshCw className="h-4 w-4" /> Retry
+            </Button>
+            {result.passed && result.nextLessonId ? (
+              <Button
+                className="h-12 flex-1 gap-2 bg-brand font-bold text-brand-foreground shadow-lg shadow-brand/40 hover:bg-brand/90"
+                onClick={() => { onNext() }}
+              >
+                Next Lesson <ArrowRight className="h-4 w-4 rtl:rotate-180" />
+              </Button>
+            ) : (
+              <Button
+                className="h-12 flex-1 gap-2 bg-brand font-bold text-brand-foreground shadow-lg shadow-brand/40 hover:bg-brand/90"
+                onClick={() => { onClose() }}
+              >
+                Continue <ArrowRight className="h-4 w-4 rtl:rotate-180" />
+              </Button>
+            )}
+          </motion.div>
+        </motion.div>
+      </motion.div>
+    </AnimatePresence>
   )
 }
