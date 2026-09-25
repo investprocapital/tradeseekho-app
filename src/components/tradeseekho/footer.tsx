@@ -47,6 +47,23 @@ export function Footer() {
           </button>
         )}
       </div>
+
+      {/* Links + Copyright */}
+      <div className="px-3 py-3 text-center">
+        <div className="mb-2 flex items-center justify-center gap-3 text-[10px]">
+          <a href="/about-us" className="font-bold text-brand hover:underline">About Us</a>
+          <span className="text-muted-foreground">|</span>
+          <a href="/privacy-policy" className="font-bold text-brand hover:underline">Privacy Policy</a>
+          <span className="text-muted-foreground">|</span>
+          <a href="/contact-us" className="font-bold text-brand hover:underline">Contact Us</a>
+        </div>
+        <p className="text-[9px] text-muted-foreground">
+          © {new Date().getFullYear()} TradeSeekho PK · Made in Pakistan · Serving Worldwide
+        </p>
+        <p className="mt-0.5 text-[9px] text-muted-foreground">
+          Email: <a href="mailto:tradeseekhopk@gmail.com" className="text-brand hover:underline">tradeseekhopk@gmail.com</a>
+        </p>
+      </div>
     </footer>
   )
 }

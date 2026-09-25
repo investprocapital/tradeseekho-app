@@ -235,6 +235,15 @@ model ProSettings {
   updatedAt       DateTime @updatedAt
 }
 
+// Admin-editable static pages (About Us, Privacy Policy, Contact Us)
+model PageContent {
+  id        String   @id @default(cuid())
+  slug      String   @unique // about-us | privacy-policy | contact-us
+  title     String
+  content   String   // markdown/text content
+  updatedAt DateTime @updatedAt
+}
+
 model AppStats {
   id             String  @id @default("singleton")
   totalDownloads Int     @default(0)

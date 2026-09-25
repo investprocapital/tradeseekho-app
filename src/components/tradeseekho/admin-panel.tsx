@@ -39,7 +39,7 @@ import {
   useAdminQuiz, useAdminStats, useSaveStats, useAdminAds, useSaveAds,
   useAdminProRequests, useApproveProRequest, useRejectProRequest,
   useProSettings, useSaveProSettings,
-  useBrokerAds, useSaveBrokerAds,
+  useBrokerAds, useSaveBrokerAds, useAdminPages, useSavePage,
   useAdminUsers,
 } from "./admin-data"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
@@ -119,6 +119,7 @@ export function AdminPanel() {
             <TabsTrigger value="ads" className="gap-1 whitespace-nowrap"><Megaphone className="h-4 w-4" /><span className="hidden xs:inline sm:inline">Ads</span></TabsTrigger>
             <TabsTrigger value="broker-ads" className="gap-1 whitespace-nowrap"><Megaphone className="h-4 w-4" /><span className="hidden xs:inline sm:inline">Broker Ads</span></TabsTrigger>
             <TabsTrigger value="payment" className="gap-1 whitespace-nowrap"><CreditCard className="h-4 w-4" /><span className="hidden xs:inline sm:inline">Payment</span></TabsTrigger>
+            <TabsTrigger value="pages" className="gap-1 whitespace-nowrap"><BookOpen className="h-4 w-4" /><span className="hidden xs:inline sm:inline">Pages</span></TabsTrigger>
             <TabsTrigger value="pro" className="gap-1 whitespace-nowrap"><Crown className="h-4 w-4" /><span className="hidden xs:inline sm:inline">Pro</span></TabsTrigger>
           </TabsList>
         </div>
@@ -129,6 +130,7 @@ export function AdminPanel() {
         <TabsContent value="ads" className="mt-5"><AdsTab /></TabsContent>
         <TabsContent value="broker-ads" className="mt-5"><BrokerAdsTab /></TabsContent>
         <TabsContent value="payment" className="mt-5"><PaymentSettingsTab /></TabsContent>
+        <TabsContent value="pages" className="mt-5"><PagesTab /></TabsContent>
         <TabsContent value="pro" className="mt-5"><ProRequestsTab /></TabsContent>
       </Tabs>
     </div>
@@ -1397,6 +1399,81 @@ function UsersTab() {
             </TableBody>
           </Table>
         </ScrollArea>
+      </Card>
+    </div>
+  )
+}
+
+/* ---------------- Pages ---------------- */
+function PagesTab() {
+  const { data, isLoading } = useAdminPages()
+  const save = useSavePage()
+  const [editing, setEditing] = useState<string | null>(null)
+  const [title, setTitle] = useState("")
+  const [content, setContent] = useState("")
+
+  const pages = data?.pages ?? []
+
+  const startEdit = (p: { slug: string; title: string; content: string }) => {
+    setEditing(p.slug)
+    setTitle(p.title)
+    setContent(p.content)
+  }
+
+  const onSave = async () => {
+    if (!editing) return
+    try {
+      await save.mutateAsync({ slug: editing, title, content })
+      toast.success("Page saved!")
+      setEditing(null)
+    } catch {
+      toast.error("Failed to save")
+    }
+  }
+
+  if (isLoading) return <p className="py-6 text-center text-sm text-muted-foreground">Loading...</p>
+
+  return (
+    <div className="space-y-4">
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2"><BookOpen className="h-5 w-5 text-brand" /> Static Pages</CardTitle>
+          <CardDescription>Edit About Us, Privacy Policy, Contact Us content.</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          {pages.map((p) => (
+            <div key={p.slug} className="rounded-xl border border-border p-3">
+              {editing === p.slug ? (
+                <div className="space-y-3">
+                  <div className="space-y-1">
+                    <Label className="text-xs">Title</Label>
+                    <Input value={title} onChange={(e) => setTitle(e.target.value)} className="h-9" />
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-xs">Content</Label>
+                    <Textarea value={content} onChange={(e) => setContent(e.target.value)} rows={8} className="text-sm" />
+                  </div>
+                  <div className="flex gap-2">
+                    <Button size="sm" className="gap-1.5 bg-brand font-bold text-brand-foreground" onClick={onSave} disabled={save.isPending}>
+                      <Save className="h-3.5 w-3.5" /> Save
+                    </Button>
+                    <Button size="sm" variant="outline" onClick={() => setEditing(null)}>Cancel</Button>
+                  </div>
+                </div>
+              ) : (
+                <div className="flex items-center justify-between">
+                  <div>
+                    <div className="text-sm font-bold capitalize">{p.slug.replace(/-/g, " ")}</div>
+                    <div className="text-[11px] text-muted-foreground truncate max-w-[200px]">{p.content.slice(0, 60)}...</div>
+                  </div>
+                  <Button size="sm" variant="outline" className="gap-1 text-xs" onClick={() => startEdit(p)}>
+                    <Pencil className="h-3 w-3" /> Edit
+                  </Button>
+                </div>
+              )}
+            </div>
+          ))}
+        </CardContent>
       </Card>
     </div>
   )

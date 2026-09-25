@@ -341,3 +341,31 @@ export function useAdminUsers(search?: string, filter?: string) {
     queryFn: () => j(fetch(url).then((r) => r)),
   })
 }
+
+export interface PageData {
+  slug: string
+  title: string
+  content: string
+}
+
+export function useAdminPages() {
+  return useQuery<{ pages: PageData[] }>({
+    queryKey: ["admin-pages"],
+    queryFn: () => j(fetch("/api/admin/pages").then((r) => r)),
+  })
+}
+
+export function useSavePage() {
+  const qc = useQueryClient()
+  return useMutation<PageData, Error, { slug: string; title: string; content: string }>({
+    mutationFn: async (data) => {
+      const res = await fetch("/api/admin/pages", {
+        method: "PUT",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify(data),
+      })
+      return j(Promise.resolve(res))
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["admin-pages"] }),
+  })
+}
