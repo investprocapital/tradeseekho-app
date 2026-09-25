@@ -95,9 +95,13 @@ export async function POST(req: Request) {
       // compute score snapshot
       const scoreSum = progressRows.reduce((acc, p) => acc + (p.passed ? p.score : 0), 0)
       const scoreTotal = progressRows.reduce((acc, p) => acc + p.total, 0)
+      // Get user's actual name for certificate
+      const userRow = await db.user.findUnique({ where: { id: userId }, select: { name: true, email: true } })
+      const certUserName = userRow?.name || userRow?.email?.split("@")[0] || "TradeSeekho PK Learner"
       const cert = await db.certificate.upsert({
         where: { userId_categorySlug: { userId, categorySlug: lesson.category.slug } },
         update: {
+          userName: certUserName,
           lessonsPassed: siblings.length,
           totalLessons: siblings.length,
           scoreSum,
@@ -106,7 +110,7 @@ export async function POST(req: Request) {
         create: {
           userId,
           categorySlug: lesson.category.slug,
-          userName: "TradeSeekho PK Learner",
+          userName: certUserName,
           lessonsPassed: siblings.length,
           totalLessons: siblings.length,
           scoreSum,
