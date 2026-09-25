@@ -84,15 +84,52 @@ export function QuizContent({ lesson, quiz }: { lesson: LessonDetailDTO; quiz: P
         {showAd && (
           <motion.div
             initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-            className="absolute inset-0 z-50 flex flex-col items-center justify-center gap-4 bg-[#0A1929] p-6 text-center"
+            className="absolute inset-0 z-[150] flex flex-col items-center justify-center gap-4 bg-[#0A1929] p-6 text-center"
           >
-            <Megaphone className="h-10 w-10 text-gold" />
-            <p className="text-sm font-bold text-white">Better Trades, Learn Skills</p>
-            <p className="text-xs text-white/50">TradeSeekho PK · Sponsored</p>
-            <Button variant="secondary" size="sm" className="mt-2" onClick={() => setShowAd(false)}>
-              {t("action.skip")} →
-            </Button>
-            {result?.passed && <span className="text-[11px] font-bold text-brand">🎉 {t("toast.quizPassed")}</span>}
+            {/* Ad badge */}
+            <div className="absolute left-3 top-3 rounded bg-white/10 px-2 py-0.5 text-[9px] font-bold text-white/50">AD</div>
+
+            <motion.div
+              initial={{ scale: 0.8, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              transition={{ delay: 0.2, type: "spring" }}
+              className="flex flex-col items-center gap-4"
+            >
+              <span className="inline-flex h-20 w-20 items-center justify-center rounded-full bg-gold/20">
+                <Megaphone className="h-10 w-10 text-gold" />
+              </span>
+              <div>
+                <p className="text-lg font-extrabold text-white">Better Trades, Learn Skills</p>
+                <p className="mt-1 text-xs text-white/50">TradeSeekho PK · Sponsored</p>
+              </div>
+              {result?.passed && <span className="text-sm font-bold text-brand">🎉 Quiz Passed! Next lesson unlocked</span>}
+            </motion.div>
+
+            {/* Skip button — 3 second countdown then enabled */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 3 }}
+              className="absolute bottom-6 right-6"
+            >
+              <Button
+                size="sm"
+                className="gap-1.5 bg-brand font-bold text-brand-foreground hover:bg-brand/90"
+                onClick={() => setShowAd(false)}
+              >
+                {t("action.skip")} →
+              </Button>
+            </motion.div>
+
+            {/* Countdown timer */}
+            <motion.div
+              initial={{ opacity: 1 }}
+              animate={{ opacity: 0 }}
+              transition={{ delay: 3, duration: 0.5 }}
+              className="absolute bottom-6 right-6"
+            >
+              <span className="text-xs font-bold text-white/40">Ad closing in 3...</span>
+            </motion.div>
           </motion.div>
         )}
       </AnimatePresence>

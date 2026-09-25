@@ -73,10 +73,18 @@ export async function POST(req: Request) {
   const user = await db.user.findUnique({ where: { id: userId } })
   lessonsCompleted = user?.lessonsCompleted ?? 0
 
-  // AdMob interstitial cadence: every 2 newly-completed lessons (and only if enabled)
+  // AdMob interstitial: show every 2nd completed lesson
+  // Ensure user row exists (local-learner might not exist on fresh DB)
   const ads = await db.adSettings.findUnique({ where: { id: "singleton" } })
   const interstitialEnabled = ads?.interstitialEnabled ?? true
-  const showInterstitial = interstitialEnabled && isFirstPass && lessonsCompleted > 0 && lessonsCompleted % 2 === 0
+  // Ensure user exists
+  let userRow = await db.user.findUnique({ where: { id: userId } })
+  if (!userRow) {
+    userRow = await db.user.create({ data: { id: userId, role: "student" } })
+  }
+  lessonsCompleted = userRow.lessonsCompleted
+  // Show interstitial every 2 lessons completed (2, 4, 6, 8...)
+  const showInterstitial = interstitialEnabled && isFirstPass && lessonsCompleted >= 2 && lessonsCompleted % 2 === 0
 
   // Certificate: if this lesson's level is now fully passed, issue one (idempotent)
   let certificateId: string | null = null
