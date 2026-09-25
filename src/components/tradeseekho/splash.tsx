@@ -53,7 +53,7 @@ export function Splash({ onDone }: { onDone: () => void }) {
             </motion.p>
           </div>
 
-          {/* Bottom section: Boy illustration (cross-legged, laptop, floating chart) */}
+          {/* Bottom section: Boy illustration (solid dark bg, blends with splash) */}
           <motion.div
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
@@ -63,8 +63,12 @@ export function Splash({ onDone }: { onDone: () => void }) {
             <img
               src="/splash-boy.png"
               alt="Trader"
-              className="h-[45vh] w-auto max-w-[90vw] object-contain"
+              className="h-[50vh] w-auto max-w-[95vw] object-contain"
               draggable={false}
+              style={{
+                maskImage: "linear-gradient(to top, #000 80%, transparent 100%)",
+                WebkitMaskImage: "linear-gradient(to top, #000 80%, transparent 100%)",
+              }}
             />
           </motion.div>
 
