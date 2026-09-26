@@ -1,12 +1,13 @@
 import { NextResponse } from "next/server"
 import { db } from "@/lib/db"
+import crypto from "crypto"
 
 export const dynamic = "force-dynamic"
 
 // POST /api/auth/forgot-password
 // Body: { email }
-// Sends password reset email via Google Identity Toolkit (Firebase Auth REST API)
-// Requires GOOGLE_IDENTITY_API_KEY env var (Google Cloud > Credentials > API Key)
+// Generates a reset token, stores in DB, returns reset link directly
+// (No external email service needed — shows link on screen)
 export async function POST(req: Request) {
   try {
     const { email } = await req.json()
@@ -23,33 +24,48 @@ export async function POST(req: Request) {
       return NextResponse.json({ ok: true, message: "If this email exists, a reset link has been sent." })
     }
 
+    // Generate a secure reset token
+    const token = crypto.randomBytes(32).toString("hex")
+    const expiry = new Date(Date.now() + 60 * 60 * 1000) // 1 hour expiry
+
+    // Store token in DB
+    await db.user.update({
+      where: { id: user.id },
+      data: {
+        resetToken: token,
+        resetTokenExpiry: expiry,
+      },
+    })
+
+    // Build reset link
+    const baseUrl = process.env.NEXTAUTH_URL || "https://tradeseekho-app.vercel.app"
+    const resetLink = `${baseUrl}/reset-password?token=${token}`
+
+    // Try to send email via Google Identity Toolkit if API key is set
     const apiKey = process.env.GOOGLE_IDENTITY_API_KEY
-
     if (apiKey) {
-      // Use Google Identity Toolkit to send reset email
-      const res = await fetch(`https://identitytoolkit.googleapis.com/v1/accounts:sendOobCode?key=${apiKey}`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          requestType: "PASSWORD_RESET",
-          email: normalizedEmail,
-        }),
-      })
-
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({}))
-        console.error("Identity Toolkit error:", err)
-        // Still return success for security (don't reveal errors)
+      try {
+        await fetch(`https://identitytoolkit.googleapis.com/v1/accounts:sendOobCode?key=${apiKey}`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            requestType: "PASSWORD_RESET",
+            email: normalizedEmail,
+          }),
+        })
+      } catch (e) {
+        console.error("Email send failed, showing link directly:", e)
       }
     }
-    // If no API key, the email won't actually be sent — but we still return success
-    // Admin needs to set GOOGLE_IDENTITY_API_KEY on Vercel
 
-    return NextResponse.json({ 
-      ok: true, 
-      message: "If this email exists, a reset link has been sent." 
+    // Return the reset link directly (works even without email service)
+    return NextResponse.json({
+      ok: true,
+      message: "Reset link generated.",
+      resetLink,
     })
   } catch (e) {
+    console.error("Forgot password error:", e)
     return NextResponse.json({ error: "Something went wrong" }, { status: 500 })
   }
 }

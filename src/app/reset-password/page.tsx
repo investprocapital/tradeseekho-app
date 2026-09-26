@@ -6,11 +6,11 @@ import Link from "next/link"
 import { toast } from "sonner"
 
 export default function ResetPasswordPage() {
-  // Read oobCode from URL (Google Identity Toolkit redirect)
-  const [oobCode] = useState(() => {
+  // Read token from URL (?token=XXX)
+  const [token] = useState(() => {
     if (typeof window !== "undefined") {
       const params = new URLSearchParams(window.location.search)
-      return params.get("oobCode") || params.get("code") || ""
+      return params.get("token") || params.get("oobCode") || params.get("code") || ""
     }
     return ""
   })
@@ -21,13 +21,13 @@ export default function ResetPasswordPage() {
 
   const submit = async () => {
     if (newPassword.length < 6) { setErr("Password must be at least 6 characters"); return }
-    if (!oobCode) { setErr("Invalid reset link — no code found in URL"); return }
+    if (!token) { setErr("Invalid reset link — no token found in URL"); return }
     setBusy(true); setErr("")
     try {
       const res = await fetch("/api/auth/reset-password", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ oobCode, newPassword }),
+        body: JSON.stringify({ token, newPassword }),
       })
       const j = await res.json()
       if (!res.ok) { setErr(j.error || "Reset failed"); setBusy(false); return }

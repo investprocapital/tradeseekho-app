@@ -24,6 +24,7 @@ export function LoginDialog() {
   const [remember, setRemember] = useState(true)
   const [busy, setBusy] = useState(false)
   const [err, setErr] = useState<string | null>(null)
+  const [resetLink, setResetLink] = useState("")
 
   const reset = () => { setView("landing"); setEmail(""); setPassword(""); setName(""); setErr(null); setBusy(false) }
 
@@ -252,8 +253,8 @@ export function LoginDialog() {
                         const res = await fetch("/api/auth/forgot-password", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ email }) })
                         const j = await res.json()
                         if (!res.ok) { setErr(j.error || "Failed"); setBusy(false); return }
-                        // Show success message — don't go to reset view
                         setErr(null)
+                        setResetLink(j.resetLink || "")
                         setView("forgot-sent")
                         setBusy(false)
                       } catch { setErr("Network error"); setBusy(false) }
@@ -266,25 +267,29 @@ export function LoginDialog() {
                 </motion.div>
               )}
 
-              {/* Forgot Password Sent — success message */}
+              {/* Forgot Password Sent — success message with reset link */}
               {view === "forgot-sent" && (
                 <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="flex flex-col items-center text-center">
                   <span className="mt-2 text-xl font-extrabold"><span className="text-white">TradeSeekho</span> <span className="text-[#00D09C]">PK</span></span>
                   <div className="mt-8 flex h-16 w-16 items-center justify-center rounded-full bg-[#00D09C]/20">
                     <Mail className="h-8 w-8 text-[#00D09C]" />
                   </div>
-                  <h2 className="mt-4 text-2xl font-extrabold text-white">Check Your Email</h2>
+                  <h2 className="mt-4 text-2xl font-extrabold text-white">Reset Link Ready</h2>
                   <p className="mt-2 text-sm text-white/50">
-                    We've sent a password reset link to<br />
+                    Reset link generated for<br />
                     <span className="font-bold text-white">{email}</span>
                   </p>
-                  <p className="mt-2 text-xs text-white/30">
-                    Click the link in your email to reset your password.<br />
-                    Then come back and login with your new password.
+                  {resetLink && (
+                    <a href={resetLink} className="mt-4 flex h-12 w-full items-center justify-center gap-2 rounded-xl text-sm font-bold text-white"
+                      style={{ background: "linear-gradient(135deg, #00D09C 0%, #0072FF 100%)" }}>
+                      Click Here to Reset Password <ArrowRight className="h-4 w-4" />
+                    </a>
+                  )}
+                  <p className="mt-3 text-xs text-white/30">
+                    Link expires in 1 hour. Click the button above to set your new password.
                   </p>
-                  <button onClick={() => { setView("landing"); setEmail(""); }} className="mt-6 flex h-12 w-full items-center justify-center gap-2 rounded-xl text-sm font-bold text-white"
-                    style={{ background: "linear-gradient(135deg, #00D09C 0%, #0072FF 100%)" }}>
-                    Back to Login <ArrowRight className="h-4 w-4" />
+                  <button onClick={() => { setView("landing"); setEmail(""); setResetLink(""); }} className="mt-4 text-sm font-semibold text-white/60 hover:text-white">
+                    Back to Login
                   </button>
                 </motion.div>
               )}

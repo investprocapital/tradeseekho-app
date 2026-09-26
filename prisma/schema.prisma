@@ -122,6 +122,8 @@ model User {
   proStatus       String     @default("none") // none | pending | active (manual payment approval)
   proExpiresAt    DateTime?  // optional expiry; null = lifetime
   lessonsCompleted Int     @default(0) // cumulative count of lessons passed (for ad interstitial cadence)
+  resetToken      String?   // password reset token
+  resetTokenExpiry DateTime? // when reset token expires
   progress        Progress[]
   bookmarks       Bookmark[]
   certificates    Certificate[]
