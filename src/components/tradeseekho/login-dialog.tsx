@@ -168,7 +168,7 @@ export function LoginDialog() {
                     </div>
                   </div>
                 </motion.div>
-              ) : (
+              ) : (view === "signin" || view === "signup") ? (
                 <motion.div key="form" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 20 }} className="flex w-full flex-col items-center">
                   <button onClick={() => { setView("landing"); setErr(null) }} className="mb-4 flex items-center gap-1.5 self-start text-sm font-semibold text-white/60 hover:text-white">
                     <ArrowLeft className="h-4 w-4" /> Back
