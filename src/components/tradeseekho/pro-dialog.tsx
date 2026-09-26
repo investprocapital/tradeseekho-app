@@ -10,7 +10,7 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
-import { Crown, Copy, Upload, Loader2, AlertCircle, CheckCircle2, Clock, Smartphone, Image as ImageIcon, CreditCard } from "lucide-react"
+import { Crown, Copy, Upload, Loader2, AlertCircle, CheckCircle2, Clock, Smartphone, Image as ImageIcon, CreditCard, Globe } from "lucide-react"
 import { useStore } from "@/lib/store"
 import { useProMe, useSubmitProRequest } from "./use-data"
 import { toast } from "sonner"
@@ -23,6 +23,10 @@ interface ProSettings {
   easypaisaNumber: string
   cardEnabled: boolean
   cardInstructions: string
+  sadapayEnabled: boolean
+  sadapayName: string
+  sadapayNumber: string
+  sadapayIban: string
 }
 
 async function fetchProSettings(): Promise<ProSettings> {
@@ -31,7 +35,7 @@ async function fetchProSettings(): Promise<ProSettings> {
   return res.json()
 }
 
-type Method = "JazzCash" | "Easypaisa" | "Card"
+type Method = "JazzCash" | "Easypaisa" | "Card" | "SadaPay"
 
 export function ProDialog() {
   const open = useStore((s) => s.proOpen)
@@ -62,12 +66,15 @@ export function ProDialog() {
   const pkrPrice = settings?.pkrPrice ?? Math.round(usdPrice * pkrRate)
   const displayAmount = amount || String(pkrPrice)
 
-  const methods: { id: Method; label: string; color: string; accent: string; icon: any }[] = [
+  const methods: { id: Method; label: string; color: string; accent: string; icon: any; subtitle?: string }[] = [
     { id: "JazzCash", label: "JazzCash", color: "#ED1C24", accent: "bg-[#ED1C24]", icon: Smartphone },
     { id: "Easypaisa", label: "Easypaisa", color: "#00B14F", accent: "bg-[#00B14F]", icon: Smartphone },
   ]
   if (settings?.cardEnabled !== false) {
     methods.push({ id: "Card", label: "Visa / Debit Card", color: "#1A1F71", accent: "bg-[#1A1F71]", icon: CreditCard })
+  }
+  if (settings?.sadapayEnabled !== false) {
+    methods.push({ id: "SadaPay", label: "SadaPay", color: "#6C2BD9", accent: "bg-[#6C2BD9]", icon: Globe, subtitle: "For International / Worldwide Clients" })
   }
 
   const currentNumber = method === "JazzCash" ? settings?.jazzcashNumber : method === "Easypaisa" ? settings?.easypaisaNumber : ""
@@ -173,7 +180,7 @@ export function ProDialog() {
                         </span>
                         <div>
                           <div className="text-sm font-bold">{m.label}</div>
-                          <div className="text-[10px] text-muted-foreground">Tap to select</div>
+                          {m.subtitle ? <div className="text-[9px] text-muted-foreground">{m.subtitle}</div> : <div className="text-[10px] text-muted-foreground">Tap to select</div>}
                         </div>
                       </button>
                     )
@@ -181,7 +188,7 @@ export function ProDialog() {
                 </div>
               </div>
 
-              {/* Number to send to (JazzCash / Easypaisa) OR Card instructions */}
+              {/* Payment details: Card / SadaPay / JazzCash / Easypaisa */}
               {method === "Card" ? (
                 <div className="rounded-xl border border-dashed border-border bg-muted/30 p-3">
                   <div className="flex items-start gap-2">
@@ -190,6 +197,32 @@ export function ProDialog() {
                       <div className="text-[11px] uppercase tracking-wide text-muted-foreground">Card Payment</div>
                       <div className="text-sm font-bold text-foreground">{settings?.cardInstructions || "Contact admin on WhatsApp for card payment link"}</div>
                       <div className="mt-1 text-[10px] text-muted-foreground">Pay ${usdPrice} USD via secure card link</div>
+                    </div>
+                  </div>
+                </div>
+              ) : method === "SadaPay" ? (
+                <div className="rounded-xl border border-dashed border-[#6C2BD9]/40 bg-[#6C2BD9]/5 p-3">
+                  <div className="flex items-start gap-2">
+                    <Globe className="mt-0.5 h-5 w-5 shrink-0 text-[#6C2BD9]" />
+                    <div className="flex-1">
+                      <div className="text-[11px] uppercase tracking-wide text-muted-foreground">SadaPay · International</div>
+                      <div className="text-sm font-bold text-foreground">{settings?.sadapayName || "TradeSeekho PK"}</div>
+                      <div className="mt-1.5 space-y-1">
+                        <div className="flex items-center justify-between">
+                          <span className="text-[10px] text-muted-foreground">Number:</span>
+                          <span className="font-mono text-xs font-bold text-foreground">{settings?.sadapayNumber || "03XX-XXXXXXX"}</span>
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <span className="text-[10px] text-muted-foreground">IBAN:</span>
+                          <span className="font-mono text-xs font-bold text-foreground">{settings?.sadapayIban || "PK36SAPK0000000000000000"}</span>
+                        </div>
+                      </div>
+                      <div className="mt-2 flex justify-end">
+                        <Button type="button" size="sm" variant="outline" className="gap-1.5" onClick={() => copy(settings?.sadapayNumber || "")}>
+                          <Copy className="h-3.5 w-3.5" /> Copy Number
+                        </Button>
+                      </div>
+                      <div className="mt-1 text-[10px] text-muted-foreground">Send ${usdPrice} USD or Rs {pkrPrice} PKR</div>
                     </div>
                   </div>
                 </div>

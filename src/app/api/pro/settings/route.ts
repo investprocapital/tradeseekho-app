@@ -4,7 +4,6 @@ import { db } from "@/lib/db"
 export const dynamic = "force-dynamic"
 
 // GET /api/pro/settings — public: get Pro payment settings for display
-// Returns USD price, PKR rate, payment numbers, card option
 export async function GET() {
   let s = await db.proSettings.findUnique({ where: { id: "singleton" } })
   if (!s) {
@@ -18,5 +17,9 @@ export async function GET() {
     easypaisaNumber: s.easypaisaNumber,
     cardEnabled: s.cardEnabled,
     cardInstructions: s.cardInstructions,
+    sadapayEnabled: s.sadapayEnabled,
+    sadapayName: s.sadapayName,
+    sadapayNumber: s.sadapayNumber,
+    sadapayIban: s.sadapayIban,
   })
 }

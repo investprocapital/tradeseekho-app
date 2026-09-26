@@ -1124,6 +1124,10 @@ function PaymentSettingsTab() {
   const [easypaisa, setEasypaisa] = useState("")
   const [cardEnabled, setCardEnabled] = useState(true)
   const [cardInstructions, setCardInstructions] = useState("")
+  const [sadapayEnabled, setSadapayEnabled] = useState(true)
+  const [sadapayName, setSadapayName] = useState("")
+  const [sadapayNumber, setSadapayNumber] = useState("")
+  const [sadapayIban, setSadapayIban] = useState("")
   const [loaded, setLoaded] = useState(false)
 
   // Sync local inputs when server data arrives
@@ -1134,6 +1138,10 @@ function PaymentSettingsTab() {
     setEasypaisa(data.easypaisaNumber)
     setCardEnabled(data.cardEnabled)
     setCardInstructions(data.cardInstructions)
+    setSadapayEnabled(data.sadapayEnabled ?? true)
+    setSadapayName(data.sadapayName || "")
+    setSadapayNumber(data.sadapayNumber || "")
+    setSadapayIban(data.sadapayIban || "")
     setLoaded(true)
   }
 
@@ -1146,6 +1154,10 @@ function PaymentSettingsTab() {
         easypaisaNumber: easypaisa,
         cardEnabled,
         cardInstructions,
+        sadapayEnabled,
+        sadapayName,
+        sadapayNumber,
+        sadapayIban,
       })
       toast.success("Payment settings saved!")
     } catch {
@@ -1203,6 +1215,31 @@ function PaymentSettingsTab() {
             <div className="space-y-1.5">
               <label className="text-xs font-bold uppercase tracking-wide text-muted-foreground">Card Payment Instructions</label>
               <Textarea value={cardInstructions} onChange={(e) => setCardInstructions(e.target.value)} rows={2} placeholder="e.g. Contact admin on WhatsApp for card payment link" className="text-sm" />
+            </div>
+          )}
+
+          {/* SadaPay — International */}
+          <div className="flex items-center justify-between rounded-lg border border-[#6C2BD9]/30 bg-[#6C2BD9]/5 p-3">
+            <div>
+              <div className="text-sm font-bold">SadaPay (International / Worldwide)</div>
+              <div className="text-[11px] text-muted-foreground">For clients outside Pakistan</div>
+            </div>
+            <Switch checked={sadapayEnabled} onCheckedChange={setSadapayEnabled} />
+          </div>
+          {sadapayEnabled && (
+            <div className="space-y-2 rounded-lg border border-[#6C2BD9]/20 p-3">
+              <div className="space-y-1">
+                <label className="text-xs font-bold uppercase tracking-wide text-muted-foreground">SadaPay Account Name</label>
+                <Input value={sadapayName} onChange={(e) => setSadapayName(e.target.value)} className="h-9" placeholder="TradeSeekho PK" />
+              </div>
+              <div className="space-y-1">
+                <label className="text-xs font-bold uppercase tracking-wide text-muted-foreground">SadaPay Number</label>
+                <Input value={sadapayNumber} onChange={(e) => setSadapayNumber(e.target.value)} className="h-9" placeholder="03XX-XXXXXXX" />
+              </div>
+              <div className="space-y-1">
+                <label className="text-xs font-bold uppercase tracking-wide text-muted-foreground">SadaPay IBAN</label>
+                <Input value={sadapayIban} onChange={(e) => setSadapayIban(e.target.value)} className="h-9 font-mono text-xs" placeholder="PK36SAPK0000000000000000" />
+              </div>
             </div>
           )}
 

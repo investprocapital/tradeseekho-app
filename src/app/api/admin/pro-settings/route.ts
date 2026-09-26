@@ -19,6 +19,10 @@ export async function GET() {
     easypaisaNumber: s.easypaisaNumber,
     cardEnabled: s.cardEnabled,
     cardInstructions: s.cardInstructions,
+    sadapayEnabled: s.sadapayEnabled,
+    sadapayName: s.sadapayName,
+    sadapayNumber: s.sadapayNumber,
+    sadapayIban: s.sadapayIban,
   })
 }
 
@@ -34,6 +38,11 @@ export async function PUT(req: Request) {
   if ("easypaisaNumber" in body) data.easypaisaNumber = String(body.easypaisaNumber)
   if ("cardEnabled" in body) data.cardEnabled = !!body.cardEnabled
   if ("cardInstructions" in body) data.cardInstructions = String(body.cardInstructions)
+  // SadaPay
+  if ("sadapayEnabled" in body) data.sadapayEnabled = !!body.sadapayEnabled
+  if ("sadapayName" in body) data.sadapayName = String(body.sadapayName)
+  if ("sadapayNumber" in body) data.sadapayNumber = String(body.sadapayNumber)
+  if ("sadapayIban" in body) data.sadapayIban = String(body.sadapayIban)
 
   const updated = await db.proSettings.upsert({
     where: { id: "singleton" },
@@ -47,5 +56,9 @@ export async function PUT(req: Request) {
     easypaisaNumber: updated.easypaisaNumber,
     cardEnabled: updated.cardEnabled,
     cardInstructions: updated.cardInstructions,
+    sadapayEnabled: updated.sadapayEnabled,
+    sadapayName: updated.sadapayName,
+    sadapayNumber: updated.sadapayNumber,
+    sadapayIban: updated.sadapayIban,
   })
 }

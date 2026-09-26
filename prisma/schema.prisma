@@ -234,6 +234,11 @@ model ProSettings {
   easypaisaNumber String   @default("03XX-XXXXXXX")
   cardEnabled     Boolean  @default(true)  // Show Visa/Debit Card option
   cardInstructions String  @default("Contact admin on WhatsApp for card payment link")
+  // SadaPay — for international/worldwide clients
+  sadapayEnabled  Boolean  @default(true)
+  sadapayName     String   @default("TradeSeekho PK")
+  sadapayNumber   String   @default("03XX-XXXXXXX")
+  sadapayIban     String   @default("PK36SAPK0000000000000000")
   updatedAt       DateTime @updatedAt
 }
 
