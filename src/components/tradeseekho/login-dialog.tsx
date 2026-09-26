@@ -112,47 +112,13 @@ export function LoginDialog() {
                   <p className="mt-1 text-sm text-white/50">Login to your account to continue</p>
 
                   <div className="mt-6 w-full space-y-3">
-                    <div className="relative">
-                      <Mail className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#06b6d4]" />
-                      <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="Email Address"
-                        className="h-12 w-full rounded-xl border border-[#1E3A5F] bg-[#0f172a]/80 ps-10 pe-3 text-sm text-white placeholder:text-white/30 focus:border-[#00D09C] focus:outline-none focus:ring-1 focus:ring-[#00D09C]" required />
-                    </div>
-                    <div className="relative">
-                      <Lock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#06b6d4]" />
-                      <input type={showPw ? "text" : "password"} value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Password"
-                        className="h-12 w-full rounded-xl border border-[#1E3A5F] bg-[#0f172a]/80 ps-10 pe-10 text-sm text-white placeholder:text-white/30 focus:border-[#00D09C] focus:outline-none focus:ring-1 focus:ring-[#00D09C]" required minLength={6} />
-                      <button type="button" onClick={() => setShowPw(!showPw)} className="absolute right-3 top-1/2 -translate-y-1/2 text-white/30 hover:text-white/60">
-                        {showPw ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                      </button>
-                    </div>
-                    <div className="flex items-center justify-between text-xs">
-                      <label className="flex items-center gap-1.5 cursor-pointer">
-                        <button type="button" onClick={() => setRemember(!remember)} className={`flex h-4 w-4 items-center justify-center rounded ${remember ? "bg-[#00D09C]" : "border border-white/20"}`}>
-                          {remember && <svg className="h-3 w-3 text-[#070F2B]" viewBox="0 0 24 24" fill="none"><path d="M5 12l5 5L20 7" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" /></svg>}
-                        </button>
-                        <span className="text-white/60">Remember me</span>
-                      </label>
-                      <button type="button" onClick={() => { setView("forgot"); setErr(null) }} className="font-semibold text-[#00D09C] hover:underline">Forgot Password?</button>
-                    </div>
-
-                    {err && <p className="flex items-center gap-1.5 text-xs font-semibold text-red-400"><AlertCircle className="h-3.5 w-3.5" /> {err}</p>}
-
-                    <button onClick={submit} disabled={busy}
-                      className="flex h-12 w-full items-center justify-center gap-2 rounded-xl text-sm font-bold text-white shadow-lg transition active:scale-[0.98] disabled:opacity-50"
-                      style={{ background: "linear-gradient(135deg, #00D09C 0%, #0072FF 100%)", boxShadow: "0 4px 20px rgba(0, 208, 156, 0.25)" }}>
-                      {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <>Login <ArrowRight className="h-4 w-4" /></>}
-                    </button>
-
-                    <div className="flex items-center gap-3 py-1">
-                      <div className="h-px flex-1 bg-white/10" /><span className="text-xs text-white/30">OR</span><div className="h-px flex-1 bg-white/10" />
-                    </div>
-
                     <button onClick={google} disabled={busy}
-                      className="flex h-11 w-full items-center justify-center gap-2 rounded-xl border border-[#1E3A5F] bg-transparent text-sm font-semibold text-white transition hover:border-[#06b6d4] hover:bg-[#06b6d4]/5 active:scale-[0.98] disabled:opacity-50">
+                      className="flex h-12 w-full items-center justify-center gap-2 rounded-xl border border-[#1E3A5F] bg-transparent text-sm font-semibold text-white transition hover:border-[#06b6d4] hover:bg-[#06b6d4]/5 active:scale-[0.98] disabled:opacity-50">
                       <GoogleG /> Continue with Google
                     </button>
                     <button onClick={() => { setView("signin"); setErr(null) }}
-                      className="flex h-11 w-full items-center justify-center gap-2 rounded-xl border border-[#1E3A5F] bg-transparent text-sm font-semibold text-white transition hover:border-[#06b6d4] hover:bg-[#06b6d4]/5 active:scale-[0.98]">
+                      className="flex h-12 w-full items-center justify-center gap-2 rounded-xl text-sm font-bold text-white shadow-lg transition active:scale-[0.98]"
+                      style={{ background: "linear-gradient(135deg, #00D09C 0%, #0072FF 100%)", boxShadow: "0 4px 20px rgba(0, 208, 156, 0.25)" }}>
                       <Mail className="h-4 w-4" /> Continue with Email
                     </button>
                   </div>
