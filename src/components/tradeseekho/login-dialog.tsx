@@ -204,6 +204,16 @@ export function LoginDialog() {
                       </button>
                     </div>
                     {err && <p className="flex items-center gap-1.5 text-xs font-semibold text-red-400"><AlertCircle className="h-3.5 w-3.5" /> {err}</p>}
+                    
+                    {/* Forgot Password — only on signin view, right aligned */}
+                    {view === "signin" && (
+                      <div className="flex justify-end">
+                        <button type="button" onClick={() => { setView("forgot"); setErr(null) }} className="text-xs font-semibold text-[#00D09C] hover:underline">
+                          Forgot Password?
+                        </button>
+                      </div>
+                    )}
+                    
                     <button type="submit" disabled={busy}
                       className="flex h-12 w-full items-center justify-center gap-2 rounded-xl text-sm font-bold text-white transition active:scale-[0.98] disabled:opacity-50"
                       style={{ background: "linear-gradient(135deg, #00D09C 0%, #0072FF 100%)", boxShadow: "0 4px 20px rgba(0, 208, 156, 0.25)" }}>
