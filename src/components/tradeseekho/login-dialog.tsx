@@ -8,7 +8,7 @@ import { useStore } from "@/lib/store"
 import { Mail, Lock, User, Loader2, AlertCircle, ArrowLeft, ArrowRight, Eye, EyeOff, GraduationCap, BarChart3, TrendingUp, Moon, Sun } from "lucide-react"
 import { useTheme } from "next-themes"
 
-type View = "landing" | "signin" | "signup"
+type View = "landing" | "signin" | "signup" | "forgot" | "reset"
 
 export function LoginDialog() {
   const loginOpen = useStore((s) => s.loginOpen)
@@ -132,7 +132,7 @@ export function LoginDialog() {
                         </button>
                         <span className="text-white/60">Remember me</span>
                       </label>
-                      <button type="button" className="font-semibold text-[#00D09C] hover:underline">Forgot Password?</button>
+                      <button type="button" onClick={() => { setView("forgot"); setErr(null) }} className="font-semibold text-[#00D09C] hover:underline">Forgot Password?</button>
                     </div>
 
                     {err && <p className="flex items-center gap-1.5 text-xs font-semibold text-red-400"><AlertCircle className="h-3.5 w-3.5" /> {err}</p>}
@@ -248,6 +248,79 @@ export function LoginDialog() {
                     {view === "signup" ? "Already have an account? " : "Don't have an account? "}
                     <button onClick={() => { setView(view === "signup" ? "landing" : "signup"); setErr(null) }} className="font-bold text-[#00D09C] hover:underline">{view === "signup" ? "Sign In" : "Sign Up"}</button>
                   </p>
+                </motion.div>
+              )}
+
+              {/* Forgot Password View */}
+              {view === "forgot" && (
+                <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="flex flex-col items-center">
+                  <button onClick={() => { setView("landing"); setErr(null) }} className="mb-4 flex items-center gap-1.5 self-start text-sm font-semibold text-white/60 hover:text-white">
+                    <ArrowLeft className="h-4 w-4" /> Back
+                  </button>
+                  <span className="mt-2 text-xl font-extrabold"><span className="text-white">TradeSeekho</span> <span className="text-[#00D09C]">PK</span></span>
+                  <h2 className="mt-6 text-2xl font-extrabold text-white">Forgot Password</h2>
+                  <p className="mt-1 text-sm text-white/50">Enter your email to reset your password</p>
+
+                  <div className="mt-6 w-full space-y-3">
+                    <div className="flex items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-3">
+                      <Mail className="h-4 w-4 text-white/40" />
+                      <input value={email} onChange={(e) => setEmail(e.target.value)} type="email" placeholder="your@email.com" className="h-12 w-full bg-transparent text-sm text-white placeholder:text-white/30 focus:outline-none" />
+                    </div>
+
+                    {err && <p className="flex items-center gap-1.5 text-xs font-semibold text-red-400"><AlertCircle className="h-3.5 w-3.5" /> {err}</p>}
+
+                    <button onClick={async () => {
+                      if (!email) { setErr("Please enter your email"); return }
+                      setBusy(true); setErr(null)
+                      try {
+                        const res = await fetch("/api/auth/forgot-password", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ email }) })
+                        const j = await res.json()
+                        if (!res.ok) { setErr(j.error || "Failed"); setBusy(false); return }
+                        setView("reset"); setBusy(false)
+                      } catch { setErr("Network error"); setBusy(false) }
+                    }} disabled={busy}
+                      className="flex h-12 w-full items-center justify-center gap-2 rounded-xl text-sm font-bold text-white shadow-lg transition active:scale-[0.98] disabled:opacity-50"
+                      style={{ background: "linear-gradient(135deg, #00D09C 0%, #0072FF 100%)", boxShadow: "0 4px 20px rgba(0, 208, 156, 0.25)" }}>
+                      {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <>Send Reset Link <ArrowRight className="h-4 w-4" /></>}
+                    </button>
+                  </div>
+                </motion.div>
+              )}
+
+              {/* Reset Password View */}
+              {view === "reset" && (
+                <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="flex flex-col items-center">
+                  <button onClick={() => { setView("landing"); setErr(null) }} className="mb-4 flex items-center gap-1.5 self-start text-sm font-semibold text-white/60 hover:text-white">
+                    <ArrowLeft className="h-4 w-4" /> Back
+                  </button>
+                  <span className="mt-2 text-xl font-extrabold"><span className="text-white">TradeSeekho</span> <span className="text-[#00D09C]">PK</span></span>
+                  <h2 className="mt-6 text-2xl font-extrabold text-white">Reset Password</h2>
+                  <p className="mt-1 text-sm text-white/50">Enter your new password for {email}</p>
+
+                  <div className="mt-6 w-full space-y-3">
+                    <div className="flex items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-3">
+                      <Lock className="h-4 w-4 text-white/40" />
+                      <input value={password} onChange={(e) => setPassword(e.target.value)} type="password" placeholder="New password (min 6 chars)" className="h-12 w-full bg-transparent text-sm text-white placeholder:text-white/30 focus:outline-none" />
+                    </div>
+
+                    {err && <p className="flex items-center gap-1.5 text-xs font-semibold text-red-400"><AlertCircle className="h-3.5 w-3.5" /> {err}</p>}
+
+                    <button onClick={async () => {
+                      if (password.length < 6) { setErr("Password must be at least 6 characters"); return }
+                      setBusy(true); setErr(null)
+                      try {
+                        const res = await fetch("/api/auth/reset-password", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ email, newPassword: password }) })
+                        const j = await res.json()
+                        if (!res.ok) { setErr(j.error || "Failed"); setBusy(false); return }
+                        toast.success("Password reset! Please login.")
+                        setView("landing"); setPassword(""); setBusy(false)
+                      } catch { setErr("Network error"); setBusy(false) }
+                    }} disabled={busy}
+                      className="flex h-12 w-full items-center justify-center gap-2 rounded-xl text-sm font-bold text-white shadow-lg transition active:scale-[0.98] disabled:opacity-50"
+                      style={{ background: "linear-gradient(135deg, #00D09C 0%, #0072FF 100%)", boxShadow: "0 4px 20px rgba(0, 208, 156, 0.25)" }}>
+                      {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <>Reset Password <ArrowRight className="h-4 w-4" /></>}
+                    </button>
+                  </div>
                 </motion.div>
               )}
             </AnimatePresence>
