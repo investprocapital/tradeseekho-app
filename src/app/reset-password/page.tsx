@@ -1,25 +1,23 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState } from "react"
 import { Lock, Loader2, ArrowLeft, CheckCircle2, AlertCircle } from "lucide-react"
 import Link from "next/link"
 import { toast } from "sonner"
 
 export default function ResetPasswordPage() {
   // Read oobCode from URL (Google Identity Toolkit redirect)
-  const [oobCode, setOobCode] = useState("")
+  const [oobCode] = useState(() => {
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search)
+      return params.get("oobCode") || params.get("code") || ""
+    }
+    return ""
+  })
   const [newPassword, setNewPassword] = useState("")
   const [busy, setBusy] = useState(false)
   const [done, setDone] = useState(false)
   const [err, setErr] = useState("")
-
-  useEffect(() => {
-    if (typeof window !== "undefined") {
-      const params = new URLSearchParams(window.location.search)
-      const code = params.get("oobCode") || params.get("code") || ""
-      if (code) setOobCode(code)
-    }
-  }, [])
 
   const submit = async () => {
     if (newPassword.length < 6) { setErr("Password must be at least 6 characters"); return }
