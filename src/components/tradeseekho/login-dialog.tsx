@@ -225,7 +225,7 @@ export function LoginDialog() {
                     <button onClick={() => { setView(view === "signup" ? "landing" : "signup"); setErr(null) }} className="font-bold text-[#00D09C] hover:underline">{view === "signup" ? "Sign In" : "Sign Up"}</button>
                   </p>
                 </motion.div>
-              )}
+              ) : null}
 
               {/* Forgot Password View — sends reset email only */}
               {view === "forgot" && (
