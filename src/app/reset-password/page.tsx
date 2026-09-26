@@ -6,17 +6,19 @@ import Link from "next/link"
 import { toast } from "sonner"
 
 export default function ResetPasswordPage() {
+  // Read oobCode from URL (Google Identity Toolkit redirect)
   const [oobCode, setOobCode] = useState("")
   const [newPassword, setNewPassword] = useState("")
   const [busy, setBusy] = useState(false)
   const [done, setDone] = useState(false)
   const [err, setErr] = useState("")
 
-  // Read oobCode from URL (Google Identity Toolkit redirect)
   useEffect(() => {
-    const params = new URLSearchParams(window.location.search)
-    const code = params.get("oobCode") || params.get("code") || ""
-    setOobCode(code)
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search)
+      const code = params.get("oobCode") || params.get("code") || ""
+      if (code) setOobCode(code)
+    }
   }, [])
 
   const submit = async () => {
