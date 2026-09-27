@@ -252,9 +252,10 @@ model PageContent {
 }
 
 // Trading signals — admin creates, clients view
+// status flow: active -> tp1_hit -> tp2_hit -> tp3_hit (win) OR -> sl_hit (loss) OR -> closed
 model Signal {
   id          String   @id @default(cuid())
-  symbol      String   // OANDA:XAUUSD | BINANCE:BTCUSDT
+  symbol      String   // OANDA:XAUUSD | BINANCE:BTCUSDT | TVC:USOIL | FX:EURUSD | FX:GBPUSD
   signalType  String   // BUY | SELL
   entry       String   // e.g. "1.0950"
   stopLoss    String   // e.g. "1.0930"
@@ -263,11 +264,36 @@ model Signal {
   tp3         String?
   note        String?
   screenshot  String   // base64 data URL of chart screenshot
-  status      String   @default("active") // active | closed
+  status      String   @default("active") // active | tp1_hit | tp2_hit | tp3_hit | sl_hit | closed
+  // Timestamps for each TP/SL hit (null = not yet hit). Phase 1 = manual button.
+  tp1HitAt    DateTime?
+  tp2HitAt    DateTime?
+  tp3HitAt    DateTime?
+  slHitAt     DateTime?
+  // Optional profit snapshot (USD) recorded at the moment of the hit, for display.
+  profitUsd   Int?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
+  notifications Notification[]
+
   @@index([status])
+}
+
+// Broadcast notifications — one row is seen by ALL users (Phase 1 manual system).
+// Used for signal TP/SL hit alerts. Per-user read tracking is a future update.
+// deepLink follows the app:// scheme, e.g. app://signal/{signalId}
+model Notification {
+  id        String   @id @default(cuid())
+  type      String   @default("signal") // signal | system
+  title     String
+  body      String
+  deepLink  String?  // app://signal/{id}
+  signalId  String?
+  signal    Signal?  @relation(fields: [signalId], references: [id], onDelete: SetNull)
+  createdAt DateTime @default(now())
+
+  @@index([createdAt])
 }
 
 model AppStats {

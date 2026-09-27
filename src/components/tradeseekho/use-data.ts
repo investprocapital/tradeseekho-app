@@ -147,6 +147,7 @@ export interface AppNotification {
   type: "welcome" | "quiz_passed" | "new_lesson" | "signal"
   title: string
   body: string
+  deepLink?: string
   createdAt: string
 }
 

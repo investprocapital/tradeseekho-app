@@ -1,0 +1,1521 @@
+     1→"use client"
+     2→
+     3→import { useState, useRef } from "react"
+     4→import { motion } from "framer-motion"
+     5→import {
+     6→  Download, Users, BookOpen, BarChart3, Shield, Lock, LogOut, Eye,
+     7→  Plus, Pencil, Trash2, Save, Send, Megaphone, Check, ChevronRight, ArrowLeft,
+     8→  Crown, X, Upload, CreditCard, Search, TrendingUp,
+     9→} from "lucide-react"
+    10→import {
+    11→  Card, CardContent, CardHeader, CardTitle, CardDescription,
+    12→} from "@/components/ui/card"
+    13→import { Button } from "@/components/ui/button"
+    14→import { Input } from "@/components/ui/input"
+    15→import { Textarea } from "@/components/ui/textarea"
+    16→import { Label } from "@/components/ui/label"
+    17→import { Switch } from "@/components/ui/switch"
+    18→import { Badge } from "@/components/ui/badge"
+    19→import { Separator } from "@/components/ui/separator"
+    20→import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
+    21→import {
+    22→  Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription,
+    23→} from "@/components/ui/dialog"
+    24→import {
+    25→  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+    26→} from "@/components/ui/select"
+    27→import {
+    28→  Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
+    29→} from "@/components/ui/table"
+    30→import { ScrollArea } from "@/components/ui/scroll-area"
+    31→import { toast } from "sonner"
+    32→import { useStore, useT } from "@/lib/store"
+    33→import { usePick } from "./localize"
+    34→import { LANG_ORDER, LANGS } from "@/lib/i18n"
+    35→import type { LocalizedText } from "@/lib/types"
+    36→import {
+    37→  useAdminMe, useLogin, useLogout, useAdminLessons, useCategories,
+    38→  useAdminLessonDetail, useSaveLesson, useDeleteLesson, useSaveQuiz,
+    39→  useAdminQuiz, useAdminStats, useSaveStats, useAdminAds, useSaveAds,
+    40→  useAdminProRequests, useApproveProRequest, useRejectProRequest,
+    41→  useProSettings, useSaveProSettings,
+    42→  useBrokerAds, useSaveBrokerAds, useAdminPages, useSavePage,
+    43→  useAdminUsers,
+    44→} from "./admin-data"
+    45→import { SignalManager } from "./signal-manager"
+    46→import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+    47→
+    48→const EMPTY_LOC: LocalizedText = { en: "", ur: "", hi: "", ar: "" }
+    49→
+    50→function blankQuestion() {
+    51→  return {
+    52→    type: "MCQ" as "MCQ" | "TF",
+    53→    prompt: { ...EMPTY_LOC },
+    54→    options: [
+    55→      { ...EMPTY_LOC },
+    56→      { ...EMPTY_LOC },
+    57→    ],
+    58→    correctIndex: 0,
+    59→    explanation: { ...EMPTY_LOC },
+    60→  }
+    61→}
+    62→
+    63→export function AdminPanel() {
+    64→  const t = useT()
+    65→  const { data: me } = useAdminMe()
+    66→  const adminAuthed = useStore((s) => s.adminAuthed)
+    67→  const setAdminAuthed = useStore((s) => s.setAdminAuthed)
+    68→  const adminTab = useStore((s) => s.adminTab)
+    69→  const setAdminTab = useStore((s) => s.setAdminTab)
+    70→  const setShowAdmin = useStore((s) => s.setShowAdmin)
+    71→  const logout = useLogout()
+    72→
+    73→  const authed = adminAuthed || me?.authed
+    74→
+    75→  // keep store in sync with server truth (adjust-during-render, lint-clean)
+    76→  const [seenAuthed, setSeenAuthed] = useState<boolean | undefined>(undefined)
+    77→  const serverAuthed = me?.authed
+    78→  if (serverAuthed !== undefined && serverAuthed !== seenAuthed) {
+    79→    setSeenAuthed(serverAuthed)
+    80→    setAdminAuthed(serverAuthed)
+    81→  }
+    82→
+    83→  if (!authed) return <AdminLogin />
+    84→
+    85→  return (
+    86→    <div className="mx-auto w-full max-w-6xl px-2 py-4 sm:px-4 sm:py-8">
+    87→      {/* Top bar */}
+    88→      <div className="flex flex-wrap items-center justify-between gap-3">
+    89→        <div className="flex items-center gap-2.5">
+    90→          <span className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-brand text-brand-foreground shadow-sm">
+    91→            <Shield className="h-5 w-5" />
+    92→          </span>
+    93→          <div>
+    94→            <h1 className="text-xl font-extrabold tracking-tight">{t("admin.title")}</h1>
+    95→            <p className="text-xs text-muted-foreground">TradeSeekho PK v1.0</p>
+    96→          </div>
+    97→        </div>
+    98→        <div className="flex items-center gap-2">
+    99→          <Button variant="outline" size="sm" className="gap-1.5" onClick={() => setShowAdmin(false)}>
+   100→            <Eye className="h-4 w-4" /> <span className="hidden sm:inline">View Site</span>
+   101→          </Button>
+   102→          <Button
+   103→            variant="ghost"
+   104→            size="sm"
+   105→            className="gap-1.5 text-destructive hover:text-destructive"
+   106→            onClick={() => logout.mutateAsync().then(() => setAdminAuthed(false))}
+   107→          >
+   108→            <LogOut className="h-4 w-4" /> <span className="hidden sm:inline">{t("action.logout")}</span>
+   109→          </Button>
+   110→        </div>
+   111→      </div>
+   112→
+   113→      <Tabs value={adminTab} onValueChange={(v) => setAdminTab(v as any)} className="mt-4">
+   114→        <div className="overflow-x-auto pb-1">
+   115→          <TabsList className="flex w-max gap-1">
+   116→            <TabsTrigger value="dashboard" className="gap-1 whitespace-nowrap"><BarChart3 className="h-4 w-4" /><span className="hidden xs:inline sm:inline">Dashboard</span></TabsTrigger>
+   117→            <TabsTrigger value="users" className="gap-1 whitespace-nowrap"><Users className="h-4 w-4" /><span className="hidden xs:inline sm:inline">Users</span></TabsTrigger>
+   118→            <TabsTrigger value="lessons" className="gap-1 whitespace-nowrap"><BookOpen className="h-4 w-4" /><span className="hidden xs:inline sm:inline">Lessons</span></TabsTrigger>
+   119→            <TabsTrigger value="quizzes" className="gap-1 whitespace-nowrap"><BarChart3 className="h-4 w-4" /><span className="hidden xs:inline sm:inline">Quizzes</span></TabsTrigger>
+   120→            <TabsTrigger value="ads" className="gap-1 whitespace-nowrap"><Megaphone className="h-4 w-4" /><span className="hidden xs:inline sm:inline">Ads</span></TabsTrigger>
+   121→            <TabsTrigger value="broker-ads" className="gap-1 whitespace-nowrap"><Megaphone className="h-4 w-4" /><span className="hidden xs:inline sm:inline">Broker Ads</span></TabsTrigger>
+   122→            <TabsTrigger value="payment" className="gap-1 whitespace-nowrap"><CreditCard className="h-4 w-4" /><span className="hidden xs:inline sm:inline">Payment</span></TabsTrigger>
+   123→            <TabsTrigger value="pages" className="gap-1 whitespace-nowrap"><BookOpen className="h-4 w-4" /><span className="hidden xs:inline sm:inline">Pages</span></TabsTrigger>
+   124→            <TabsTrigger value="signals" className="gap-1 whitespace-nowrap"><TrendingUp className="h-4 w-4" /><span className="hidden xs:inline sm:inline">Signals</span></TabsTrigger>
+   125→            <TabsTrigger value="pro" className="gap-1 whitespace-nowrap"><Crown className="h-4 w-4" /><span className="hidden xs:inline sm:inline">Pro</span></TabsTrigger>
+   126→          </TabsList>
+   127→        </div>
+   128→        <TabsContent value="dashboard" className="mt-5"><DashboardTab /></TabsContent>
+   129→        <TabsContent value="users" className="mt-5"><UsersTab /></TabsContent>
+   130→        <TabsContent value="lessons" className="mt-5"><LessonsTab /></TabsContent>
+   131→        <TabsContent value="quizzes" className="mt-5"><QuizzesTab /></TabsContent>
+   132→        <TabsContent value="ads" className="mt-5"><AdsTab /></TabsContent>
+   133→        <TabsContent value="broker-ads" className="mt-5"><BrokerAdsTab /></TabsContent>
+   134→        <TabsContent value="payment" className="mt-5"><PaymentSettingsTab /></TabsContent>
+   135→        <TabsContent value="pages" className="mt-5"><PagesTab /></TabsContent>
+   136→        <TabsContent value="signals" className="mt-5"><SignalManager /></TabsContent>
+   137→        <TabsContent value="pro" className="mt-5"><ProRequestsTab /></TabsContent>
+   138→      </Tabs>
+   139→    </div>
+   140→  )
+   141→}
+   142→
+   143→/* ---------------- Login ---------------- */
+   144→function AdminLogin() {
+   145→  const t = useT()
+   146→  const login = useLogin()
+   147→  const setAdminAuthed = useStore((s) => s.setAdminAuthed)
+   148→  const setShowAdmin = useStore((s) => s.setShowAdmin)
+   149→  const [pw, setPw] = useState("")
+   150→
+   151→  const submit = async (e: React.FormEvent) => {
+   152→    e.preventDefault()
+   153→    try {
+   154→      await login.mutateAsync({ password: pw })
+   155→      setAdminAuthed(true)
+   156→      toast.success(t("toast.loginSuccess"))
+   157→      setPw("")
+   158→    } catch {
+   159→      toast.error(t("admin.loginError"))
+   160→    }
+   161→  }
+   162→
+   163→  return (
+   164→    <div className="mx-auto flex min-h-[60vh] w-full max-w-md flex-col items-center justify-center px-4">
+   165→      <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="w-full">
+   166→        <Card className="border-border shadow-xl">
+   167→          <CardHeader className="items-center text-center">
+   168→            <span className="mx-auto inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-brand text-brand-foreground shadow-lg shadow-brand/30">
+   169→              <Lock className="h-7 w-7" />
+   170→            </span>
+   171→            <CardTitle className="mt-2">{t("admin.title")}</CardTitle>
+   172→            <CardDescription>{t("admin.loginSubtitle")}</CardDescription>
+   173→          </CardHeader>
+   174→          <CardContent>
+   175→            <form onSubmit={submit} className="space-y-4">
+   176→              <div className="space-y-1.5">
+   177→                <Label htmlFor="pw">{t("admin.password")}</Label>
+   178→                <Input
+   179→                  id="pw"
+   180→                  type="password"
+   181→                  autoFocus
+   182→                  value={pw}
+   183→                  onChange={(e) => setPw(e.target.value)}
+   184→                  placeholder={t("admin.passwordPlaceholder")}
+   185→                  className="h-11"
+   186→                />
+   187→              </div>
+   188→              {login.isError && (
+   189→                <p className="text-xs font-semibold text-destructive">{t("admin.loginError")}</p>
+   190→              )}
+   191→              <Button type="submit" className="h-11 w-full gap-2 bg-brand font-bold text-brand-foreground hover:bg-brand/90" disabled={login.isPending}>
+   192→                {login.isPending ? t("common.loading") : t("action.login")}
+   193→              </Button>
+   194→              <p className="text-center text-[11px] text-muted-foreground">
+   195→                Demo password: <code className="rounded bg-muted px-1 py-0.5 font-mono">tradeseekho</code>
+   196→              </p>
+   197→              <Button type="button" variant="ghost" size="sm" className="w-full gap-1.5" onClick={() => setShowAdmin(false)}>
+   198→                <ArrowLeft className="h-4 w-4" /> {t("action.backToHome")}
+   199→              </Button>
+   200→            </form>
+   201→          </CardContent>
+   202→        </Card>
+   203→      </motion.div>
+   204→    </div>
+   205→  )
+   206→}
+   207→
+   208→/* ---------------- Dashboard ---------------- */
+   209→function DashboardTab() {
+   210→  const t = useT()
+   211→  const setAdminTab = useStore((s) => s.setAdminTab)
+   212→  const { data, isLoading } = useAdminStats()
+   213→  const [dl, setDl] = useState("")
+   214→  const [au, setAu] = useState("")
+   215→  const saveStats = useSaveStats()
+   216→
+   217→  // Sync local inputs when server stats arrive (adjust-during-render, lint-clean)
+   218→  const [seenStats, setSeenStats] = useState<typeof data>(null)
+   219→  if (data && data !== seenStats) {
+   220→    setSeenStats(data)
+   221→    setDl(String(data.totalDownloads))
+   222→    setAu(String(data.activeUsers))
+   223→  }
+   224→
+   225→  const stats = [
+   226→    { icon: Download, label: t("admin.totalDownloads"), value: data?.totalDownloads ?? 0, color: "var(--brand)" },
+   227→    { icon: Users, label: t("admin.activeUsers"), value: data?.activeUsers ?? 0, color: "#00bfa5" },
+   228→    { icon: BookOpen, label: t("admin.totalLessons"), value: data?.totalLessons ?? 0, color: "var(--gold)" },
+   229→    { icon: BarChart3, label: t("admin.totalQuizzes"), value: data?.totalQuizzes ?? 0, color: "#7c4dff" },
+   230→  ]
+   231→
+   232→  return (
+   233→    <div className="space-y-6">
+   234→      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+   235→        {stats.map((s) => (
+   236→          <Card key={s.label} className="overflow-hidden">
+   237→            <CardContent className="flex items-center gap-3 p-4">
+   238→              <span className="inline-flex h-11 w-11 items-center justify-center rounded-xl text-white" style={{ background: s.color }}>
+   239→                <s.icon className="h-5 w-5" />
+   240→              </span>
+   241→              <div>
+   242→                <div className="text-2xl font-extrabold leading-none">{isLoading ? "—" : s.value.toLocaleString()}</div>
+   243→                <div className="mt-1 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">{s.label}</div>
+   244→              </div>
+   245→            </CardContent>
+   246→          </Card>
+   247→        ))}
+   248→      </div>
+   249→
+   250→      <div className="grid gap-4 lg:grid-cols-2">
+   251→        <Card>
+   252→          <CardHeader>
+   253→            <CardTitle className="text-base">Edit app metrics</CardTitle>
+   254→            <CardDescription>Used on the marketing dashboard + app home.</CardDescription>
+   255→          </CardHeader>
+   256→          <CardContent className="space-y-3">
+   257→            <div className="grid grid-cols-2 gap-3">
+   258→              <div className="space-y-1.5">
+   259→                <Label>{t("admin.totalDownloads")}</Label>
+   260→                <Input type="number" value={dl} onChange={(e) => setDl(e.target.value)} className="h-10" />
+   261→              </div>
+   262→              <div className="space-y-1.5">
+   263→                <Label>{t("admin.activeUsers")}</Label>
+   264→                <Input type="number" value={au} onChange={(e) => setAu(e.target.value)} className="h-10" />
+   265→              </div>
+   266→            </div>
+   267→            <Button
+   268→              className="gap-2 bg-brand font-bold text-brand-foreground hover:bg-brand/90"
+   269→              onClick={async () => {
+   270→                try {
+   271→                  await saveStats.mutateAsync({ totalDownloads: Number(dl) || 0, activeUsers: Number(au) || 0 })
+   272→                  toast.success(t("toast.adsUpdated"))
+   273→                } catch { toast.error(t("common.error")) }
+   274→              }}
+   275→            >
+   276→              <Save className="h-4 w-4" /> {t("action.save")}
+   277→            </Button>
+   278→          </CardContent>
+   279→        </Card>
+   280→
+   281→        <Card>
+   282→          <CardHeader>
+   283→            <CardTitle className="text-base">Quick actions</CardTitle>
+   284→            <CardDescription>Jump to a management area.</CardDescription>
+   285→          </CardHeader>
+   286→          <CardContent className="grid gap-2">
+   287→            {[
+   288→              { tab: "lessons", label: t("admin.manageLessons"), icon: BookOpen },
+   289→              { tab: "quizzes", label: t("admin.manageQuizzes"), icon: BarChart3 },
+   290→              { tab: "ads", label: t("admin.ads"), icon: Megaphone },
+   291→            ].map((q) => (
+   292→              <button
+   293→                key={q.tab}
+   294→                onClick={() => setAdminTab(q.tab as any)}
+   295→                className="flex items-center justify-between rounded-lg border border-border bg-card px-3 py-2.5 text-start text-sm font-semibold transition hover:border-brand/50 hover:bg-muted/40"
+   296→              >
+   297→                <span className="flex items-center gap-2"><q.icon className="h-4 w-4 text-brand" /> {q.label}</span>
+   298→                <ChevronRight className="h-4 w-4 text-muted-foreground rtl:rotate-180" />
+   299→              </button>
+   300→            ))}
+   301→          </CardContent>
+   302→        </Card>
+   303→      </div>
+   304→    </div>
+   305→  )
+   306→}
+   307→
+   308→/* ---------------- Lessons ---------------- */
+   309→function LessonsTab() {
+   310→  const t = useT()
+   311→  const pick = usePick()
+   312→  const { data, isLoading } = useAdminLessons()
+   313→  const del = useDeleteLesson()
+   314→  const [editing, setEditing] = useState<{ open: boolean; id: string | null }>({ open: false, id: null })
+   315→
+   316→  const lessons = data?.lessons ?? []
+   317→
+   318→  return (
+   319→    <div>
+   320→      <div className="mb-3 flex items-center justify-between gap-2">
+   321→        <p className="text-sm text-muted-foreground">{lessons.length} {t("nav.lessons").toLowerCase()}</p>
+   322→        <Button className="gap-1.5 bg-brand font-bold text-brand-foreground hover:bg-brand/90" onClick={() => setEditing({ open: true, id: null })}>
+   323→          <Plus className="h-4 w-4" /> {t("action.addLesson")}
+   324→        </Button>
+   325→      </div>
+   326→      <Card>
+   327→        <ScrollArea className="ts-scroll max-h-[70vh] overflow-x-auto">
+   328→          <Table>
+   329→            <TableHeader>
+   330→              <TableRow>
+   331→                <TableHead className="w-16">Image</TableHead>
+   332→                <TableHead>{t("admin.lessonTitle")}</TableHead>
+   333→                <TableHead className="hidden sm:table-cell">{t("admin.lessonCategory")}</TableHead>
+   334→                <TableHead className="hidden sm:table-cell">Min</TableHead>
+   335→                <TableHead>Status</TableHead>
+   336→                <TableHead className="text-end">{t("action.edit")}</TableHead>
+   337→              </TableRow>
+   338→            </TableHeader>
+   339→            <TableBody>
+   340→              {isLoading ? (
+   341→                <TableRow><TableCell colSpan={6} className="py-6 text-center text-muted-foreground">{t("common.loading")}</TableCell></TableRow>
+   342→              ) : lessons.length === 0 ? (
+   343→                <TableRow><TableCell colSpan={6} className="py-6 text-center text-muted-foreground">{t("common.empty")}</TableCell></TableRow>
+   344→              ) : lessons.map((l) => (
+   345→                <TableRow
+   346→                  key={l.id}
+   347→                  className="cursor-pointer hover:bg-muted/30"
+   348→                  onClick={() => setEditing({ open: true, id: l.id })}
+   349→                >
+   350→                  <TableCell>
+   351→                    {l.imageUrl ? (
+   352→                      <img src={l.imageUrl} alt="" className="h-10 w-14 rounded object-cover" />
+   353→                    ) : (
+   354→                      <div className="flex h-10 w-14 items-center justify-center rounded bg-muted text-[10px] text-muted-foreground">No img</div>
+   355→                    )}
+   356→                  </TableCell>
+   357→                  <TableCell className="max-w-[180px] truncate font-semibold">{pick(l.title)}</TableCell>
+   358→                  <TableCell className="hidden md:table-cell capitalize text-muted-foreground whitespace-nowrap">{l.categorySlug}</TableCell>
+   359→                  <TableCell className="hidden md:table-cell text-muted-foreground whitespace-nowrap">{l.durationMin}</TableCell>
+   360→                  <TableCell>
+   361→                    {l.isPublished
+   362→                      ? <Badge className="bg-brand-muted text-brand">{t("lesson.published")}</Badge>
+   363→                      : <Badge variant="secondary">{t("lesson.draft")}</Badge>}
+   364→                  </TableCell>
+   365→                  <TableCell className="text-end" onClick={(e) => e.stopPropagation()}>
+   366→                    <div className="inline-flex gap-1">
+   367→                      <Button size="sm" variant="outline" className="h-8 gap-1 text-xs" onClick={() => setEditing({ open: true, id: l.id })}>
+   368→                        <Pencil className="h-3.5 w-3.5" /> Edit
+   369→                      </Button>
+   370→                      <Button
+   371→                        size="sm" variant="ghost" className="h-8 gap-1 text-xs text-destructive hover:text-destructive"
+   372→                        onClick={async () => {
+   373→                          if (!confirm(`${t("action.delete")}: ${pick(l.title)}?`)) return
+   374→                          try {
+   375→                            await del.mutateAsync(l.id)
+   376→                            toast.success(t("toast.lessonDeleted"))
+   377→                          } catch { toast.error(t("common.error")) }
+   378→                        }}
+   379→                      >
+   380→                        <Trash2 className="h-3.5 w-3.5" /> Delete
+   381→                      </Button>
+   382→                    </div>
+   383→                  </TableCell>
+   384→                </TableRow>
+   385→              ))}
+   386→            </TableBody>
+   387→          </Table>
+   388→        </ScrollArea>
+   389→      </Card>
+   390→
+   391→      <LessonEditor
+   392→        open={editing.open}
+   393→        id={editing.id}
+   394→        onOpenChange={(v) => setEditing({ open: v, id: v ? editing.id : null })}
+   395→      />
+   396→    </div>
+   397→  )
+   398→}
+   399→
+   400→/* ---------------- Lesson editor (4-lang, dialog) ---------------- */
+   401→function LessonEditor({ open, id, onOpenChange }: { open: boolean; id: string | null; onOpenChange: (v: boolean) => void }) {
+   402→  const t = useT()
+   403→  const pick = usePick()
+   404→  const { data: cats } = useCategories()
+   405→  const { data: detail, isLoading } = useAdminLessonDetail(id)
+   406→  const save = useSaveLesson()
+   407→  const lang = useStore((s) => s.lang)
+   408→  const [locTab, setLocTab] = useState<typeof LANG_ORDER[number]>(lang)
+   409→  const [form, setForm] = useState(() => ({
+   410→    categoryId: "",
+   411→    title: { ...EMPTY_LOC },
+   412→    summary: { ...EMPTY_LOC },
+   413→    content: { ...EMPTY_LOC },
+   414→    imageUrl: "",
+   415→    order: 1,
+   416→    durationMin: 5,
+   417→    isPublished: false,
+   418→    isFree: true,
+   419→  }))
+   420→
+   421→  // Reset form when the editing target (id) changes — adjust-during-render (lint-clean)
+   422→  const [initedId, setInitedId] = useState<string | null | undefined>(undefined)
+   423→  if (id !== initedId) {
+   424→    setInitedId(id)
+   425→    if (!id) {
+   426→      setForm({
+   427→        categoryId: cats?.categories[0]?.id ?? "",
+   428→        title: { ...EMPTY_LOC },
+   429→        summary: { ...EMPTY_LOC },
+   430→        content: { ...EMPTY_LOC },
+   431→        imageUrl: "",
+   432→        order: 1,
+   433→        durationMin: 5,
+   434→        isPublished: false,
+   435→        isFree: true,
+   436→      })
+   437→    }
+   438→    setLocTab(lang)
+   439→  }
+   440→  // Populate form once server detail arrives (editing mode)
+   441→  const [initedDetailId, setInitedDetailId] = useState<string | null>(null)
+   442→  if (detail && detail.lesson.id !== initedDetailId) {
+   443→    setInitedDetailId(detail.lesson.id)
+   444→    setForm({
+   445→      categoryId: detail.lesson.categoryId,
+   446→      title: { ...detail.lesson.title },
+   447→      summary: { ...detail.lesson.summary },
+   448→      content: { ...detail.lesson.content },
+   449→      imageUrl: detail.lesson.imageUrl ?? "",
+   450→      order: detail.lesson.order,
+   451→      durationMin: detail.lesson.durationMin,
+   452→      isPublished: detail.lesson.isPublished,
+   453→      isFree: true,
+   454→    })
+   455→    setLocTab(lang)
+   456→  }
+   457→
+   458→  const setLoc = (field: "title" | "summary" | "content", l: string, val: string) =>
+   459→    setForm((f) => ({ ...f, [field]: { ...f[field], [l]: val } }))
+   460→
+   461→  const imgFileRef = useRef<HTMLInputElement>(null)
+   462→  const [imgUploading, setImgUploading] = useState(false)
+   463→
+   464→  const onImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+   465→    const f = e.target.files?.[0]
+   466→    if (!f) return
+   467→    // Check size before upload
+   468→    if (f.size > 2 * 1024 * 1024) {
+   469→      toast.error("Image too large (max 2MB). Use a smaller image.")
+   470→      if (imgFileRef.current) imgFileRef.current.value = ""
+   471→      return
+   472→    }
+   473→    setImgUploading(true)
+   474→    try {
+   475→      const fd = new FormData()
+   476→      fd.append("file", f)
+   477→      const res = await fetch("/api/admin/upload-image", { method: "POST", body: fd })
+   478→      const j = await res.json()
+   479→      if (!res.ok) throw new Error(j.error || "upload_failed")
+   480→      setForm((prev) => ({ ...prev, imageUrl: j.url }))
+   481→      toast.success("Image uploaded successfully")
+   482→    } catch (err: any) {
+   483→      toast.error(err?.message === "too_large" ? "Image too large (max 2MB)" : "Upload failed. Try a smaller image.")
+   484→    } finally {
+   485→      setImgUploading(false)
+   486→      if (imgFileRef.current) imgFileRef.current.value = ""
+   487→    }
+   488→  }
+   489→
+   490→  const submit = async (publish = false) => {
+   491→    if (!form.categoryId || !form.title.en) {
+   492→      toast.error("Title (EN) + category required")
+   493→      return
+   494→    }
+   495→    const payload: Record<string, unknown> = {
+   496→      categoryId: form.categoryId,
+   497→      titleEn: form.title.en, titleUr: form.title.ur || form.title.en, titleHi: form.title.hi || form.title.en, titleAr: form.title.ar || form.title.en,
+   498→      summaryEn: form.summary.en || null, summaryUr: form.summary.ur || null, summaryHi: form.summary.hi || null, summaryAr: form.summary.ar || null,
+   499→      contentEn: form.content.en, contentUr: form.content.ur || form.content.en, contentHi: form.content.hi || form.content.en, contentAr: form.content.ar || form.content.en,
+   500→      imageUrl: form.imageUrl || null,
+   501→      order: Number(form.order) || 0,
+   502→      durationMin: Number(form.durationMin) || 5,
+   503→      isPublished: publish ? true : form.isPublished,
+   504→      isFree: form.isFree,
+   505→    }
+   506→    try {
+   507→      await save.mutateAsync({ id: id ?? undefined, data: payload })
+   508→      toast.success(publish ? t("toast.lessonPublished") : t("toast.lessonSaved"))
+   509→      onOpenChange(false)
+   510→    } catch {
+   511→      toast.error(t("common.error"))
+   512→    }
+   513→  }
+   514→
+   515→  return (
+   516→    <Dialog open={open} onOpenChange={onOpenChange}>
+   517→      <DialogContent className="max-h-[90vh] overflow-y-auto p-0 sm:max-w-2xl">
+   518→        <DialogHeader className="border-b border-border p-5">
+   519→          <DialogTitle className="flex items-center gap-2 text-lg font-extrabold">
+   520→            <BookOpen className="h-5 w-5 text-brand" />
+   521→            {id ? t("action.edit") : t("admin.newLesson")}
+   522→          </DialogTitle>
+   523→          <DialogDescription>{t("admin.lessonEditor")}</DialogDescription>
+   524→        </DialogHeader>
+   525→
+   526→        <div className="max-h-[70vh] overflow-y-auto p-5">
+   527→          <div className="space-y-5 p-5">
+   528→            {/* Category + meta */}
+   529→            <div className="grid gap-3 sm:grid-cols-2">
+   530→              <div className="space-y-1.5">
+   531→                <Label>{t("admin.lessonCategory")}</Label>
+   532→                <Select value={form.categoryId} onValueChange={(v) => setForm((f) => ({ ...f, categoryId: v }))}>
+   533→                  <SelectTrigger className="h-10"><SelectValue /></SelectTrigger>
+   534→                  <SelectContent>
+   535→                    {cats?.categories.map((c) => (
+   536→                      <SelectItem key={c.id} value={c.id}>{pick(c.name)}</SelectItem>
+   537→                    ))}
+   538→                  </SelectContent>
+   539→                </Select>
+   540→              </div>
+   541→              <div className="grid grid-cols-2 gap-3">
+   542→                <div className="space-y-1.5">
+   543→                  <Label>{t("admin.lessonOrder")}</Label>
+   544→                  <Input type="number" value={form.order} onChange={(e) => setForm((f) => ({ ...f, order: Number(e.target.value) }))} className="h-10" />
+   545→                </div>
+   546→                <div className="space-y-1.5">
+   547→                  <Label>{t("admin.lessonDuration")}</Label>
+   548→                  <Input type="number" value={form.durationMin} onChange={(e) => setForm((f) => ({ ...f, durationMin: Number(e.target.value) }))} className="h-10" />
+   549→                </div>
+   550→              </div>
+   551→            </div>
+   552→
+   553→            <div className="space-y-1.5">
+   554→              <Label>{t("admin.lessonImage")}</Label>
+   555→              <div className="flex gap-2">
+   556→                <Input value={form.imageUrl} onChange={(e) => setForm((f) => ({ ...f, imageUrl: e.target.value }))} placeholder="URL or upload below" className="h-10" />
+   557→                {form.imageUrl && (
+   558→                  <Button type="button" variant="outline" size="sm" className="h-10 shrink-0 text-destructive hover:text-destructive" onClick={() => setForm((f) => ({ ...f, imageUrl: "" }))}>
+   559→                    <Trash2 className="h-4 w-4" />
+   560→                  </Button>
+   561→                )}
+   562→              </div>
+   563→              {/* Upload from gallery */}
+   564→              <input ref={imgFileRef} type="file" accept="image/*" className="hidden" onChange={onImageUpload} />
+   565→              <Button
+   566→                type="button"
+   567→                variant="outline"
+   568→                size="sm"
+   569→                className="h-9 gap-1.5 text-xs"
+   570→                onClick={() => imgFileRef.current?.click()}
+   571→                disabled={imgUploading}
+   572→              >
+   573→                {imgUploading ? (
+   574→                  <><span className="h-3.5 w-3.5 animate-spin rounded-full border border-brand/30 border-t-brand" /> Uploading...</>
+   575→                ) : (
+   576→                  <><Upload className="h-3.5 w-3.5" /> Upload from Gallery</>
+   577→                )}
+   578→              </Button>
+   579→              {/* Image preview */}
+   580→              {form.imageUrl && (
+   581→                <div className="mt-2 overflow-hidden rounded-lg border border-border">
+   582→                  <img src={form.imageUrl} alt="lesson preview" className="h-32 w-full object-cover" />
+   583→                </div>
+   584→              )}
+   585→            </div>
+   586→
+   587→            {/* Language tabs */}
+   588→            <div>
+   589→              <div className="mb-2 flex flex-wrap gap-1.5">
+   590→                {LANG_ORDER.map((code) => (
+   591→                  <button
+   592→                    key={code}
+   593→                    onClick={() => setLocTab(code)}
+   594→                    className={`rounded-md px-2.5 py-1 text-xs font-bold transition ${
+   595→                      locTab === code ? "bg-brand text-brand-foreground" : "bg-muted text-muted-foreground hover:bg-muted/70"
+   596→                    }`}
+   597→                  >
+   598→                    {LANGS[code].native}
+   599→                  </button>
+   600→                ))}
+   601→              </div>
+   602→
+   603→              <div className={`space-y-3 rounded-xl border border-border bg-card p-3 ${locTab === "ur" || locTab === "ar" ? "font-urdu" : ""}`}>
+   604→                <div className="space-y-1.5">
+   605→                  <Label>{t("admin.lessonTitle")}</Label>
+   606→                  <Input
+   607→                    value={form.title[locTab]}
+   608→                    onChange={(e) => setLoc("title", locTab, e.target.value)}
+   609→                    className="h-10"
+   610→                  />
+   611→                </div>
+   612→                <div className="space-y-1.5">
+   613→                  <Label>{t("admin.lessonSummary")}</Label>
+   614→                  <Input
+   615→                    value={form.summary[locTab]}
+   616→                    onChange={(e) => setLoc("summary", locTab, e.target.value)}
+   617→                    className="h-10"
+   618→                  />
+   619→                </div>
+   620→                <div className="space-y-1.5">
+   621→                  <Label>{t("admin.lessonContent")}</Label>
+   622→                  <Textarea
+   623→                    value={form.content[locTab]}
+   624→                    onChange={(e) => setLoc("content", locTab, e.target.value)}
+   625→                    rows={9}
+   626→                    className="font-mono text-[13px]"
+   627→                  />
+   628→                </div>
+   629→              </div>
+   630→            </div>
+   631→
+   632→            <Separator />
+   633→            <div className="flex items-center justify-between rounded-lg border border-border p-3">
+   634→              <div>
+   635→                <div className="text-sm font-bold">{t("admin.lessonEditor")} → {t("lesson.published")}</div>
+   636→                <div className="text-xs text-muted-foreground">Publish makes it live in app + website instantly.</div>
+   637→              </div>
+   638→              <Switch checked={form.isPublished} onCheckedChange={(v) => setForm((f) => ({ ...f, isPublished: v }))} />
+   639→            </div>
+   640→          </div>
+   641→        </div>
+   642→
+   643→        <div className="flex items-center justify-end gap-2 border-t border-border p-4">
+   644→          <Button variant="outline" onClick={() => onOpenChange(false)}>{t("action.cancel")}</Button>
+   645→          <Button variant="secondary" className="gap-1.5" onClick={() => submit(false)} disabled={save.isPending || isLoading}>
+   646→            <Save className="h-4 w-4" /> {t("action.save")}
+   647→          </Button>
+   648→          <Button className="gap-1.5 bg-brand font-bold text-brand-foreground hover:bg-brand/90" onClick={() => submit(true)} disabled={save.isPending || isLoading}>
+   649→            <Send className="h-4 w-4" /> {t("action.publish")}
+   650→          </Button>
+   651→        </div>
+   652→      </DialogContent>
+   653→    </Dialog>
+   654→  )
+   655→}
+   656→
+   657→/* ---------------- Quizzes ---------------- */
+   658→function QuizzesTab() {
+   659→  const t = useT()
+   660→  const pick = usePick()
+   661→  const { data: lessonsData } = useAdminLessons()
+   662→  const [lessonId, setLessonId] = useState<string | null>(null)
+   663→  const { data: quizData, isLoading } = useAdminQuiz(lessonId)
+   664→  const save = useSaveQuiz()
+   665→  const lang = useStore((s) => s.lang)
+   666→  const [locTab, setLocTab] = useState<typeof LANG_ORDER[number]>(lang)
+   667→  const [passMark, setPassMark] = useState(3)
+   668→  const [questions, setQuestions] = useState(() => [blankQuestion()])
+   669→
+   670→  // Sync the editor language tab with the global language (adjust-during-render, lint-clean)
+   671→  const [seenLang, setSeenLang] = useState(lang)
+   672→  if (lang !== seenLang) {
+   673→    setSeenLang(lang)
+   674→    setLocTab(lang)
+   675→  }
+   676→
+   677→  // Seed questions + passMark from server when the quiz/lesson target changes
+   678→  const [initedKey, setInitedKey] = useState<string | null>(null)
+   679→  const quizKey = lessonId
+   680→    ? `${lessonId}::${quizData?.quiz?.id ?? "none"}::${isLoading ? "loading" : "done"}`
+   681→    : null
+   682→  if (quizKey && quizKey !== initedKey) {
+   683→    setInitedKey(quizKey)
+   684→    if (quizData?.quiz) {
+   685→      setPassMark(quizData.quiz.passMark)
+   686→      setQuestions(
+   687→        quizData.quiz.questions.length
+   688→          ? quizData.quiz.questions.map((q) => ({
+   689→              type: q.type,
+   690→              prompt: { ...q.prompt },
+   691→              options: q.options.map((o) => ({ ...o })),
+   692→              correctIndex: q.correctIndex,
+   693→              explanation: { ...q.explanation },
+   694→            }))
+   695→          : [blankQuestion()],
+   696→      )
+   697→    } else {
+   698→      setPassMark(3)
+   699→      setQuestions([blankQuestion()])
+   700→    }
+   701→  }
+   702→
+   703→  const updateQ = (i: number, patch: any) =>
+   704→    setQuestions((qs) => qs.map((q, idx) => (idx === i ? { ...q, ...patch } : q)))
+   705→
+   706→  const setQLoc = (i: number, field: "prompt" | "explanation", l: string, val: string) =>
+   707→    setQuestions((qs) => qs.map((q, idx) => (idx === i ? { ...q, [field]: { ...q[field], [l]: val } } : q)))
+   708→
+   709→  const setOptLoc = (i: number, oi: number, l: string, val: string) =>
+   710→    setQuestions((qs) =>
+   711→      qs.map((q, idx) =>
+   712→        idx === i
+   713→          ? { ...q, options: q.options.map((o, oidx) => (oidx === oi ? { ...o, [l]: val } : o)) }
+   714→          : q,
+   715→      ),
+   716→    )
+   717→
+   718→  const addOption = (i: number) =>
+   719→    setQuestions((qs) =>
+   720→      qs.map((q, idx) => (idx === i && q.options.length < 4 ? { ...q, options: [...q.options, { ...EMPTY_LOC }] } : q)),
+   721→    )
+   722→  const removeOption = (i: number, oi: number) =>
+   723→    setQuestions((qs) =>
+   724→      qs.map((q, idx) => {
+   725→        if (idx !== i || q.options.length <= 2) return q
+   726→        const options = q.options.filter((_, oidx) => oidx !== oi)
+   727→        const correctIndex = q.correctIndex >= options.length ? options.length - 1 : q.correctIndex
+   728→        return { ...q, options, correctIndex }
+   729→      }),
+   730→    )
+   731→
+   732→  const setType = (i: number, type: "MCQ" | "TF") =>
+   733→    setQuestions((qs) =>
+   734→      qs.map((q, idx) =>
+   735→        idx === i
+   736→          ? { ...q, type, options: type === "TF" ? q.options.slice(0, 2) : q.options.length < 2 ? [{ ...EMPTY_LOC }, { ...EMPTY_LOC }] : q.options }
+   737→          : q,
+   738→      ),
+   739→    )
+   740→
+   741→  const saveQuiz = async () => {
+   742→    if (!lessonId) return
+   743→    try {
+   744→      await save.mutateAsync({ lessonId, body: { passMark, questions } })
+   745→      toast.success(t("toast.questionSaved"))
+   746→    } catch { toast.error(t("common.error")) }
+   747→  }
+   748→
+   749→  return (
+   750→    <div className="space-y-4">
+   751→      <Card>
+   752→        <CardContent className="flex flex-col gap-3 p-4 sm:flex-row sm:items-end">
+   753→          <div className="flex-1 space-y-1.5">
+   754→            <Label>{t("admin.quizFor")}</Label>
+   755→            <Select value={lessonId ?? ""} onValueChange={(v) => setLessonId(v)}>
+   756→              <SelectTrigger className="h-10"><SelectValue placeholder="Select lesson" /></SelectTrigger>
+   757→              <SelectContent>
+   758→                {lessonsData?.lessons.map((l) => (
+   759→                  <SelectItem key={l.id} value={l.id}>{pick(l.title)}</SelectItem>
+   760→                ))}
+   761→              </SelectContent>
+   762→            </Select>
+   763→          </div>
+   764→          <div className="w-32 space-y-1.5">
+   765→            <Label>Pass mark</Label>
+   766→            <Input type="number" min={1} value={passMark} onChange={(e) => setPassMark(Number(e.target.value) || 1)} className="h-10" />
+   767→          </div>
+   768→        </CardContent>
+   769→      </Card>
+   770→
+   771→      {!lessonId ? (
+   772→        <Card><CardContent className="p-10 text-center text-sm text-muted-foreground">{t("common.empty")}</CardContent></Card>
+   773→      ) : isLoading ? (
+   774→        <Card><CardContent className="p-10 text-center text-sm text-muted-foreground">{t("common.loading")}</CardContent></Card>
+   775→      ) : (
+   776→        <>
+   777→          {/* Language tabs */}
+   778→          <div className="flex flex-wrap gap-1.5">
+   779→            {LANG_ORDER.map((code) => (
+   780→              <button key={code} onClick={() => setLocTab(code)} className={`rounded-md px-2.5 py-1 text-xs font-bold transition ${locTab === code ? "bg-brand text-brand-foreground" : "bg-muted text-muted-foreground hover:bg-muted/70"}`}>
+   781→                {LANGS[code].native}
+   782→              </button>
+   783→            ))}
+   784→          </div>
+   785→
+   786→          <div className="space-y-3">
+   787→            {questions.map((q, i) => (
+   788→              <Card key={i} className="overflow-hidden">
+   789→                <CardContent className={`p-4 ${locTab === "ur" || locTab === "ar" ? "font-urdu" : ""}`}>
+   790→                  <div className="mb-3 flex items-center justify-between gap-2">
+   791→                    <div className="flex items-center gap-2">
+   792→                      <span className="inline-flex h-7 min-w-7 items-center justify-center rounded-md bg-brand px-1.5 text-xs font-bold text-brand-foreground">{i + 1}</span>
+   793→                      <div className="inline-flex rounded-md border border-border p-0.5">
+   794→                        <button onClick={() => setType(i, "MCQ")} className={`rounded px-2 py-0.5 text-[11px] font-bold ${q.type === "MCQ" ? "bg-brand text-brand-foreground" : "text-muted-foreground"}`}>MCQ</button>
+   795→                        <button onClick={() => setType(i, "TF")} className={`rounded px-2 py-0.5 text-[11px] font-bold ${q.type === "TF" ? "bg-brand text-brand-foreground" : "text-muted-foreground"}`}>T/F</button>
+   796→                      </div>
+   797→                    </div>
+   798→                    <Button size="icon" variant="ghost" className="h-8 w-8 text-destructive hover:text-destructive" onClick={() => setQuestions((qs) => qs.filter((_, idx) => idx !== i))} aria-label={t("action.delete")}>
+   799→                      <Trash2 className="h-4 w-4" />
+   800→                    </Button>
+   801→                  </div>
+   802→
+   803→                  <div className="space-y-3">
+   804→                    <div className="space-y-1">
+   805→                      <Label className="text-xs">{t("admin.questionPrompt")} ({LANGS[locTab].native})</Label>
+   806→                      <Textarea value={q.prompt[locTab]} onChange={(e) => setQLoc(i, "prompt", locTab, e.target.value)} rows={2} className="text-sm" />
+   807→                    </div>
+   808→                    <div className="space-y-1.5">
+   809→                      <Label className="text-xs">{t("admin.option")} · {t("admin.correct")} ({LANGS[locTab].native})</Label>
+   810→                      <div className="space-y-1.5">
+   811→                        {q.options.map((o, oi) => (
+   812→                          <div key={oi} className="flex items-center gap-2">
+   813→                            <button
+   814→                              onClick={() => updateQ(i, { correctIndex: oi })}
+   815→                              className={`inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full border-2 text-xs font-bold transition ${q.correctIndex === oi ? "border-brand bg-brand text-brand-foreground" : "border-muted-foreground/40 text-muted-foreground"}`}
+   816→                              aria-label={`Correct ${oi + 1}`}
+   817→                            >
+   818→                              {q.correctIndex === oi ? <Check className="h-3.5 w-3.5" /> : String.fromCharCode(65 + oi)}
+   819→                            </button>
+   820→                            <Input value={o[locTab]} onChange={(e) => setOptLoc(i, oi, locTab, e.target.value)} className="h-9 flex-1 text-sm" />
+   821→                            {q.type === "MCQ" && q.options.length > 2 && (
+   822→                              <Button size="icon" variant="ghost" className="h-8 w-8 shrink-0 text-destructive" onClick={() => removeOption(i, oi)} aria-label="Remove option">
+   823→                                <Trash2 className="h-3.5 w-3.5" />
+   824→                              </Button>
+   825→                            )}
+   826→                          </div>
+   827→                        ))}
+   828→                      </div>
+   829→                      {q.type === "MCQ" && q.options.length < 4 && (
+   830→                        <Button size="sm" variant="outline" className="h-8 gap-1 text-xs" onClick={() => addOption(i)}>
+   831→                          <Plus className="h-3.5 w-3.5" /> {t("action.add")}
+   832→                        </Button>
+   833→                      )}
+   834→                    </div>
+   835→                    <div className="space-y-1">
+   836→                      <Label className="text-xs">{t("admin.explanation")} ({LANGS[locTab].native})</Label>
+   837→                      <Textarea value={q.explanation[locTab]} onChange={(e) => setQLoc(i, "explanation", locTab, e.target.value)} rows={2} className="text-sm" />
+   838→                    </div>
+   839→                  </div>
+   840→                </CardContent>
+   841→              </Card>
+   842→            ))}
+   843→          </div>
+   844→
+   845→          <div className="sticky bottom-0 flex items-center justify-between gap-2 border-t border-border bg-background/90 py-3 backdrop-blur">
+   846→            <Button variant="outline" className="gap-1.5" onClick={() => setQuestions((qs) => [...qs, blankQuestion()])}>
+   847→              <Plus className="h-4 w-4" /> {t("action.addQuestion")}
+   848→            </Button>
+   849→            <Button className="gap-1.5 bg-brand font-bold text-brand-foreground hover:bg-brand/90" onClick={saveQuiz} disabled={save.isPending}>
+   850→              <Save className="h-4 w-4" /> {t("action.save")}
+   851→            </Button>
+   852→          </div>
+   853→        </>
+   854→      )}
+   855→    </div>
+   856→  )
+   857→}
+   858→
+   859→/* ---------------- Ads ---------------- */
+   860→function AdsTab() {
+   861→  const t = useT()
+   862→  const { data, isLoading } = useAdminAds()
+   863→  const save = useSaveAds()
+   864→  const [form, setForm] = useState<AdminAdsForm | null>(null)
+   865→
+   866→  // Sync local form when server ad settings arrive (adjust-during-render, lint-clean)
+   867→  const [seenAds, setSeenAds] = useState<typeof data>(null)
+   868→  if (data && data !== seenAds) {
+   869→    setSeenAds(data)
+   870→    setForm(data)
+   871→  }
+   872→
+   873→  if (!form) {
+   874→    return <Card><CardContent className="p-10 text-center text-sm text-muted-foreground">{t("common.loading")}</CardContent></Card>
+   875→  }
+   876→
+   877→  const saveAds = async () => {
+   878→    try {
+   879→      await save.mutateAsync(form)
+   880→      toast.success(t("toast.adsUpdated"))
+   881→    } catch { toast.error(t("common.error")) }
+   882→  }
+   883→
+   884→  return (
+   885→    <div className="grid gap-4 sm:grid-cols-2">
+   886→      <Card>
+   887→        <CardHeader>
+   888→          <CardTitle className="flex items-center gap-2 text-base"><Megaphone className="h-5 w-5 text-gold" /> {t("admin.bannerAds")}</CardTitle>
+   889→          <CardDescription>Bottom banner shown on home + reader.</CardDescription>
+   890→        </CardHeader>
+   891→        <CardContent className="space-y-3">
+   892→          <div className="flex items-center justify-between rounded-lg border border-border p-3">
+   893→            <div>
+   894→              <div className="text-sm font-bold">{form.bannerEnabled ? t("admin.adsEnabled") : t("admin.adsDisabled")}</div>
+   895→              <div className="text-xs text-muted-foreground">Toggle AdMob banner ads.</div>
+   896→            </div>
+   897→            <Switch checked={form.bannerEnabled} onCheckedChange={(v) => setForm((f) => f && ({ ...f, bannerEnabled: v }))} />
+   898→          </div>
+   899→          <div className="space-y-1.5">
+   900→            <Label className="text-xs">Banner Unit ID</Label>
+   901→            <Input value={form.bannerUnitId} onChange={(e) => setForm((f) => f && ({ ...f, bannerUnitId: e.target.value }))} className="h-9 font-mono text-xs" />
+   902→          </div>
+   903→        </CardContent>
+   904→      </Card>
+   905→
+   906→      <Card>
+   907→        <CardHeader>
+   908→          <CardTitle className="flex items-center gap-2 text-base"><Megaphone className="h-5 w-5 text-brand" /> {t("admin.interstitialAds")}</CardTitle>
+   909→          <CardDescription>Full-screen ad shown after quiz submit.</CardDescription>
+   910→        </CardHeader>
+   911→        <CardContent className="space-y-3">
+   912→          <div className="flex items-center justify-between rounded-lg border border-border p-3">
+   913→            <div>
+   914→              <div className="text-sm font-bold">{form.interstitialEnabled ? t("admin.adsEnabled") : t("admin.adsDisabled")}</div>
+   915→              <div className="text-xs text-muted-foreground">Toggle AdMob interstitials.</div>
+   916→            </div>
+   917→            <Switch checked={form.interstitialEnabled} onCheckedChange={(v) => setForm((f) => f && ({ ...f, interstitialEnabled: v }))} />
+   918→          </div>
+   919→          <div className="space-y-1.5">
+   920→            <Label className="text-xs">Interstitial Unit ID</Label>
+   921→            <Input value={form.interstitialUnitId} onChange={(e) => setForm((f) => f && ({ ...f, interstitialUnitId: e.target.value }))} className="h-9 font-mono text-xs" />
+   922→          </div>
+   923→        </CardContent>
+   924→      </Card>
+   925→
+   926→      <Card className="sm:col-span-2">
+   927→        <CardHeader>
+   928→          <CardTitle className="flex items-center gap-2 text-base"><Megaphone className="h-5 w-5 text-brand" /> Ad Network Settings</CardTitle>
+   929→          <CardDescription>Control which ad network shows on which platform.</CardDescription>
+   930→        </CardHeader>
+   931→        <CardContent className="space-y-3">
+   932→          {/* AdMob Switch */}
+   933→          <div className="flex items-center justify-between rounded-lg border border-border p-3">
+   934→            <div>
+   935→              <div className="text-sm font-bold">AdMob (Native App Ads)</div>
+   936→              <div className="text-xs text-muted-foreground">For Android APK / Play Store App. Default: OFF</div>
+   937→            </div>
+   938→            <Switch
+   939→              checked={form.admobEnabled || false}
+   940→              onCheckedChange={(v) => {
+   941→                setForm((f) => f && ({ ...f, admobEnabled: v, ...(f.autoMode && v ? { adsenseEnabled: false } : {}) }))
+   942→              }}
+   943→            />
+   944→          </div>
+   945→
+   946→          {/* AdSense Switch */}
+   947→          <div className="flex items-center justify-between rounded-lg border border-border p-3">
+   948→            <div>
+   949→              <div className="text-sm font-bold">AdSense (Web Ads)</div>
+   950→              <div className="text-xs text-muted-foreground">For PC / Mobile Browser / iPhone. Default: ON</div>
+   951→            </div>
+   952→            <Switch
+   953→              checked={form.adsenseEnabled ?? true}
+   954→              onCheckedChange={(v) => {
+   955→                setForm((f) => f && ({ ...f, adsenseEnabled: v, ...(f.autoMode && v ? { admobEnabled: false } : {}) }))
+   956→              }}
+   957→            />
+   958→          </div>
+   959→
+   960→          {/* Auto Mode Switch */}
+   961→          <div className="flex items-center justify-between rounded-lg border border-border p-3">
+   962→            <div>
+   963→              <div className="text-sm font-bold">Auto Switch Mode</div>
+   964→              <div className="text-xs text-muted-foreground">One network at a time. Turning one ON auto-turns the other OFF.</div>
+   965→            </div>
+   966→            <Switch
+   967→              checked={form.autoMode ?? true}
+   968→              onCheckedChange={(v) => setForm((f) => f && ({ ...f, autoMode: v }))}
+   969→            />
+   970→          </div>
+   971→
+   972→          {/* Ad Frequency */}
+   973→          <div className="space-y-1.5">
+   974→            <Label className="text-xs">Ad Frequency (show ad every N lessons)</Label>
+   975→            <Input
+   976→              type="number"
+   977→              value={form.adFrequency ?? 4}
+   978→              onChange={(e) => setForm((f) => f && ({ ...f, adFrequency: Number(e.target.value) || 4 }))}
+   979→              className="h-9"
+   980→              min={1}
+   981→              max={10}
+   982→            />
+   983→            <p className="text-[10px] text-muted-foreground">Default: 4 (ad shows after every 4th completed lesson)</p>
+   984→          </div>
+   985→        </CardContent>
+   986→      </Card>
+   987→
+   988→      <div className="sm:col-span-2 flex justify-end">
+   989→        <Button className="gap-1.5 bg-brand font-bold text-brand-foreground hover:bg-brand/90" onClick={saveAds} disabled={save.isPending || isLoading}>
+   990→          <Save className="h-4 w-4" /> {t("action.save")}
+   991→        </Button>
+   992→      </div>
+   993→    </div>
+   994→  )
+   995→}
+   996→
+   997→type AdminAdsForm = {
+   998→  bannerEnabled: boolean
+   999→  interstitialEnabled: boolean
+  1000→  bannerUnitId: string
+  1001→  interstitialUnitId: string
+  1002→  admobEnabled?: boolean
+  1003→  adsenseEnabled?: boolean
+  1004→  autoMode?: boolean
+  1005→  adFrequency?: number
+  1006→}
+  1007→
+  1008→/* ---------------- Pro Requests ---------------- */
+  1009→function ProRequestsTab() {
+  1010→  const t = useT()
+  1011→  const [status, setStatus] = useState<"pending" | "approved" | "rejected" | "all">("pending")
+  1012→  const { data, isLoading } = useAdminProRequests(status)
+  1013→  const approve = useApproveProRequest()
+  1014→  const reject = useRejectProRequest()
+  1015→  const [preview, setPreview] = useState<string | null>(null)
+  1016→  const list = data?.requests ?? []
+  1017→
+  1018→  const onApprove = async (id: string) => {
+  1019→    try { await approve.mutateAsync({ id }); toast.success("Pro approved — user is now Pro 🎉") }
+  1020→    catch { toast.error("Could not approve") }
+  1021→  }
+  1022→  const onReject = async (id: string) => {
+  1023→    if (!confirm("Reject this payment request? User's Pro will stay off.")) return
+  1024→    try { await reject.mutateAsync({ id }); toast.success("Request rejected") }
+  1025→    catch { toast.error("Could not reject") }
+  1026→  }
+  1027→
+  1028→  return (
+  1029→    <div>
+  1030→      <div className="mb-3 flex flex-wrap items-center gap-2">
+  1031→        {(["pending", "approved", "rejected", "all"] as const).map((s) => (
+  1032→          <button
+  1033→            key={s}
+  1034→            onClick={() => setStatus(s)}
+  1035→            className={`rounded-full px-3 py-1 text-xs font-bold capitalize transition ${
+  1036→              status === s ? "bg-brand text-brand-foreground" : "bg-muted text-muted-foreground hover:bg-muted/70"
+  1037→            }`}
+  1038→          >
+  1039→            {s}
+  1040→          </button>
+  1041→        ))}
+  1042→        <span className="ml-auto text-xs text-muted-foreground">{list.length} request{list.length === 1 ? "" : "s"}</span>
+  1043→      </div>
+  1044→
+  1045→      {isLoading ? (
+  1046→        <Card><CardContent className="p-10 text-center text-sm text-muted-foreground">{t("common.loading")}</CardContent></Card>
+  1047→      ) : list.length === 0 ? (
+  1048→        <Card><CardContent className="flex flex-col items-center gap-2 p-10 text-center">
+  1049→          <Crown className="h-10 w-10 text-muted-foreground/50" />
+  1050→          <p className="text-sm text-muted-foreground">No {status} Pro requests.</p>
+  1051→        </CardContent></Card>
+  1052→      ) : (
+  1053→        <div className="grid gap-3 sm:grid-cols-2">
+  1054→          {list.map((r) => {
+  1055→            const initial = (r.user.name || r.user.email || "U").charAt(0).toUpperCase()
+  1056→            return (
+  1057→              <Card key={r.id}>
+  1058→                <CardContent className="p-4">
+  1059→                  <div className="flex items-start gap-3">
+  1060→                    <Avatar className="h-10 w-10">
+  1061→                      <AvatarImage src={r.user.image ?? undefined} alt="" />
+  1062→                      <AvatarFallback className="bg-brand text-xs font-bold text-brand-foreground">{initial}</AvatarFallback>
+  1063→                    </Avatar>
+  1064→                    <div className="min-w-0 flex-1">
+  1065→                      <div className="truncate text-sm font-bold">{r.user.name || "Learner"}</div>
+  1066→                      <div className="truncate text-[11px] text-muted-foreground">{r.user.email}</div>
+  1067→                    </div>
+  1068→                    <Badge className={
+  1069→                      r.status === "approved" ? "bg-brand-muted text-brand"
+  1070→                      : r.status === "rejected" ? "bg-destructive/15 text-destructive"
+  1071→                      : "bg-gold/20 text-gold-foreground"
+  1072→                    }>{r.status}</Badge>
+  1073→                  </div>
+  1074→
+  1075→                  <div className="mt-3 grid grid-cols-2 gap-2 text-xs">
+  1076→                    <div><span className="text-muted-foreground">Method:</span> <span className="font-bold">{r.method}</span></div>
+  1077→                    <div><span className="text-muted-foreground">Amount:</span> <span className="font-bold">Rs {r.amount}</span></div>
+  1078→                    <div className="col-span-2"><span className="text-muted-foreground">Submitted:</span> <span className="font-bold">{new Date(r.createdAt).toLocaleString()}</span></div>
+  1079→                    {r.note && <div className="col-span-2 rounded bg-muted/50 p-2"><span className="font-semibold">Note:</span> {r.note}</div>}
+  1080→                    {r.reviewerNote && <div className="col-span-2 rounded bg-muted/50 p-2"><span className="font-semibold">Admin:</span> {r.reviewerNote}</div>}
+  1081→                  </div>
+  1082→
+  1083→                  <button
+  1084→                    onClick={() => setPreview(r.screenshotPath)}
+  1085→                    className="mt-3 block w-full overflow-hidden rounded-lg border border-border"
+  1086→                    aria-label="View screenshot"
+  1087→                  >
+  1088→                    <img src={r.screenshotPath} alt="payment screenshot" className="h-32 w-full object-cover" />
+  1089→                  </button>
+  1090→
+  1091→                  {r.status === "pending" && (
+  1092→                    <div className="mt-3 flex gap-2">
+  1093→                      <Button size="sm" className="flex-1 gap-1.5 bg-brand font-bold text-brand-foreground hover:bg-brand/90" onClick={() => onApprove(r.id)} disabled={approve.isPending}>
+  1094→                        <Check className="h-4 w-4" /> Approve
+  1095→                      </Button>
+  1096→                      <Button size="sm" variant="outline" className="flex-1 gap-1.5 text-destructive hover:text-destructive" onClick={() => onReject(r.id)} disabled={reject.isPending}>
+  1097→                        <X className="h-4 w-4" /> Reject
+  1098→                      </Button>
+  1099→                    </div>
+  1100→                  )}
+  1101→                </CardContent>
+  1102→              </Card>
+  1103→            )
+  1104→          })}
+  1105→        </div>
+  1106→      )}
+  1107→
+  1108→      {/* Screenshot preview lightbox */}
+  1109→      {preview && (
+  1110→        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-foreground/90 p-4" onClick={() => setPreview(null)}>
+  1111→          <button className="absolute right-4 top-4 text-background" aria-label="Close"><X className="h-6 w-6" /></button>
+  1112→          <img src={preview} alt="screenshot" className="max-h-[90vh] max-w-full rounded-lg" />
+  1113→        </div>
+  1114→      )}
+  1115→    </div>
+  1116→  )
+  1117→}
+  1118→
+  1119→/* ---------------- Payment Settings ---------------- */
+  1120→function PaymentSettingsTab() {
+  1121→  const { data, isLoading } = useProSettings()
+  1122→  const save = useSaveProSettings()
+  1123→
+  1124→  const [usdPrice, setUsdPrice] = useState("5")
+  1125→  const [pkrRate, setPkrRate] = useState("280")
+  1126→  const [jazzcash, setJazzcash] = useState("")
+  1127→  const [easypaisa, setEasypaisa] = useState("")
+  1128→  const [cardEnabled, setCardEnabled] = useState(true)
+  1129→  const [cardInstructions, setCardInstructions] = useState("")
+  1130→  const [sadapayEnabled, setSadapayEnabled] = useState(true)
+  1131→  const [sadapayName, setSadapayName] = useState("")
+  1132→  const [sadapayNumber, setSadapayNumber] = useState("")
+  1133→  const [sadapayIban, setSadapayIban] = useState("")
+  1134→  const [loaded, setLoaded] = useState(false)
+  1135→
+  1136→  // Sync local inputs when server data arrives
+  1137→  if (data && !loaded) {
+  1138→    setUsdPrice(String(data.usdPrice))
+  1139→    setPkrRate(String(data.pkrRate))
+  1140→    setJazzcash(data.jazzcashNumber)
+  1141→    setEasypaisa(data.easypaisaNumber)
+  1142→    setCardEnabled(data.cardEnabled)
+  1143→    setCardInstructions(data.cardInstructions)
+  1144→    setSadapayEnabled(data.sadapayEnabled ?? true)
+  1145→    setSadapayName(data.sadapayName || "")
+  1146→    setSadapayNumber(data.sadapayNumber || "")
+  1147→    setSadapayIban(data.sadapayIban || "")
+  1148→    setLoaded(true)
+  1149→  }
+  1150→
+  1151→  const onSave = async () => {
+  1152→    try {
+  1153→      await save.mutateAsync({
+  1154→        usdPrice: Number(usdPrice) || 5,
+  1155→        pkrRate: Number(pkrRate) || 280,
+  1156→        jazzcashNumber: jazzcash,
+  1157→        easypaisaNumber: easypaisa,
+  1158→        cardEnabled,
+  1159→        cardInstructions,
+  1160→        sadapayEnabled,
+  1161→        sadapayName,
+  1162→        sadapayNumber,
+  1163→        sadapayIban,
+  1164→      })
+  1165→      toast.success("Payment settings saved!")
+  1166→    } catch {
+  1167→      toast.error("Failed to save. Try again.")
+  1168→    }
+  1169→  }
+  1170→
+  1171→  const pkrPrice = Math.round((Number(usdPrice) || 5) * (Number(pkrRate) || 280))
+  1172→
+  1173→  return (
+  1174→    <div className="space-y-4">
+  1175→      <Card>
+  1176→        <CardHeader>
+  1177→          <CardTitle className="flex items-center gap-2"><CreditCard className="h-5 w-5 text-brand" /> Payment Settings</CardTitle>
+  1178→          <CardDescription>Set Pro price, PKR exchange rate, and payment method numbers.</CardDescription>
+  1179→        </CardHeader>
+  1180→        <CardContent className="space-y-4">
+  1181→          {/* Price */}
+  1182→          <div className="grid grid-cols-2 gap-3">
+  1183→            <div className="space-y-1.5">
+  1184→              <label className="text-xs font-bold uppercase tracking-wide text-muted-foreground">USD Price ($)</label>
+  1185→              <Input type="number" step="0.01" value={usdPrice} onChange={(e) => setUsdPrice(e.target.value)} className="h-10" />
+  1186→            </div>
+  1187→            <div className="space-y-1.5">
+  1188→              <label className="text-xs font-bold uppercase tracking-wide text-muted-foreground">PKR Rate (1 USD = ?)</label>
+  1189→              <Input type="number" value={pkrRate} onChange={(e) => setPkrRate(e.target.value)} className="h-10" />
+  1190→            </div>
+  1191→          </div>
+  1192→          <div className="rounded-lg bg-brand-muted/30 p-3 text-center">
+  1193→            <span className="text-sm font-bold text-brand">Auto-calculated PKR: Rs {pkrPrice}</span>
+  1194→            <span className="ml-2 text-xs text-muted-foreground">(${usdPrice} × {pkrRate})</span>
+  1195→          </div>
+  1196→
+  1197→          {/* JazzCash */}
+  1198→          <div className="space-y-1.5">
+  1199→            <label className="text-xs font-bold uppercase tracking-wide text-muted-foreground">JazzCash Number</label>
+  1200→            <Input value={jazzcash} onChange={(e) => setJazzcash(e.target.value)} placeholder="03XX-XXXXXXX" className="h-10" />
+  1201→          </div>
+  1202→
+  1203→          {/* Easypaisa */}
+  1204→          <div className="space-y-1.5">
+  1205→            <label className="text-xs font-bold uppercase tracking-wide text-muted-foreground">Easypaisa Number</label>
+  1206→            <Input value={easypaisa} onChange={(e) => setEasypaisa(e.target.value)} placeholder="03XX-XXXXXXX" className="h-10" />
+  1207→          </div>
+  1208→
+  1209→          {/* Card option */}
+  1210→          <div className="flex items-center justify-between rounded-lg border border-border p-3">
+  1211→            <div>
+  1212→              <div className="text-sm font-bold">Visa / Debit Card option</div>
+  1213→              <div className="text-[11px] text-muted-foreground">Show 3rd payment method to users</div>
+  1214→            </div>
+  1215→            <Switch checked={cardEnabled} onCheckedChange={setCardEnabled} />
+  1216→          </div>
+  1217→          {cardEnabled && (
+  1218→            <div className="space-y-1.5">
+  1219→              <label className="text-xs font-bold uppercase tracking-wide text-muted-foreground">Card Payment Instructions</label>
+  1220→              <Textarea value={cardInstructions} onChange={(e) => setCardInstructions(e.target.value)} rows={2} placeholder="e.g. Contact admin on WhatsApp for card payment link" className="text-sm" />
+  1221→            </div>
+  1222→          )}
+  1223→
+  1224→          {/* SadaPay — International */}
+  1225→          <div className="flex items-center justify-between rounded-lg border border-[#6C2BD9]/30 bg-[#6C2BD9]/5 p-3">
+  1226→            <div>
+  1227→              <div className="text-sm font-bold">SadaPay (International / Worldwide)</div>
+  1228→              <div className="text-[11px] text-muted-foreground">For clients outside Pakistan</div>
+  1229→            </div>
+  1230→            <Switch checked={sadapayEnabled} onCheckedChange={setSadapayEnabled} />
+  1231→          </div>
+  1232→          {sadapayEnabled && (
+  1233→            <div className="space-y-2 rounded-lg border border-[#6C2BD9]/20 p-3">
+  1234→              <div className="space-y-1">
+  1235→                <label className="text-xs font-bold uppercase tracking-wide text-muted-foreground">SadaPay Account Name</label>
+  1236→                <Input value={sadapayName} onChange={(e) => setSadapayName(e.target.value)} className="h-9" placeholder="TradeSeekho PK" />
+  1237→              </div>
+  1238→              <div className="space-y-1">
+  1239→                <label className="text-xs font-bold uppercase tracking-wide text-muted-foreground">SadaPay Number</label>
+  1240→                <Input value={sadapayNumber} onChange={(e) => setSadapayNumber(e.target.value)} className="h-9" placeholder="03XX-XXXXXXX" />
+  1241→              </div>
+  1242→              <div className="space-y-1">
+  1243→                <label className="text-xs font-bold uppercase tracking-wide text-muted-foreground">SadaPay IBAN</label>
+  1244→                <Input value={sadapayIban} onChange={(e) => setSadapayIban(e.target.value)} className="h-9 font-mono text-xs" placeholder="PK36SAPK0000000000000000" />
+  1245→              </div>
+  1246→            </div>
+  1247→          )}
+  1248→
+  1249→          <Button className="h-10 w-full gap-2 bg-brand font-bold text-brand-foreground hover:bg-brand/90" onClick={onSave} disabled={save.isPending}>
+  1250→            {save.isPending ? <Save className="h-4 w-4 animate-pulse" /> : <Save className="h-4 w-4" />}
+  1251→            Save Payment Settings
+  1252→          </Button>
+  1253→        </CardContent>
+  1254→      </Card>
+  1255→    </div>
+  1256→  )
+  1257→}
+  1258→
+  1259→/* ---------------- Broker Ads ---------------- */
+  1260→function BrokerAdsTab() {
+  1261→  const { data, isLoading } = useBrokerAds()
+  1262→  const save = useSaveBrokerAds()
+  1263→
+  1264→  const [ads, setAds] = useState<Array<{
+  1265→    id?: string; slot: number; name: string; text: string; btnText: string; link: string; enabled: boolean
+  1266→  }>>([])
+  1267→  const [loaded, setLoaded] = useState(false)
+  1268→
+  1269→  if (data && !loaded) {
+  1270→    setAds(data.ads.map((a: any) => ({ ...a })))
+  1271→    setLoaded(true)
+  1272→  }
+  1273→
+  1274→  const update = (slot: number, field: string, value: string | boolean) => {
+  1275→    setAds((prev) => prev.map((a) => a.slot === slot ? { ...a, [field]: value } : a))
+  1276→  }
+  1277→
+  1278→  const onSave = async () => {
+  1279→    try {
+  1280→      await save.mutateAsync({ ads })
+  1281→      toast.success("Broker ads saved!")
+  1282→    } catch {
+  1283→      toast.error("Failed to save. Try again.")
+  1284→    }
+  1285→  }
+  1286→
+  1287→  if (isLoading) return <p className="py-6 text-center text-sm text-muted-foreground">Loading...</p>
+  1288→
+  1289→  return (
+  1290→    <div className="space-y-4">
+  1291→      <Card>
+  1292→        <CardHeader>
+  1293→          <CardTitle className="flex items-center gap-2"><Megaphone className="h-5 w-5 text-brand" /> Broker Ad Banners</CardTitle>
+  1294→          <CardDescription>Manage rotating broker ads shown on homepage. Ads auto-rotate every 10 seconds.</CardDescription>
+  1295→        </CardHeader>
+  1296→        <CardContent className="space-y-4">
+  1297→          {ads.map((ad, i) => (
+  1298→            <div key={ad.slot} className="rounded-xl border border-border p-4 space-y-3">
+  1299→              <div className="flex items-center justify-between">
+  1300→                <span className="text-sm font-bold">Ad Slot {ad.slot}</span>
+  1301→                <div className="flex items-center gap-2">
+  1302→                  <span className="text-[11px] text-muted-foreground">{ad.enabled ? "ON" : "OFF"}</span>
+  1303→                  <Switch checked={ad.enabled} onCheckedChange={(v) => update(ad.slot, "enabled", v)} />
+  1304→                </div>
+  1305→              </div>
+  1306→              <div className="grid gap-2">
+  1307→                <div className="space-y-1">
+  1308→                  <label className="text-[11px] font-bold uppercase tracking-wide text-muted-foreground">Broker Name</label>
+  1309→                  <Input value={ad.name} onChange={(e) => update(ad.slot, "name", e.target.value)} className="h-9" placeholder="e.g. Exness" />
+  1310→                </div>
+  1311→                <div className="space-y-1">
+  1312→                  <label className="text-[11px] font-bold uppercase tracking-wide text-muted-foreground">Ad Text</label>
+  1313→                  <Input value={ad.text} onChange={(e) => update(ad.slot, "text", e.target.value)} className="h-9" placeholder="e.g. Trade with Exness - Instant Deposit" />
+  1314→                </div>
+  1315→                <div className="grid grid-cols-2 gap-2">
+  1316→                  <div className="space-y-1">
+  1317→                    <label className="text-[11px] font-bold uppercase tracking-wide text-muted-foreground">Button Text</label>
+  1318→                    <Input value={ad.btnText} onChange={(e) => update(ad.slot, "btnText", e.target.value)} className="h-9" placeholder="e.g. Open Account" />
+  1319→                  </div>
+  1320→                  <div className="space-y-1">
+  1321→                    <label className="text-[11px] font-bold uppercase tracking-wide text-muted-foreground">Link (URL)</label>
+  1322→                    <Input value={ad.link} onChange={(e) => update(ad.slot, "link", e.target.value)} className="h-9" placeholder="https://..." />
+  1323→                  </div>
+  1324→                </div>
+  1325→              </div>
+  1326→            </div>
+  1327→          ))}
+  1328→          <Button className="h-10 w-full gap-2 bg-brand font-bold text-brand-foreground hover:bg-brand/90" onClick={onSave} disabled={save.isPending}>
+  1329→            {save.isPending ? <Save className="h-4 w-4 animate-pulse" /> : <Save className="h-4 w-4" />}
+  1330→            Save Broker Ads
+  1331→          </Button>
+  1332→        </CardContent>
+  1333→      </Card>
+  1334→    </div>
+  1335→  )
+  1336→}
+  1337→
+  1338→/* ---------------- Users / Clients ---------------- */
+  1339→function UsersTab() {
+  1340→  const [search, setSearch] = useState("")
+  1341→  const [filter, setFilter] = useState("all")
+  1342→  const { data, isLoading } = useAdminUsers(search, filter)
+  1343→
+  1344→  const users = data?.users ?? []
+  1345→  const proCount = users.filter((u) => u.proStatus === "active").length
+  1346→
+  1347→  return (
+  1348→    <div className="space-y-4">
+  1349→      {/* Stats */}
+  1350→      <div className="grid grid-cols-3 gap-2">
+  1351→        <div className="rounded-xl border border-border bg-card p-3 text-center">
+  1352→          <div className="text-2xl font-extrabold text-foreground">{data?.total ?? 0}</div>
+  1353→          <div className="text-[10px] uppercase tracking-wide text-muted-foreground">Total Users</div>
+  1354→        </div>
+  1355→        <div className="rounded-xl border border-gold/30 bg-gold/5 p-3 text-center">
+  1356→          <div className="text-2xl font-extrabold text-gold-foreground">{proCount}</div>
+  1357→          <div className="text-[10px] uppercase tracking-wide text-muted-foreground">Pro Users</div>
+  1358→        </div>
+  1359→        <div className="rounded-xl border border-border bg-card p-3 text-center">
+  1360→          <div className="text-2xl font-extrabold text-foreground">{(data?.total ?? 0) - proCount}</div>
+  1361→          <div className="text-[10px] uppercase tracking-wide text-muted-foreground">Free Users</div>
+  1362→        </div>
+  1363→      </div>
+  1364→
+  1365→      {/* Search + Filter */}
+  1366→      <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+  1367→        <div className="relative flex-1">
+  1368→          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+  1369→          <Input
+  1370→            value={search}
+  1371→            onChange={(e) => setSearch(e.target.value)}
+  1372→            placeholder="Search by email or name..."
+  1373→            className="h-10 pl-9"
+  1374→          />
+  1375→        </div>
+  1376→        <div className="flex gap-1.5">
+  1377→          <button
+  1378→            onClick={() => setFilter("all")}
+  1379→            className={`rounded-lg px-3 py-2 text-xs font-bold transition ${filter === "all" ? "bg-brand text-brand-foreground" : "bg-muted text-muted-foreground"}`}
+  1380→          >All</button>
+  1381→          <button
+  1382→            onClick={() => setFilter("pro")}
+  1383→            className={`rounded-lg px-3 py-2 text-xs font-bold transition ${filter === "pro" ? "bg-gold text-gold-foreground" : "bg-muted text-muted-foreground"}`}
+  1384→          >Pro Only</button>
+  1385→          <button
+  1386→            onClick={() => setFilter("free")}
+  1387→            className={`rounded-lg px-3 py-2 text-xs font-bold transition ${filter === "free" ? "bg-brand text-brand-foreground" : "bg-muted text-muted-foreground"}`}
+  1388→          >Free Only</button>
+  1389→        </div>
+  1390→      </div>
+  1391→
+  1392→      {/* Users Table */}
+  1393→      <Card>
+  1394→        <ScrollArea className="ts-scroll max-h-[60vh] overflow-x-auto">
+  1395→          <Table>
+  1396→            <TableHeader>
+  1397→              <TableRow>
+  1398→                <TableHead>Email</TableHead>
+  1399→                <TableHead>Name</TableHead>
+  1400→                <TableHead className="hidden md:table-cell">Auth</TableHead>
+  1401→                <TableHead className="hidden md:table-cell">Password (hash)</TableHead>
+  1402→                <TableHead>Pro Status</TableHead>
+  1403→                <TableHead className="hidden lg:table-cell">Pro Method / TID</TableHead>
+  1404→                <TableHead className="hidden md:table-cell">Joined</TableHead>
+  1405→                <TableHead>Quiz</TableHead>
+  1406→                <TableHead className="hidden lg:table-cell">Device</TableHead>
+  1407→              </TableRow>
+  1408→            </TableHeader>
+  1409→            <TableBody>
+  1410→              {isLoading ? (
+  1411→                <TableRow><TableCell colSpan={9} className="py-6 text-center text-muted-foreground">Loading...</TableCell></TableRow>
+  1412→              ) : users.length === 0 ? (
+  1413→                <TableRow><TableCell colSpan={9} className="py-6 text-center text-muted-foreground">No users found.</TableCell></TableRow>
+  1414→              ) : users.map((u) => (
+  1415→                <TableRow key={u.id} className="hover:bg-muted/30">
+  1416→                  <TableCell className="font-semibold text-xs">{u.email}</TableCell>
+  1417→                  <TableCell className="text-xs">{u.name}</TableCell>
+  1418→                  <TableCell className="hidden md:table-cell text-xs text-muted-foreground whitespace-nowrap">{u.authMethod}</TableCell>
+  1419→                  <TableCell className="hidden md:table-cell text-[10px] font-mono text-muted-foreground whitespace-nowrap">{u.password}</TableCell>
+  1420→                  <TableCell>
+  1421→                    {u.proStatus === "active" ? (
+  1422→                      <Badge className="bg-gold/20 text-gold-foreground text-[10px]">PRO</Badge>
+  1423→                    ) : u.proStatus === "pending" ? (
+  1424→                      <Badge variant="secondary" className="text-[10px]">Pending</Badge>
+  1425→                    ) : (
+  1426→                      <Badge variant="outline" className="text-[10px]">Free</Badge>
+  1427→                    )}
+  1428→                  </TableCell>
+  1429→                  <TableCell className="hidden lg:table-cell text-xs text-muted-foreground whitespace-nowrap">
+  1430→                    {u.proMethod ? `${u.proMethod}${u.proNote ? " · " + u.proNote.slice(0, 20) : ""}` : "-"}
+  1431→                  </TableCell>
+  1432→                  <TableCell className="hidden md:table-cell text-xs text-muted-foreground whitespace-nowrap">
+  1433→                    {new Date(u.joinedAt).toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" })}
+  1434→                  </TableCell>
+  1435→                  <TableCell className="text-xs font-bold whitespace-nowrap">{u.passedQuizzes}/{u.totalLessons}</TableCell>
+  1436→                  <TableCell className="hidden lg:table-cell text-xs text-muted-foreground">{u.deviceInfo}</TableCell>
+  1437→                </TableRow>
+  1438→              ))}
+  1439→            </TableBody>
+  1440→          </Table>
+  1441→        </ScrollArea>
+  1442→      </Card>
+  1443→    </div>
+  1444→  )
+  1445→}
+  1446→
+  1447→/* ---------------- Pages ---------------- */
+  1448→function PagesTab() {
+  1449→  const { data, isLoading } = useAdminPages()
+  1450→  const save = useSavePage()
+  1451→  const [editing, setEditing] = useState<string | null>(null)
+  1452→  const [title, setTitle] = useState("")
+  1453→  const [content, setContent] = useState("")
+  1454→
+  1455→  const pages = data?.pages ?? []
+  1456→
+  1457→  const startEdit = (p: { slug: string; title: string; content: string }) => {
+  1458→    setEditing(p.slug)
+  1459→    setTitle(p.title)
+  1460→    setContent(p.content)
+  1461→  }
+  1462→
+  1463→  const onSave = async () => {
+  1464→    if (!editing) return
+  1465→    try {
+  1466→      await save.mutateAsync({ slug: editing, title, content })
+  1467→      toast.success("Page saved!")
+  1468→      setEditing(null)
+  1469→    } catch {
+  1470→      toast.error("Failed to save")
+  1471→    }
+  1472→  }
+  1473→
+  1474→  if (isLoading) return <p className="py-6 text-center text-sm text-muted-foreground">Loading...</p>
+  1475→
+  1476→  return (
+  1477→    <div className="space-y-4">
+  1478→      <Card>
+  1479→        <CardHeader>
+  1480→          <CardTitle className="flex items-center gap-2"><BookOpen className="h-5 w-5 text-brand" /> Static Pages</CardTitle>
+  1481→          <CardDescription>Edit About Us, Privacy Policy, Contact Us content.</CardDescription>
+  1482→        </CardHeader>
+  1483→        <CardContent className="space-y-3">
+  1484→          {pages.map((p) => (
+  1485→            <div key={p.slug} className="rounded-xl border border-border p-3">
+  1486→              {editing === p.slug ? (
+  1487→                <div className="space-y-3">
+  1488→                  <div className="space-y-1">
+  1489→                    <Label className="text-xs">Title</Label>
+  1490→                    <Input value={title} onChange={(e) => setTitle(e.target.value)} className="h-9" />
+  1491→                  </div>
+  1492→                  <div className="space-y-1">
+  1493→                    <Label className="text-xs">Content</Label>
+  1494→                    <Textarea value={content} onChange={(e) => setContent(e.target.value)} rows={8} className="text-sm" />
+  1495→                  </div>
+  1496→                  <div className="flex gap-2">
+  1497→                    <Button size="sm" className="gap-1.5 bg-brand font-bold text-brand-foreground" onClick={onSave} disabled={save.isPending}>
+  1498→                      <Save className="h-3.5 w-3.5" /> Save
+  1499→                    </Button>
+  1500→                    <Button size="sm" variant="outline" onClick={() => setEditing(null)}>Cancel</Button>
+  1501→                  </div>
+  1502→                </div>
+  1503→              ) : (
+  1504→                <div className="flex items-center justify-between">
+  1505→                  <div>
+  1506→                    <div className="text-sm font-bold capitalize">{p.slug.replace(/-/g, " ")}</div>
+  1507→                    <div className="text-[11px] text-muted-foreground truncate max-w-[200px]">{p.content.slice(0, 60)}...</div>
+  1508→                  </div>
+  1509→                  <Button size="sm" variant="outline" className="gap-1 text-xs" onClick={() => startEdit(p)}>
+  1510→                    <Pencil className="h-3 w-3" /> Edit
+  1511→                  </Button>
+  1512→                </div>
+  1513→              )}
+  1514→            </div>
+  1515→          ))}
+  1516→        </CardContent>
+  1517→      </Card>
+  1518→    </div>
+  1519→  )
+  1520→}
+  1521→
