@@ -5,7 +5,7 @@ import { motion } from "framer-motion"
 import {
   Download, Users, BookOpen, BarChart3, Shield, Lock, LogOut, Eye,
   Plus, Pencil, Trash2, Save, Send, Megaphone, Check, ChevronRight, ArrowLeft,
-  Crown, X, Upload, CreditCard, Search,
+  Crown, X, Upload, CreditCard, Search, TrendingUp,
 } from "lucide-react"
 import {
   Card, CardContent, CardHeader, CardTitle, CardDescription,
@@ -42,6 +42,7 @@ import {
   useBrokerAds, useSaveBrokerAds, useAdminPages, useSavePage,
   useAdminUsers,
 } from "./admin-data"
+import { SignalManager } from "./signal-manager"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 
 const EMPTY_LOC: LocalizedText = { en: "", ur: "", hi: "", ar: "" }
@@ -120,6 +121,7 @@ export function AdminPanel() {
             <TabsTrigger value="broker-ads" className="gap-1 whitespace-nowrap"><Megaphone className="h-4 w-4" /><span className="hidden xs:inline sm:inline">Broker Ads</span></TabsTrigger>
             <TabsTrigger value="payment" className="gap-1 whitespace-nowrap"><CreditCard className="h-4 w-4" /><span className="hidden xs:inline sm:inline">Payment</span></TabsTrigger>
             <TabsTrigger value="pages" className="gap-1 whitespace-nowrap"><BookOpen className="h-4 w-4" /><span className="hidden xs:inline sm:inline">Pages</span></TabsTrigger>
+            <TabsTrigger value="signals" className="gap-1 whitespace-nowrap"><TrendingUp className="h-4 w-4" /><span className="hidden xs:inline sm:inline">Signals</span></TabsTrigger>
             <TabsTrigger value="pro" className="gap-1 whitespace-nowrap"><Crown className="h-4 w-4" /><span className="hidden xs:inline sm:inline">Pro</span></TabsTrigger>
           </TabsList>
         </div>
@@ -131,6 +133,7 @@ export function AdminPanel() {
         <TabsContent value="broker-ads" className="mt-5"><BrokerAdsTab /></TabsContent>
         <TabsContent value="payment" className="mt-5"><PaymentSettingsTab /></TabsContent>
         <TabsContent value="pages" className="mt-5"><PagesTab /></TabsContent>
+        <TabsContent value="signals" className="mt-5"><SignalManager /></TabsContent>
         <TabsContent value="pro" className="mt-5"><ProRequestsTab /></TabsContent>
       </Tabs>
     </div>

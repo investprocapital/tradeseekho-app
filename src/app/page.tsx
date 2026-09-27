@@ -9,6 +9,7 @@ import { useLessonsBundle, useProMe } from "@/components/tradeseekho/use-data"
 import { Header } from "@/components/tradeseekho/header"
 import { Footer } from "@/components/tradeseekho/footer"
 import { BrokerAdBanner } from "@/components/tradeseekho/broker-ad-banner"
+import { SignalList } from "@/components/tradeseekho/signal-list"
 import { BottomNav } from "@/components/tradeseekho/bottom-nav"
 import { LessonReader } from "@/components/tradeseekho/lesson-reader"
 import { BookmarksSheet } from "@/components/tradeseekho/bookmarks-sheet"
@@ -75,6 +76,9 @@ export default function Home() {
               <ProgressMini icon={Award} value={`${Math.round(totalLessons ? (completedCount / totalLessons) * 100 : 0)}%`} label={lang === "ur" || lang === "ar" ? "پیش رفت" : lang === "hi" ? "प्रगति" : "Progress"} color="var(--gold)" />
               <ProgressMini icon={BookOpen} value={`${totalLessons}`} label={lang === "ur" || lang === "ar" ? "اسباق" : lang === "hi" ? "पाठ" : "Lessons"} color="#00bfa5" />
             </motion.div>
+
+            {/* Live Signals */}
+            <SignalList />
 
             {/* Choose Your Level */}
             <section className="mb-4">

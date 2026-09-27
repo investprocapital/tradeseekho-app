@@ -251,6 +251,25 @@ model PageContent {
   updatedAt DateTime @updatedAt
 }
 
+// Trading signals — admin creates, clients view
+model Signal {
+  id          String   @id @default(cuid())
+  symbol      String   // OANDA:XAUUSD | BINANCE:BTCUSDT
+  signalType  String   // BUY | SELL
+  entry       String   // e.g. "1.0950"
+  stopLoss    String   // e.g. "1.0930"
+  tp1         String?
+  tp2         String?
+  tp3         String?
+  note        String?
+  screenshot  String   // base64 data URL of chart screenshot
+  status      String   @default("active") // active | closed
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([status])
+}
+
 model AppStats {
   id             String  @id @default("singleton")
   totalDownloads Int     @default(0)
