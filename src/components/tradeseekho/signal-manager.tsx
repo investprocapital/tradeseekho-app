@@ -343,6 +343,16 @@ export function SignalManager() {
     [livePrice, symbol, signalType, fetchPrice, stopLoss, tp1, tp2, tp3, note],
   )
 
+  // BUG 3 FIX: Auto-fill Entry/SL/TP the moment the live price arrives — so
+  // the admin sees filled fields immediately without clicking anything.
+  // Only fires once per symbol (autoFilled guard) + only when fields are empty
+  // (so manual edits are never overwritten).
+  useEffect(() => {
+    if (livePrice !== null && !autoFilled && !entry && !stopLoss && !tp1) {
+      void applyLivePrice("all")
+    }
+  }, [livePrice, autoFilled, symbol, entry, stopLoss, tp1, applyLivePrice])
+
   // ---------- BUG 2: screenshot capture (thin wrapper around renderSignalCard) ----------
   const captureScreenshot = useCallback((): string => {
     const shot = renderSignalCard({
@@ -402,19 +412,27 @@ export function SignalManager() {
                 ))}
               </select>
 
-              {/* Live price chip */}
-              <div className="flex items-center gap-1.5 rounded-lg border border-border bg-card px-2.5 py-1.5">
+              {/* BUG 3 FIX: Live price chip is CLICKABLE — tapping it auto-fills
+                  Entry/SL/TP. Also auto-fills on first price load (useEffect). */}
+              <button
+                type="button"
+                onClick={() => applyLivePrice("all")}
+                disabled={priceLoading || livePrice === null}
+                title="Click to auto-fill Entry/SL/TP from this live price"
+                className="flex items-center gap-1.5 rounded-lg border-2 border-emerald-500/40 bg-emerald-500/10 px-3 py-1.5 transition hover:border-emerald-500 hover:bg-emerald-500/20 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+              >
                 {priceLoading ? (
-                  <Loader2 className="h-3.5 w-3.5 animate-spin text-muted-foreground" />
+                  <Loader2 className="h-3.5 w-3.5 animate-spin text-emerald-500" />
                 ) : livePrice !== null ? (
                   <>
                     <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                    <span className="text-sm font-bold text-emerald-500">{formatPrice(symbol, livePrice)}</span>
+                    <span className="text-sm font-extrabold text-emerald-500">{formatPrice(symbol, livePrice)}</span>
+                    <Zap className="h-3 w-3 text-emerald-500" />
                   </>
                 ) : (
                   <span className="text-[11px] text-muted-foreground">no price</span>
                 )}
-              </div>
+              </button>
 
               <Button
                 size="sm"
@@ -424,7 +442,7 @@ export function SignalManager() {
                 disabled={priceLoading}
               >
                 {priceLoading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Zap className="h-3.5 w-3.5" />}
-                Get Live Price
+                Auto-Fill
               </Button>
 
               <Button size="sm" variant="outline" className="gap-1.5" onClick={() => fetchPrice(symbol)} disabled={priceLoading}>
@@ -438,7 +456,7 @@ export function SignalManager() {
 
             {priceSource && (
               <p className="text-[10px] text-muted-foreground">
-                Price: {priceSource} · Tap the <span className="font-bold text-brand">Entry Price</span> field below to auto-fill.
+                Price: {priceSource} · <span className="font-bold text-emerald-500">Tap the green live-price chip</span> to auto-fill Entry/SL/TP (fields auto-fill on load — editable).
               </p>
             )}
 
