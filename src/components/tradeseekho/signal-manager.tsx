@@ -379,6 +379,19 @@ export function SignalManager() {
   // it uses the `hide_side_toolbar: false` config option.
   const tvChartRef = useRef<HTMLDivElement>(null)
 
+  // Uploaded real-chart screenshot (from TradingView's camera icon). When set,
+  // this OVERRIDES the auto-generated canvas card — so the signal shows the
+  // admin's ACTUAL drawings (SELL box, S/R lines, Fibonacci) + indicators.
+  // TradingView's iframe is cross-origin, so we can't screenshot it via JS;
+  // the only way to capture real drawings is: admin clicks the camera icon →
+  // saves PNG → uploads it here.
+  const [uploadedScreenshot, setUploadedScreenshot] = useState<string>("")
+  const fileInputRef = useRef<HTMLInputElement>(null)
+
+  // The final screenshot used for publish + preview:
+  // uploaded real chart (with drawings) takes priority over the canvas card.
+  const finalScreenshot = uploadedScreenshot || screenshot
+
   const createMutation = useMutation({
     mutationFn: async (data: Record<string, unknown>) => {
       const res = await fetch("/api/admin/signals", {
@@ -394,6 +407,7 @@ export function SignalManager() {
       qc.invalidateQueries({ queryKey: ["signals"] })
       toast.success("Signal published!")
       setEntry(""); setStopLoss(""); setTp1(""); setTp2(""); setTp3(""); setNote(""); setScreenshot("")
+      setUploadedScreenshot("")
       setAutoFilled(false)
     },
   })
@@ -592,17 +606,42 @@ export function SignalManager() {
 
   const publish = () => {
     if (!entry || !stopLoss) { toast.error("Entry and SL required"); return }
-    // Capture SYNCHRONOUSLY — renderSignalCard returns the data URL directly,
-    // so we NEVER post an empty screenshot. This fixes the client-side
-    // "dark blue box" bug (chart_snapshot_url was null).
-    const finalShot = captureScreenshot()
-    if (!finalShot) { toast.error("Could not capture chart image"); return }
+    // Priority: uploaded real-chart screenshot (with admin's drawings) > canvas card.
+    // Ensure the canvas card is fresh as a fallback.
+    let shot = uploadedScreenshot
+    if (!shot) {
+      shot = captureScreenshot()
+    }
+    if (!shot) { toast.error("Could not capture chart image"); return }
     setBusy(true)
     createMutation.mutateAsync({
       symbol, signalType, entry, stopLoss,
       tp1: tp1 || null, tp2: tp2 || null, tp3: tp3 || null,
-      note: note || null, screenshot: finalShot,
+      note: note || null, screenshot: shot,
     }).finally(() => setBusy(false))
+  }
+
+  // Read an uploaded PNG/JPG (from TradingView's camera icon) and convert to a
+  // base64 data URL. This becomes the signal's screenshot — showing the admin's
+  // ACTUAL drawings (SELL box, S/R lines, Fibonacci) + indicators, not the
+  // auto-generated canvas card.
+  const handleChartUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    if (!file.type.startsWith("image/")) {
+      toast.error("Please upload an image file (PNG/JPG)")
+      return
+    }
+    const reader = new FileReader()
+    reader.onload = () => {
+      const result = reader.result as string
+      setUploadedScreenshot(result)
+      toast.success("Real chart screenshot uploaded — preview updated!")
+    }
+    reader.onerror = () => toast.error("Failed to read file")
+    reader.readAsDataURL(file)
+    // Reset the input so the same file can be re-uploaded
+    e.target.value = ""
   }
 
   const signals = data?.signals ?? []
@@ -666,10 +705,6 @@ export function SignalManager() {
               <Button size="sm" variant="outline" className="gap-1.5" onClick={() => fetchPrice(symbol)} disabled={priceLoading}>
                 <RefreshCw className={`h-3.5 w-3.5 ${priceLoading ? "animate-spin" : ""}`} />
               </Button>
-
-              <Button size="sm" variant="outline" className="gap-1.5" onClick={captureScreenshot}>
-                <Camera className="h-3.5 w-3.5" /> Capture
-              </Button>
             </div>
 
             {priceSource && (
@@ -678,25 +713,68 @@ export function SignalManager() {
               </p>
             )}
 
-            {/* TradingView Advanced Chart widget — script-based embed (NOT the old
-                widgetembed iframe). This approach reliably renders the LEFT DRAWING
-                TOOLBAR (S/R lines, Trendline, Fibonacci retracement) via
-                hide_side_toolbar: false. Also shows MA(20) + Bollinger Bands on the
-                live chart, matching the canvas capture below. */}
+            {/* TradingView Advanced Chart widget — script-based embed.
+                Left drawing toolbar (S/R, Trendline, Fibonacci) + MA/BB studies.
+                Admin draws analysis here, then uses the camera icon to export a
+                PNG, then uploads it via the "Upload Chart" button below. */}
             <div className="overflow-hidden rounded-xl border border-border" style={{ height: "500px" }}>
               <div ref={tvChartRef} style={{ height: "100%", width: "100%" }} />
             </div>
-            <p className="text-[10px] text-muted-foreground">
-              <span className="font-bold text-brand">Drawing tools:</span> Left toolbar par S/R (horizontal) lines, Trendlines, Fibonacci retracement draw karein. Chart par <span className="font-bold">📷 camera icon</span> (top-right) se PNG export karein — drawings + indicators sab aate hain. <span className="font-bold text-brand">Capture</span> button se canvas card bhi banta hai (candles + MA + BB + Entry/SL/TP).
-            </p>
+
+            {/* 3-STEP FLOW instructions */}
+            <div className="rounded-lg border border-brand/30 bg-brand-muted/20 p-3">
+              <p className="text-[11px] font-bold text-foreground">📤 How to capture your drawn chart:</p>
+              <ol className="mt-1.5 space-y-0.5 text-[10px] text-muted-foreground">
+                <li><span className="font-bold text-brand">1.</span> Uper chart par left toolbar se S/R, Trendline, Fibonacci draw karein</li>
+                <li><span className="font-bold text-brand">2.</span> Chart ke top-right par <span className="font-bold">📷 camera icon</span> par click karein → PNG download ho jayegi (drawings + indicators ke saath)</li>
+                <li><span className="font-bold text-brand">3.</span> Niche <span className="font-bold text-brand">"Upload Chart"</span> button par click karein → wo PNG select karein → preview me foran aa jayegi!</li>
+              </ol>
+            </div>
+
+            {/* Upload Chart button + hidden file input */}
+            <div className="flex flex-wrap items-center gap-2">
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/png,image/jpeg,image/jpg"
+                onChange={handleChartUpload}
+                className="hidden"
+              />
+              <Button
+                size="sm"
+                className="gap-1.5 bg-brand font-bold text-brand-foreground hover:bg-brand/90"
+                onClick={() => fileInputRef.current?.click()}
+              >
+                <Camera className="h-3.5 w-3.5" /> Upload Chart
+              </Button>
+              {uploadedScreenshot && (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="gap-1.5"
+                  onClick={() => { setUploadedScreenshot(""); toast.success("Cleared — using auto card") }}
+                >
+                  <Trash2 className="h-3.5 w-3.5" /> Remove Upload
+                </Button>
+              )}
+              <span className="text-[10px] text-muted-foreground">
+                {uploadedScreenshot
+                  ? <span className="font-bold text-emerald-500">✓ Real chart uploaded (with your drawings)</span>
+                  : "No upload — using auto card (candles + MA + BB + levels)"}
+              </span>
+            </div>
           </div>
 
-          {/* Screenshot preview — auto-generated signal card */}
-          {screenshot && (
-            <div className="rounded-xl border border-border overflow-hidden">
-              <img src={screenshot} alt="Chart screenshot" className="w-full" />
+          {/* Screenshot preview — shows uploaded real chart if present,
+              otherwise the auto-generated canvas card. */}
+          {finalScreenshot ? (
+            <div className="rounded-xl border-2 border-brand/40 overflow-hidden">
+              <div className="bg-brand/10 px-3 py-1.5 text-[10px] font-bold text-brand">
+                {uploadedScreenshot ? "📷 Real Chart (with your drawings)" : "📊 Auto Card (candles + MA + BB + levels)"}
+              </div>
+              <img src={finalScreenshot} alt="Chart screenshot" className="w-full" />
             </div>
-          )}
+          ) : null}
 
           <Separator />
 
