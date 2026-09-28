@@ -20,9 +20,10 @@ interface Signal {
   tp3: string | null
   note: string | null
   screenshot: string
-  // Alias returned by the API for mobile/Flutter clients; web uses screenshot
-  // first and falls back to this.
+  // Aliases returned by the API for mobile/Flutter clients that expect
+  // different field names. All point to the same base64 data URL.
   chart_image_url?: string
+  chart_snapshot_url?: string
   status: string // active | tp1_hit | tp2_hit | tp3_hit | sl_hit
   tp1HitAt: string | null
   tp2HitAt: string | null
@@ -38,10 +39,11 @@ async function fetchSignals() {
   return res.json() as Promise<{ signals: Signal[] }>
 }
 
-// Resolve the chart image URL. Prefers `screenshot` (web), falls back to the
-// `chart_image_url` alias (Flutter compat). Returns "" when neither exists.
+// Resolve the chart image URL. Checks all three field names the API returns
+// (screenshot / chart_image_url / chart_snapshot_url) so any client — web or
+// Flutter — gets the captured chart image. Returns "" when none exist.
 function chartImage(s: Signal): string {
-  return s.screenshot || s.chart_image_url || ""
+  return s.screenshot || s.chart_image_url || s.chart_snapshot_url || ""
 }
 
 // Client-side status badge (mirrors the admin config).

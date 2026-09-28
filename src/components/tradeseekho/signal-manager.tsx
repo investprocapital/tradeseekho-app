@@ -30,7 +30,7 @@ interface AdminSignal {
   tp3: string | null
   note: string | null
   screenshot: string
-  status: string // active | tp1_hit | tp2_hit | tp3_hit | sl_hit | closed
+  status: string
   tp1HitAt: string | null
   tp2HitAt: string | null
   tp3HitAt: string | null
@@ -45,7 +45,6 @@ async function fetchSignals() {
   return res.json() as Promise<{ signals: AdminSignal[] }>
 }
 
-// Status badge config for a signal row.
 const STATUS_BADGE: Record<string, { label: string; cls: string }> = {
   active: { label: "ACTIVE", cls: "bg-brand text-brand-foreground" },
   tp1_hit: { label: "TP1 HIT ✅", cls: "bg-emerald-500 text-white" },
@@ -53,6 +52,158 @@ const STATUS_BADGE: Record<string, { label: string; cls: string }> = {
   tp3_hit: { label: "TP3 HIT ✅", cls: "bg-blue-800 text-white" },
   sl_hit: { label: "SL HIT ❌", cls: "bg-red-600 text-white" },
   closed: { label: "CLOSED", cls: "bg-muted text-muted-foreground" },
+}
+
+// ---------- BUG 2: pure canvas renderer (no React state) ----------
+// Renders the signal-card "chart" to a canvas and returns the JPEG data URL.
+// Extracted as a standalone function so `publish` can call it synchronously
+// (fixing the stale-state bug where the screenshot was empty at publish time).
+// Uses JPEG (0.85 quality) — 5-10x smaller than PNG, prevents API body-size
+// issues on Vercel.
+interface RenderArgs {
+  symbol: string
+  signalType: string
+  entry: string
+  stopLoss: string
+  tp1: string
+  tp2: string
+  tp3: string
+  note: string
+  livePrice: number | null
+}
+function renderSignalCard(a: RenderArgs): string {
+  try {
+    const canvas = document.createElement("canvas")
+    canvas.width = 900
+    canvas.height = 500
+    const ctx = canvas.getContext("2d")
+    if (!ctx) return ""
+
+    const isBuy = a.signalType === "BUY"
+    const accent = isBuy ? "#00D09C" : "#FF6B6B"
+    const W = 900, H = 500
+
+    // Background gradient
+    const bg = ctx.createLinearGradient(0, 0, 0, H)
+    bg.addColorStop(0, "#0B1B2E")
+    bg.addColorStop(1, "#0A1929")
+    ctx.fillStyle = bg
+    ctx.fillRect(0, 0, W, H)
+
+    // Top accent bar
+    ctx.fillStyle = accent
+    ctx.fillRect(0, 0, W, 5)
+
+    // Header: pair name + BUY/SELL pill
+    ctx.fillStyle = "#FFFFFF"
+    ctx.font = "bold 38px Arial"
+    ctx.fillText(pairLabel(a.symbol), 30, 60)
+
+    const pillText = a.signalType
+    ctx.font = "bold 22px Arial"
+    const pillW = ctx.measureText(pillText).width + 36
+    ctx.fillStyle = accent
+    roundRect(ctx, W - pillW - 30, 32, pillW, 38, 19)
+    ctx.fill()
+    ctx.fillStyle = "#0A1929"
+    ctx.fillText(pillText, W - pillW - 30 + 18, 58)
+
+    // Live price label
+    if (a.livePrice !== null) {
+      ctx.fillStyle = "#8AA2B8"
+      ctx.font = "13px Arial"
+      ctx.fillText(`LIVE: ${formatPrice(a.symbol, a.livePrice)}`, W - 180, 92)
+    }
+
+    // Price-level ladder
+    const ladderX = 60
+    const ladderTop = 120
+    const ladderBottom = 420
+    const ladderH = ladderBottom - ladderTop
+
+    const entryNum = parseFloat(a.entry)
+    const slNum = parseFloat(a.stopLoss)
+    const tp1Num = parseFloat(a.tp1)
+    const tp2Num = parseFloat(a.tp2)
+    const tp3Num = parseFloat(a.tp3)
+    const nums = [entryNum, slNum, tp1Num, tp2Num, tp3Num].filter((n) => Number.isFinite(n))
+
+    if (nums.length >= 2) {
+      const min = Math.min(...nums)
+      const max = Math.max(...nums)
+      const range = Math.max(max - min, 1e-6)
+      const pad = range * 0.15
+      const lo = min - pad
+      const hi = max + pad
+      const yFor = (v: number) => ladderBottom - ((v - lo) / (hi - lo)) * ladderH
+
+      ctx.strokeStyle = "#1E3A5F"
+      ctx.lineWidth = 2
+      ctx.beginPath()
+      ctx.moveTo(ladderX, ladderTop)
+      ctx.lineTo(ladderX, ladderBottom)
+      ctx.stroke()
+
+      const drawLevel = (val: number, color: string, label: string, price: string, x: number) => {
+        if (!Number.isFinite(val)) return
+        const y = yFor(val)
+        ctx.strokeStyle = color
+        ctx.lineWidth = 2.5
+        ctx.beginPath()
+        ctx.moveTo(x - 8, y)
+        ctx.lineTo(x + 380, y)
+        ctx.stroke()
+        ctx.fillStyle = color
+        roundRect(ctx, x + 390, y - 14, 150, 28, 6)
+        ctx.fill()
+        ctx.fillStyle = "#0A1929"
+        ctx.font = "bold 13px Arial"
+        ctx.fillText(`${label}: ${price}`, x + 400, y + 5)
+      }
+
+      drawLevel(slNum, "#FF6B6B", "SL", a.stopLoss, ladderX)
+      drawLevel(entryNum, "#FFFFFF", "ENTRY", a.entry, ladderX)
+      drawLevel(tp1Num, "#00D09C", "TP1", a.tp1, ladderX)
+      drawLevel(tp2Num, "#22D3EE", "TP2", a.tp2, ladderX)
+      drawLevel(tp3Num, "#3B82F6", "TP3", a.tp3, ladderX)
+    } else {
+      ctx.fillStyle = "#445566"
+      ctx.font = "italic 16px Arial"
+      ctx.fillText("Fill Entry + SL + TP levels to render the chart", 60, 270)
+    }
+
+    // Note
+    if (a.note) {
+      ctx.fillStyle = "#8AA2B8"
+      ctx.font = "14px Arial"
+      const trimmed = a.note.length > 80 ? a.note.slice(0, 77) + "…" : a.note
+      ctx.fillText(`📝 ${trimmed}`, 30, 455)
+    }
+
+    // Branding footer
+    ctx.fillStyle = "#445566"
+    ctx.font = "11px Arial"
+    ctx.fillText("TradeSeekho PK · LEARN TRADE GROW", 30, 482)
+    const now = new Date().toLocaleString("en-GB", {
+      day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit",
+    })
+    ctx.fillText(now, W - 130, 482)
+
+    // JPEG 0.85 — much smaller than PNG, works in <img> and Flutter Image.memory
+    return canvas.toDataURL("image/jpeg", 0.85)
+  } catch {
+    return ""
+  }
+}
+
+function roundRect(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, r: number) {
+  ctx.beginPath()
+  ctx.moveTo(x + r, y)
+  ctx.arcTo(x + w, y, x + w, y + h, r)
+  ctx.arcTo(x + w, y + h, x, y + h, r)
+  ctx.arcTo(x, y + h, x, y, r)
+  ctx.arcTo(x, y, x + w, y, r)
+  ctx.closePath()
 }
 
 export function SignalManager() {
@@ -70,10 +221,13 @@ export function SignalManager() {
   const [screenshot, setScreenshot] = useState("")
   const [busy, setBusy] = useState(false)
 
-  // Live price state (BUG 2: auto-fill Entry/SL/TP from TradingView live price).
+  // Live price state (BUG 1: auto-fill from live price).
   const [livePrice, setLivePrice] = useState<number | null>(null)
   const [priceLoading, setPriceLoading] = useState(false)
   const [priceSource, setPriceSource] = useState<string>("")
+  // Track whether we've auto-filled for this symbol so we don't re-trigger
+  // on every focus. The Entry onFocus only fires once per symbol change.
+  const [autoFilled, setAutoFilled] = useState(false)
 
   const createMutation = useMutation({
     mutationFn: async (data: Record<string, unknown>) => {
@@ -90,6 +244,7 @@ export function SignalManager() {
       qc.invalidateQueries({ queryKey: ["signals"] })
       toast.success("Signal published!")
       setEntry(""); setStopLoss(""); setTp1(""); setTp2(""); setTp3(""); setNote(""); setScreenshot("")
+      setAutoFilled(false)
     },
   })
 
@@ -104,7 +259,6 @@ export function SignalManager() {
     },
   })
 
-  // PATCH a TP/SL hit. Updates status + broadcasts a notification to all users.
   const hitMutation = useMutation({
     mutationFn: async ({ id, action }: { id: string; action: HitAction }) => {
       const res = await fetch(`/api/admin/signals?id=${id}`, {
@@ -125,8 +279,7 @@ export function SignalManager() {
     onError: () => toast.error("Failed to update signal"),
   })
 
-  // ---------- BUG 2: Live price auto-fill ----------
-  // Fetches the live mid price from /api/price (Yahoo Finance, server-side).
+  // ---------- BUG 1: live price fetch ----------
   const fetchPrice = useCallback(async (sym: string) => {
     setPriceLoading(true)
     try {
@@ -148,186 +301,73 @@ export function SignalManager() {
 
   // Auto-fetch live price on mount + whenever the symbol changes.
   useEffect(() => {
+    setAutoFilled(false)
     void fetchPrice(symbol)
   }, [symbol, fetchPrice])
 
   // Fill Entry/SL/TP from the live price using per-pair default offsets.
-  // Fields stay fully editable afterwards.
+  // Returns the screenshot data URL so publish can use it synchronously.
   const applyLivePrice = useCallback(
-    async (mode: "all" | "entryOnly" = "all") => {
+    async (mode: "all" | "entryOnly" = "all"): Promise<string | null> => {
       const p = livePrice ?? (await fetchPrice(symbol))
-      if (p === null) return
+      if (p === null) return null
       const levels = suggestLevels(
         symbol,
         signalType === "SELL" ? "SELL" : "BUY",
         p,
       )
-      setEntry(levels.entry)
+      const newEntry = levels.entry
+      const newSL = mode === "all" ? levels.stopLoss : stopLoss
+      const newTp1 = mode === "all" ? levels.tp1 : tp1
+      const newTp2 = mode === "all" ? levels.tp2 : tp2
+      const newTp3 = mode === "all" ? levels.tp3 : tp3
+
+      setEntry(newEntry)
       if (mode === "all") {
-        setStopLoss(levels.stopLoss)
-        setTp1(levels.tp1)
-        setTp2(levels.tp2)
-        setTp3(levels.tp3)
+        setStopLoss(newSL)
+        setTp1(newTp1)
+        setTp2(newTp2)
+        setTp3(newTp3)
       }
-      toast.success(
-        `Auto-filled from live price (${formatPrice(symbol, p)}) — edit as needed`,
-      )
-      // Regenerate the screenshot so it reflects the new levels.
-      setTimeout(() => captureScreenshot(), 0)
+      setAutoFilled(true)
+      toast.success(`Auto-filled from live price (${formatPrice(symbol, p)}) — edit as needed`)
+
+      // Render screenshot synchronously with the NEW values (not stale state).
+      const shot = renderSignalCard({
+        symbol, signalType, entry: newEntry, stopLoss: newSL,
+        tp1: newTp1, tp2: newTp2, tp3: newTp3, note, livePrice: p,
+      })
+      setScreenshot(shot)
+      return shot
     },
-    [livePrice, symbol, signalType, fetchPrice],
+    [livePrice, symbol, signalType, fetchPrice, stopLoss, tp1, tp2, tp3, note],
   )
 
-  // ---------- BUG 1: professional signal-card screenshot ----------
-  // We can't screenshot the cross-origin TradingView iframe, so we render a
-  // clean, branded signal card to canvas. This is what the client shows as the
-  // "chart image". Auto-regenerates whenever levels change so it's never stale.
-  const captureScreenshot = useCallback(() => {
-    const canvas = document.createElement("canvas")
-    canvas.width = 900
-    canvas.height = 500
-    const ctx = canvas.getContext("2d")
-    if (!ctx) return
-
-    const isBuy = signalType === "BUY"
-    const accent = isBuy ? "#00D09C" : "#FF6B6B"
-    const W = 900, H = 500
-
-    // Background gradient
-    const bg = ctx.createLinearGradient(0, 0, 0, H)
-    bg.addColorStop(0, "#0B1B2E")
-    bg.addColorStop(1, "#0A1929")
-    ctx.fillStyle = bg
-    ctx.fillRect(0, 0, W, H)
-
-    // Top accent bar
-    ctx.fillStyle = accent
-    ctx.fillRect(0, 0, W, 5)
-
-    // Header row: pair name (big) + BUY/SELL pill
-    ctx.fillStyle = "#FFFFFF"
-    ctx.font = "bold 38px Arial"
-    ctx.fillText(pairLabel(symbol), 30, 60)
-
-    // BUY/SELL pill
-    const pillText = signalType
-    ctx.font = "bold 22px Arial"
-    const pillW = ctx.measureText(pillText).width + 36
-    ctx.fillStyle = accent
-    roundRect(ctx, W - pillW - 30, 32, pillW, 38, 19)
-    ctx.fill()
-    ctx.fillStyle = "#0A1929"
-    ctx.fillText(pillText, W - pillW - 30 + 18, 58)
-
-    // Live price line (top-right under pill)
-    if (livePrice !== null) {
-      ctx.fillStyle = "#8AA2B8"
-      ctx.font = "13px Arial"
-      ctx.fillText(`LIVE: ${formatPrice(symbol, livePrice)}`, W - 180, 92)
-    }
-
-    // Price-level visualization (the "chart" part)
-    // A vertical ladder: SL (red, bottom for BUY) -> Entry (white) -> TP1/2/3 (green, top)
-    const ladderX = 60
-    const ladderTop = 120
-    const ladderBottom = 420
-    const ladderH = ladderBottom - ladderTop
-
-    const entryNum = parseFloat(entry)
-    const slNum = parseFloat(stopLoss)
-    const tp1Num = parseFloat(tp1)
-    const tp2Num = parseFloat(tp2)
-    const tp3Num = parseFloat(tp3)
-
-    // Compute price range across all levels
-    const nums = [entryNum, slNum, tp1Num, tp2Num, tp3Num].filter((n) => Number.isFinite(n))
-    if (nums.length >= 2) {
-      const min = Math.min(...nums)
-      const max = Math.max(...nums)
-      const range = Math.max(max - min, 1e-6)
-      const pad = range * 0.15
-      const lo = min - pad
-      const hi = max + pad
-      const yFor = (v: number) => ladderBottom - ((v - lo) / (hi - lo)) * ladderH
-
-      // Vertical axis line
-      ctx.strokeStyle = "#1E3A5F"
-      ctx.lineWidth = 2
-      ctx.beginPath()
-      ctx.moveTo(ladderX, ladderTop)
-      ctx.lineTo(ladderX, ladderBottom)
-      ctx.stroke()
-
-      // Draw each level as a horizontal line + label
-      const drawLevel = (
-        val: number, color: string, label: string, price: string, x: number,
-      ) => {
-        if (!Number.isFinite(val)) return
-        const y = yFor(val)
-        ctx.strokeStyle = color
-        ctx.lineWidth = 2.5
-        ctx.beginPath()
-        ctx.moveTo(x - 8, y)
-        ctx.lineTo(x + 380, y)
-        ctx.stroke()
-        // Label box
-        ctx.fillStyle = color
-        roundRect(ctx, x + 390, y - 14, 150, 28, 6)
-        ctx.fill()
-        ctx.fillStyle = "#0A1929"
-        ctx.font = "bold 13px Arial"
-        ctx.fillText(`${label}: ${price}`, x + 400, y + 5)
-      }
-
-      // Order: for BUY, SL at bottom then Entry then TPs going up.
-      drawLevel(slNum, "#FF6B6B", "SL", stopLoss, ladderX)
-      drawLevel(entryNum, "#FFFFFF", "ENTRY", entry, ladderX)
-      drawLevel(tp1Num, "#00D09C", "TP1", tp1, ladderX)
-      drawLevel(tp2Num, "#22D3EE", "TP2", tp2, ladderX)
-      drawLevel(tp3Num, "#3B82F6", "TP3", tp3, ladderX)
-    } else {
-      // Not enough data — show a hint
-      ctx.fillStyle = "#445566"
-      ctx.font = "italic 16px Arial"
-      ctx.fillText("Fill Entry + SL + TP levels to render the chart", 60, 270)
-    }
-
-    // Note (if any)
-    if (note) {
-      ctx.fillStyle = "#8AA2B8"
-      ctx.font = "14px Arial"
-      const trimmed = note.length > 80 ? note.slice(0, 77) + "…" : note
-      ctx.fillText(`📝 ${trimmed}`, 30, 455)
-    }
-
-    // Branding footer
-    ctx.fillStyle = "#445566"
-    ctx.font = "11px Arial"
-    ctx.fillText("TradeSeekho PK · LEARN TRADE GROW", 30, 482)
-    const now = new Date().toLocaleString("en-GB", {
-      day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit",
+  // ---------- BUG 2: screenshot capture (thin wrapper around renderSignalCard) ----------
+  const captureScreenshot = useCallback((): string => {
+    const shot = renderSignalCard({
+      symbol, signalType, entry, stopLoss, tp1, tp2, tp3, note, livePrice,
     })
-    ctx.fillText(now, W - 130, 482)
-
-    setScreenshot(canvas.toDataURL("image/png"))
+    setScreenshot(shot)
+    return shot
   }, [symbol, signalType, entry, stopLoss, tp1, tp2, tp3, note, livePrice])
 
-  // Auto-capture whenever the form values change (so screenshot is always fresh
-  // + never null at publish time — fixes the "chart_image_url null" bug).
+  // Auto-capture whenever form values change (so screenshot is always fresh).
   useEffect(() => {
     if (entry || stopLoss || tp1) {
-      captureScreenshot()
+      const shot = renderSignalCard({
+        symbol, signalType, entry, stopLoss, tp1, tp2, tp3, note, livePrice,
+      })
+      setScreenshot(shot)
     }
-  }, [entry, stopLoss, tp1, tp2, tp3, note, signalType, captureScreenshot])
+  }, [entry, stopLoss, tp1, tp2, tp3, note, signalType, symbol, livePrice])
 
   const publish = () => {
     if (!entry || !stopLoss) { toast.error("Entry and SL required"); return }
-    // Ensure a screenshot exists — auto-capture if missing.
-    let finalShot = screenshot
-    if (!finalShot) {
-      captureScreenshot()
-      finalShot = screenshot
-    }
+    // Capture SYNCHRONOUSLY — renderSignalCard returns the data URL directly,
+    // so we NEVER post an empty screenshot. This fixes the client-side
+    // "dark blue box" bug (chart_snapshot_url was null).
+    const finalShot = captureScreenshot()
     if (!finalShot) { toast.error("Could not capture chart image"); return }
     setBusy(true)
     createMutation.mutateAsync({
@@ -338,7 +378,6 @@ export function SignalManager() {
   }
 
   const signals = data?.signals ?? []
-  // "Active" = still in play (not closed). These show the 4 hit buttons.
   const activeSignals = signals.filter((s) => s.status !== "closed")
 
   return (
@@ -347,11 +386,11 @@ export function SignalManager() {
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2"><TrendingUp className="h-5 w-5 text-brand" /> Create Signal</CardTitle>
-          <CardDescription>Draw on chart, fetch live price, publish to all users.</CardDescription>
+          <CardDescription>Tap Entry field to auto-fill live price. Draw on chart, publish to all users.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="space-y-2">
-            {/* Symbol + Live Price + Get Live Price button */}
+            {/* Symbol + Live Price chip + Get Live Price button */}
             <div className="flex flex-wrap items-center gap-2">
               <select
                 value={symbol}
@@ -377,7 +416,6 @@ export function SignalManager() {
                 )}
               </div>
 
-              {/* Get Live Price button — auto-fills Entry/SL/TP */}
               <Button
                 size="sm"
                 variant="default"
@@ -400,7 +438,7 @@ export function SignalManager() {
 
             {priceSource && (
               <p className="text-[10px] text-muted-foreground">
-                Price source: {priceSource} · Click <span className="font-bold text-brand">Get Live Price</span> to auto-fill Entry/SL/TP (editable).
+                Price: {priceSource} · Tap the <span className="font-bold text-brand">Entry Price</span> field below to auto-fill.
               </p>
             )}
 
@@ -444,9 +482,14 @@ export function SignalManager() {
                 </button>
               </div>
             </div>
+
+            {/* BUG 1 FIX: Entry field auto-fills live price on focus (tap). */}
             <div className="space-y-1">
               <Label className="text-xs flex items-center justify-between">
-                Entry Price
+                <span className="flex items-center gap-1">
+                  Entry Price
+                  <span className="rounded bg-brand/10 px-1 py-0.5 text-[9px] font-bold text-brand">tap to auto-fill</span>
+                </span>
                 <button
                   onClick={() => applyLivePrice("entryOnly")}
                   className="text-[10px] font-bold text-brand hover:underline"
@@ -455,8 +498,21 @@ export function SignalManager() {
                   use live
                 </button>
               </Label>
-              <Input value={entry} onChange={(e) => setEntry(e.target.value)} placeholder="e.g. 2025.50" className="h-9" />
+              <Input
+                value={entry}
+                onChange={(e) => setEntry(e.target.value)}
+                onFocus={() => {
+                  // BUG 1: tapping the Entry field auto-fills live price + SL + TP.
+                  // Only fires when field is empty + hasn't auto-filled yet for this symbol.
+                  if (!entry && !autoFilled) {
+                    void applyLivePrice("all")
+                  }
+                }}
+                placeholder="Tap to auto-fill from live price"
+                className="h-9"
+              />
             </div>
+
             <div className="space-y-1">
               <Label className="text-xs">Stop Loss</Label>
               <Input value={stopLoss} onChange={(e) => setStopLoss(e.target.value)} placeholder="e.g. 2010.00" className="h-9" />
@@ -513,7 +569,6 @@ export function SignalManager() {
 
               return (
                 <div key={s.id} className="rounded-xl border border-border p-3">
-                  {/* Row 1: signal info + status badge + delete */}
                   <div className="flex items-start justify-between gap-2">
                     <div className="flex items-center gap-2 min-w-0">
                       {s.screenshot && <img src={s.screenshot} alt="" className="h-10 w-14 shrink-0 rounded object-cover" />}
@@ -542,32 +597,11 @@ export function SignalManager() {
                     </Button>
                   </div>
 
-                  {/* Row 2: the 4 TP/SL HIT buttons */}
                   <div className="mt-3 grid grid-cols-4 gap-1.5">
-                    <HitButton
-                      label="TP1 HIT"
-                      color="emerald"
-                      disabled={tp1Done || slDone || hitMutation.isPending}
-                      onClick={() => hitMutation.mutate({ id: s.id, action: "tp1" })}
-                    />
-                    <HitButton
-                      label="TP2 HIT"
-                      color="sky"
-                      disabled={tp2Done || slDone || allTpDone || hitMutation.isPending}
-                      onClick={() => hitMutation.mutate({ id: s.id, action: "tp2" })}
-                    />
-                    <HitButton
-                      label="TP3 HIT"
-                      color="blue"
-                      disabled={tp3Done || slDone || hitMutation.isPending}
-                      onClick={() => hitMutation.mutate({ id: s.id, action: "tp3" })}
-                    />
-                    <HitButton
-                      label="SL HIT"
-                      color="red"
-                      disabled={slDone || hitMutation.isPending}
-                      onClick={() => hitMutation.mutate({ id: s.id, action: "sl" })}
-                    />
+                    <HitButton label="TP1 HIT" color="emerald" disabled={tp1Done || slDone || hitMutation.isPending} onClick={() => hitMutation.mutate({ id: s.id, action: "tp1" })} />
+                    <HitButton label="TP2 HIT" color="sky" disabled={tp2Done || slDone || allTpDone || hitMutation.isPending} onClick={() => hitMutation.mutate({ id: s.id, action: "tp2" })} />
+                    <HitButton label="TP3 HIT" color="blue" disabled={tp3Done || slDone || hitMutation.isPending} onClick={() => hitMutation.mutate({ id: s.id, action: "tp3" })} />
+                    <HitButton label="SL HIT" color="red" disabled={slDone || hitMutation.isPending} onClick={() => hitMutation.mutate({ id: s.id, action: "sl" })} />
                   </div>
                 </div>
               )
@@ -576,7 +610,6 @@ export function SignalManager() {
         </CardContent>
       </Card>
 
-      {/* Closed/historical signals count */}
       {signals.length > activeSignals.length && (
         <p className="text-center text-[10px] text-muted-foreground">
           {signals.length - activeSignals.length} closed signal(s) hidden.
@@ -586,26 +619,8 @@ export function SignalManager() {
   )
 }
 
-// Helper: rounded-rectangle path for the canvas screenshot.
-function roundRect(
-  ctx: CanvasRenderingContext2D,
-  x: number, y: number, w: number, h: number, r: number,
-) {
-  ctx.beginPath()
-  ctx.moveTo(x + r, y)
-  ctx.arcTo(x + w, y, x + w, y + h, r)
-  ctx.arcTo(x + w, y + h, x, y + h, r)
-  ctx.arcTo(x, y + h, x, y, r)
-  ctx.arcTo(x, y, x + w, y, r)
-  ctx.closePath()
-}
-
-// A colored TP/SL HIT button. When already hit, shows a checkmark and is disabled.
 function HitButton({
-  label,
-  color,
-  disabled,
-  onClick,
+  label, color, disabled, onClick,
 }: {
   label: string
   color: "emerald" | "sky" | "blue" | "red"
