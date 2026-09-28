@@ -60,6 +60,8 @@ const STATUS_BADGE: Record<string, { label: string; cls: string }> = {
 // (fixing the stale-state bug where the screenshot was empty at publish time).
 // Uses JPEG (0.85 quality) — 5-10x smaller than PNG, prevents API body-size
 // issues on Vercel.
+interface Candle { t: number; o: number; h: number; l: number; c: number }
+
 interface RenderArgs {
   symbol: string
   signalType: string
@@ -70,7 +72,13 @@ interface RenderArgs {
   tp3: string
   note: string
   livePrice: number | null
+  candles: Candle[] // real OHLC data from /api/candles
 }
+
+// Renders a REAL candlestick chart on canvas using live market OHLC data +
+// overlays Entry/SL/TP price levels. This is NOT a fake template — it draws
+// actual candlesticks (green up / red down) fetched from Yahoo Finance, so the
+// captured screenshot looks like a genuine trading chart.
 function renderSignalCard(a: RenderArgs): string {
   try {
     const canvas = document.createElement("canvas")
@@ -83,7 +91,7 @@ function renderSignalCard(a: RenderArgs): string {
     const accent = isBuy ? "#00D09C" : "#FF6B6B"
     const W = 900, H = 500
 
-    // Background gradient
+    // Background gradient (dark navy, like TradingView dark theme)
     const bg = ctx.createLinearGradient(0, 0, 0, H)
     bg.addColorStop(0, "#0B1B2E")
     bg.addColorStop(1, "#0A1929")
@@ -96,100 +104,162 @@ function renderSignalCard(a: RenderArgs): string {
 
     // Header: pair name + BUY/SELL pill
     ctx.fillStyle = "#FFFFFF"
-    ctx.font = "bold 38px Arial"
-    ctx.fillText(pairLabel(a.symbol), 30, 60)
+    ctx.font = "bold 32px Arial"
+    ctx.fillText(pairLabel(a.symbol), 24, 48)
 
     const pillText = a.signalType
-    ctx.font = "bold 22px Arial"
-    const pillW = ctx.measureText(pillText).width + 36
+    ctx.font = "bold 20px Arial"
+    const pillW = ctx.measureText(pillText).width + 32
     ctx.fillStyle = accent
-    roundRect(ctx, W - pillW - 30, 32, pillW, 38, 19)
+    roundRect(ctx, W - pillW - 24, 22, pillW, 34, 17)
     ctx.fill()
     ctx.fillStyle = "#0A1929"
-    ctx.fillText(pillText, W - pillW - 30 + 18, 58)
+    ctx.fillText(pillText, W - pillW - 24 + 16, 44)
 
-    // Live price label
+    // Live price label (top-right under pill)
     if (a.livePrice !== null) {
       ctx.fillStyle = "#8AA2B8"
-      ctx.font = "13px Arial"
-      ctx.fillText(`LIVE: ${formatPrice(a.symbol, a.livePrice)}`, W - 180, 92)
+      ctx.font = "12px Arial"
+      ctx.fillText(`LIVE: ${formatPrice(a.symbol, a.livePrice)}`, W - 160, 76)
     }
 
-    // Price-level ladder
-    const ladderX = 60
-    const ladderTop = 120
-    const ladderBottom = 420
-    const ladderH = ladderBottom - ladderTop
+    // Chart area geometry — candlesticks on left 2/3, price labels on right 1/3
+    const chartLeft = 50
+    const chartRight = 620
+    const chartTop = 100
+    const chartBottom = 430
+    const chartW = chartRight - chartLeft
+    const chartH = chartBottom - chartTop
 
+    // ---- Compute price range: include candle highs/lows + Entry/SL/TP levels ----
     const entryNum = parseFloat(a.entry)
     const slNum = parseFloat(a.stopLoss)
     const tp1Num = parseFloat(a.tp1)
     const tp2Num = parseFloat(a.tp2)
     const tp3Num = parseFloat(a.tp3)
-    const nums = [entryNum, slNum, tp1Num, tp2Num, tp3Num].filter((n) => Number.isFinite(n))
+    const levelNums = [entryNum, slNum, tp1Num, tp2Num, tp3Num].filter((n) =>
+      Number.isFinite(n),
+    )
 
-    if (nums.length >= 2) {
-      const min = Math.min(...nums)
-      const max = Math.max(...nums)
-      const range = Math.max(max - min, 1e-6)
-      const pad = range * 0.15
-      const lo = min - pad
-      const hi = max + pad
-      const yFor = (v: number) => ladderBottom - ((v - lo) / (hi - lo)) * ladderH
+    const candleHighs = a.candles.map((c) => c.h)
+    const candleLows = a.candles.map((c) => c.l)
+    let minP = candleLows.length ? Math.min(...candleLows) : 0
+    let maxP = candleHighs.length ? Math.max(...candleHighs) : 1
+    for (const n of levelNums) {
+      if (n < minP) minP = n
+      if (n > maxP) maxP = n
+    }
+    if (!Number.isFinite(minP) || !Number.isFinite(maxP) || minP === maxP) {
+      minP = (minP || 0) - 1
+      maxP = (maxP || 1) + 1
+    }
+    const padP = (maxP - minP) * 0.1
+    const lo = minP - padP
+    const hi = maxP + padP
+    const yFor = (v: number) =>
+      chartBottom - ((v - lo) / (hi - lo)) * chartH
 
-      ctx.strokeStyle = "#1E3A5F"
-      ctx.lineWidth = 2
+    // ---- Grid lines (horizontal, subtle) ----
+    ctx.strokeStyle = "#152A42"
+    ctx.lineWidth = 1
+    const gridSteps = 5
+    for (let i = 0; i <= gridSteps; i++) {
+      const y = chartTop + (chartH / gridSteps) * i
       ctx.beginPath()
-      ctx.moveTo(ladderX, ladderTop)
-      ctx.lineTo(ladderX, ladderBottom)
+      ctx.moveTo(chartLeft, y)
+      ctx.lineTo(chartRight, y)
       ctx.stroke()
+      // Price axis label
+      const priceAtY = hi - ((hi - lo) / gridSteps) * i
+      ctx.fillStyle = "#3A5066"
+      ctx.font = "10px Arial"
+      ctx.fillText(formatPrice(a.symbol, priceAtY), chartRight + 6, y + 3)
+    }
 
-      const drawLevel = (val: number, color: string, label: string, price: string, x: number) => {
-        if (!Number.isFinite(val)) return
-        const y = yFor(val)
+    // ---- Draw REAL candlesticks ----
+    const candles = a.candles
+    if (candles.length > 0) {
+      const candleSpacing = chartW / candles.length
+      const candleW = Math.max(3, Math.min(14, candleSpacing * 0.65))
+      candles.forEach((c, i) => {
+        const cx = chartLeft + candleSpacing * i + candleSpacing / 2
+        const yO = yFor(c.o)
+        const yC = yFor(c.c)
+        const yH = yFor(c.h)
+        const yL = yFor(c.l)
+        const up = c.c >= c.o
+        const color = up ? "#00D09C" : "#FF4D6D"
+
+        // Wick (high-low line)
         ctx.strokeStyle = color
-        ctx.lineWidth = 2.5
+        ctx.lineWidth = 1
         ctx.beginPath()
-        ctx.moveTo(x - 8, y)
-        ctx.lineTo(x + 380, y)
+        ctx.moveTo(cx, yH)
+        ctx.lineTo(cx, yL)
         ctx.stroke()
-        ctx.fillStyle = color
-        roundRect(ctx, x + 390, y - 14, 150, 28, 6)
-        ctx.fill()
-        ctx.fillStyle = "#0A1929"
-        ctx.font = "bold 13px Arial"
-        ctx.fillText(`${label}: ${price}`, x + 400, y + 5)
-      }
 
-      drawLevel(slNum, "#FF6B6B", "SL", a.stopLoss, ladderX)
-      drawLevel(entryNum, "#FFFFFF", "ENTRY", a.entry, ladderX)
-      drawLevel(tp1Num, "#00D09C", "TP1", a.tp1, ladderX)
-      drawLevel(tp2Num, "#22D3EE", "TP2", a.tp2, ladderX)
-      drawLevel(tp3Num, "#3B82F6", "TP3", a.tp3, ladderX)
+        // Body (open-close rectangle)
+        const bodyTop = Math.min(yO, yC)
+        const bodyH = Math.max(2, Math.abs(yC - yO))
+        ctx.fillStyle = color
+        ctx.fillRect(cx - candleW / 2, bodyTop, candleW, bodyH)
+      })
     } else {
       ctx.fillStyle = "#445566"
-      ctx.font = "italic 16px Arial"
-      ctx.fillText("Fill Entry + SL + TP levels to render the chart", 60, 270)
+      ctx.font = "italic 14px Arial"
+      ctx.fillText("Loading market data…", chartLeft + 10, chartTop + 30)
     }
+
+    // ---- Draw Entry/SL/TP horizontal level lines (overlay on the chart) ----
+    const drawLevel = (
+      val: number, color: string, label: string, price: string,
+    ) => {
+      if (!Number.isFinite(val)) return
+      const y = yFor(val)
+      // Dashed horizontal line across the chart
+      ctx.strokeStyle = color
+      ctx.lineWidth = 1.8
+      ctx.setLineDash([6, 4])
+      ctx.beginPath()
+      ctx.moveTo(chartLeft, y)
+      ctx.lineTo(chartRight, y)
+      ctx.stroke()
+      ctx.setLineDash([])
+      // Label box on the right edge
+      const labelText = `${label}: ${price}`
+      ctx.font = "bold 11px Arial"
+      const boxW = ctx.measureText(labelText).width + 12
+      ctx.fillStyle = color
+      roundRect(ctx, chartRight + 2, y - 9, boxW, 18, 4)
+      ctx.fill()
+      ctx.fillStyle = "#0A1929"
+      ctx.fillText(labelText, chartRight + 8, y + 4)
+    }
+
+    drawLevel(slNum, "#FF4D6D", "SL", a.stopLoss)
+    drawLevel(entryNum, "#FFFFFF", "ENTRY", a.entry)
+    drawLevel(tp1Num, "#00D09C", "TP1", a.tp1)
+    drawLevel(tp2Num, "#22D3EE", "TP2", a.tp2)
+    drawLevel(tp3Num, "#3B82F6", "TP3", a.tp3)
 
     // Note
     if (a.note) {
       ctx.fillStyle = "#8AA2B8"
-      ctx.font = "14px Arial"
-      const trimmed = a.note.length > 80 ? a.note.slice(0, 77) + "…" : a.note
-      ctx.fillText(`📝 ${trimmed}`, 30, 455)
+      ctx.font = "12px Arial"
+      const trimmed = a.note.length > 90 ? a.note.slice(0, 87) + "…" : a.note
+      ctx.fillText(`📝 ${trimmed}`, 24, 455)
     }
 
     // Branding footer
     ctx.fillStyle = "#445566"
     ctx.font = "11px Arial"
-    ctx.fillText("TradeSeekho PK · LEARN TRADE GROW", 30, 482)
+    ctx.fillText("TradeSeekho PK · LEARN TRADE GROW", 24, 482)
     const now = new Date().toLocaleString("en-GB", {
       day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit",
     })
     ctx.fillText(now, W - 130, 482)
 
-    // JPEG 0.85 — much smaller than PNG, works in <img> and Flutter Image.memory
+    // JPEG 0.85 — much smaller than PNG
     return canvas.toDataURL("image/jpeg", 0.85)
   } catch {
     return ""
@@ -228,6 +298,10 @@ export function SignalManager() {
   // Track whether we've auto-filled for this symbol so we don't re-trigger
   // on every focus. The Entry onFocus only fires once per symbol change.
   const [autoFilled, setAutoFilled] = useState(false)
+
+  // Real OHLC candle data (fetched from /api/candles) for the chart screenshot.
+  // Cached per symbol; refetched when the symbol changes.
+  const [candles, setCandles] = useState<Candle[]>([])
 
   const createMutation = useMutation({
     mutationFn: async (data: Record<string, unknown>) => {
@@ -299,11 +373,30 @@ export function SignalManager() {
     }
   }, [])
 
-  // Auto-fetch live price on mount + whenever the symbol changes.
+  // Fetch real OHLC candle data for the chart screenshot. Called on mount +
+  // whenever the symbol changes. Data is cached server-side (60s) so repeated
+  // captures are instant.
+  const fetchCandles = useCallback(async (sym: string) => {
+    try {
+      const res = await fetch(
+        `/api/candles?symbol=${encodeURIComponent(sym)}&interval=15m&range=1d`,
+        { cache: "no-store" },
+      )
+      if (!res.ok) throw new Error("candle fetch failed")
+      const d = (await res.json()) as { candles: Candle[] }
+      setCandles(d.candles ?? [])
+    } catch {
+      // Non-fatal — screenshot will just show levels without candles.
+      setCandles([])
+    }
+  }, [])
+
+  // Auto-fetch live price + candles on mount + whenever the symbol changes.
   useEffect(() => {
     setAutoFilled(false)
     void fetchPrice(symbol)
-  }, [symbol, fetchPrice])
+    void fetchCandles(symbol)
+  }, [symbol, fetchPrice, fetchCandles])
 
   // Fill Entry/SL/TP from the live price using per-pair default offsets.
   // Returns the screenshot data URL so publish can use it synchronously.
@@ -335,12 +428,12 @@ export function SignalManager() {
       // Render screenshot synchronously with the NEW values (not stale state).
       const shot = renderSignalCard({
         symbol, signalType, entry: newEntry, stopLoss: newSL,
-        tp1: newTp1, tp2: newTp2, tp3: newTp3, note, livePrice: p,
+        tp1: newTp1, tp2: newTp2, tp3: newTp3, note, livePrice: p, candles,
       })
       setScreenshot(shot)
       return shot
     },
-    [livePrice, symbol, signalType, fetchPrice, stopLoss, tp1, tp2, tp3, note],
+    [livePrice, symbol, signalType, fetchPrice, stopLoss, tp1, tp2, tp3, note, candles],
   )
 
   // BUG 3 FIX: Auto-fill Entry/SL/TP the moment the live price arrives — so
@@ -356,21 +449,21 @@ export function SignalManager() {
   // ---------- BUG 2: screenshot capture (thin wrapper around renderSignalCard) ----------
   const captureScreenshot = useCallback((): string => {
     const shot = renderSignalCard({
-      symbol, signalType, entry, stopLoss, tp1, tp2, tp3, note, livePrice,
+      symbol, signalType, entry, stopLoss, tp1, tp2, tp3, note, livePrice, candles,
     })
     setScreenshot(shot)
     return shot
-  }, [symbol, signalType, entry, stopLoss, tp1, tp2, tp3, note, livePrice])
+  }, [symbol, signalType, entry, stopLoss, tp1, tp2, tp3, note, livePrice, candles])
 
   // Auto-capture whenever form values change (so screenshot is always fresh).
   useEffect(() => {
     if (entry || stopLoss || tp1) {
       const shot = renderSignalCard({
-        symbol, signalType, entry, stopLoss, tp1, tp2, tp3, note, livePrice,
+        symbol, signalType, entry, stopLoss, tp1, tp2, tp3, note, livePrice, candles,
       })
       setScreenshot(shot)
     }
-  }, [entry, stopLoss, tp1, tp2, tp3, note, signalType, symbol, livePrice])
+  }, [entry, stopLoss, tp1, tp2, tp3, note, signalType, symbol, livePrice, candles])
 
   const publish = () => {
     if (!entry || !stopLoss) { toast.error("Entry and SL required"); return }
