@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useCallback } from "react"
+import { useState, useEffect, useCallback, useRef } from "react"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -373,6 +373,12 @@ export function SignalManager() {
   // Cached per symbol; refetched when the symbol changes.
   const [candles, setCandles] = useState<Candle[]>([])
 
+  // TradingView chart container ref — the embed-widget-advanced-chart.js script
+  // is injected here. This approach (vs the old widgetembed iframe) reliably
+  // shows the LEFT DRAWING TOOLBAR (S/R lines, Trendline, Fibonacci) because
+  // it uses the `hide_side_toolbar: false` config option.
+  const tvChartRef = useRef<HTMLDivElement>(null)
+
   const createMutation = useMutation({
     mutationFn: async (data: Record<string, unknown>) => {
       const res = await fetch("/api/admin/signals", {
@@ -467,6 +473,55 @@ export function SignalManager() {
     void fetchPrice(symbol)
     void fetchCandles(symbol)
   }, [symbol, fetchPrice, fetchCandles])
+
+  // Mount/reload the TradingView advanced chart widget whenever the symbol
+  // changes. Uses the embed-widget-advanced-chart.js script (NOT the old
+  // widgetembed iframe) because only this approach reliably renders the LEFT
+  // DRAWING TOOLBAR (S/R lines, Trendline, Fibonacci retracement) via
+  // hide_side_toolbar: false. Also includes MA(20) + Bollinger Bands studies
+  // on the live chart.
+  useEffect(() => {
+    if (!tvChartRef.current) return
+    const container = tvChartRef.current
+    container.innerHTML = ""
+
+    const widgetContainer = document.createElement("div")
+    widgetContainer.className = "tradingview-widget-container"
+    widgetContainer.style.height = "100%"
+    widgetContainer.style.width = "100%"
+
+    const script = document.createElement("script")
+    script.src =
+      "https://s3.tradingview.com/external-embedding/embed-widget-advanced-chart.js"
+    script.async = true
+    script.type = "text/javascript"
+    script.innerHTML = JSON.stringify({
+      autosize: true,
+      symbol,
+      interval: "15",
+      timezone: "Asia/Karachi",
+      theme: "dark",
+      style: "1",
+      locale: "en",
+      enable_publishing: false,
+      allow_symbol_change: true,
+      hide_side_toolbar: false, // ← LEFT DRAWING TOOLBAR (S/R, Trendline, Fibonacci)
+      hide_top_toolbar: false,
+      hide_legend: false,
+      save_image: true, // camera icon → export PNG with drawings + indicators
+      withdateranges: true,
+      calendar: false,
+      studies: ["STD;MA_Simple", "STD;Bollinger_Bands"], // MA(20) + BB on live chart
+      support_host: "https://www.tradingview.com",
+    })
+
+    widgetContainer.appendChild(script)
+    container.appendChild(widgetContainer)
+
+    return () => {
+      container.innerHTML = ""
+    }
+  }, [symbol])
 
   // Fill Entry/SL/TP from the live price using per-pair default offsets.
   // Returns the screenshot data URL so publish can use it synchronously.
@@ -623,21 +678,16 @@ export function SignalManager() {
               </p>
             )}
 
-            {/* TradingView chart with FULL drawing tools (left toolbar) + indicators.
-                Uses the advanced embed with all drawing tools enabled: trendline,
-                horizontal (S/R) lines, Fibonacci retracement, shapes, etc.
-                hidesidetoolbar=0 → shows the left drawing toolbar.
-                saveimage=1 → camera icon lets you export a PNG of the chart.
-                The studies below (MA + BB) also render on the captured canvas. */}
-            <div className="overflow-hidden rounded-xl border border-border" style={{ height: "450px" }}>
-              <iframe
-                src={`https://s.tradingview.com/widgetembed/?frameElementId=tvchart&symbol=${encodeURIComponent(symbol)}&interval=15&theme=dark&style=1&timezone=Asia%2FKarachi&hidesidetoolbar=0&toolbarbg=f1f3f6&studies=%5B%22MASimple%40tv-basicstudies%22%2C%22BB%40tv-basicstudies%22%5D&hideideas=1&saveimage=1&hidetoptoolbar=0&hidelegend=0&allow_symbol_change=1&withdateranges=1`}
-                style={{ width: "100%", height: "100%", border: "none" }}
-                allowFullScreen
-              />
+            {/* TradingView Advanced Chart widget — script-based embed (NOT the old
+                widgetembed iframe). This approach reliably renders the LEFT DRAWING
+                TOOLBAR (S/R lines, Trendline, Fibonacci retracement) via
+                hide_side_toolbar: false. Also shows MA(20) + Bollinger Bands on the
+                live chart, matching the canvas capture below. */}
+            <div className="overflow-hidden rounded-xl border border-border" style={{ height: "500px" }}>
+              <div ref={tvChartRef} style={{ height: "100%", width: "100%" }} />
             </div>
             <p className="text-[10px] text-muted-foreground">
-              <span className="font-bold text-brand">Drawing tools:</span> Use the left toolbar to draw S/R (horizontal) lines, Trendlines, Fibonacci retracement. <span className="font-bold text-brand">Capture</span> me bhi MA(20) + Bollinger Bands + candles + Entry/SL/TP levels sab aate hain.
+              <span className="font-bold text-brand">Drawing tools:</span> Left toolbar par S/R (horizontal) lines, Trendlines, Fibonacci retracement draw karein. Chart par <span className="font-bold">📷 camera icon</span> (top-right) se PNG export karein — drawings + indicators sab aate hain. <span className="font-bold text-brand">Capture</span> button se canvas card bhi banta hai (candles + MA + BB + Entry/SL/TP).
             </p>
           </div>
 
