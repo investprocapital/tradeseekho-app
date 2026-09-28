@@ -204,6 +204,76 @@ function renderSignalCard(a: RenderArgs): string {
         ctx.fillStyle = color
         ctx.fillRect(cx - candleW / 2, bodyTop, candleW, bodyH)
       })
+
+      // ---- SMA(20) — Simple Moving Average (orange line, like TradingView) ----
+      const smaPeriod = 20
+      const smaPoints: { x: number; y: number }[] = []
+      for (let i = smaPeriod - 1; i < candles.length; i++) {
+        let sum = 0
+        for (let j = i - smaPeriod + 1; j <= i; j++) sum += candles[j].c
+        const avg = sum / smaPeriod
+        const cx = chartLeft + candleSpacing * i + candleSpacing / 2
+        smaPoints.push({ x: cx, y: yFor(avg) })
+      }
+      if (smaPoints.length > 1) {
+        ctx.strokeStyle = "#FF9800" // orange (TradingView default MA color)
+        ctx.lineWidth = 1.8
+        ctx.beginPath()
+        ctx.moveTo(smaPoints[0].x, smaPoints[0].y)
+        for (let i = 1; i < smaPoints.length; i++) {
+          ctx.lineTo(smaPoints[i].x, smaPoints[i].y)
+        }
+        ctx.stroke()
+      }
+
+      // ---- Bollinger Bands (20, 2) — upper/lower bands (light blue) ----
+      // BB uses SMA(20) as the middle band ± 2 standard deviations.
+      const bbMult = 2
+      const upperPoints: { x: number; y: number }[] = []
+      const lowerPoints: { x: number; y: number }[] = []
+      for (let i = smaPeriod - 1; i < candles.length; i++) {
+        let sum = 0
+        for (let j = i - smaPeriod + 1; j <= i; j++) sum += candles[j].c
+        const mean = sum / smaPeriod
+        let variance = 0
+        for (let j = i - smaPeriod + 1; j <= i; j++) {
+          variance += (candles[j].c - mean) ** 2
+        }
+        const sd = Math.sqrt(variance / smaPeriod)
+        const cx = chartLeft + candleSpacing * i + candleSpacing / 2
+        upperPoints.push({ x: cx, y: yFor(mean + bbMult * sd) })
+        lowerPoints.push({ x: cx, y: yFor(mean - bbMult * sd) })
+      }
+      // Fill between bands (subtle) + draw upper/lower lines
+      if (upperPoints.length > 1) {
+        // Fill area
+        ctx.fillStyle = "rgba(33, 150, 243, 0.06)"
+        ctx.beginPath()
+        ctx.moveTo(upperPoints[0].x, upperPoints[0].y)
+        for (let i = 1; i < upperPoints.length; i++) ctx.lineTo(upperPoints[i].x, upperPoints[i].y)
+        for (let i = lowerPoints.length - 1; i >= 0; i--) ctx.lineTo(lowerPoints[i].x, lowerPoints[i].y)
+        ctx.closePath()
+        ctx.fill()
+        // Upper band
+        ctx.strokeStyle = "rgba(33, 150, 243, 0.7)"
+        ctx.lineWidth = 1.2
+        ctx.beginPath()
+        ctx.moveTo(upperPoints[0].x, upperPoints[0].y)
+        for (let i = 1; i < upperPoints.length; i++) ctx.lineTo(upperPoints[i].x, upperPoints[i].y)
+        ctx.stroke()
+        // Lower band
+        ctx.beginPath()
+        ctx.moveTo(lowerPoints[0].x, lowerPoints[0].y)
+        for (let i = 1; i < lowerPoints.length; i++) ctx.lineTo(lowerPoints[i].x, lowerPoints[i].y)
+        ctx.stroke()
+      }
+
+      // Indicator legend (top-left of chart area)
+      ctx.fillStyle = "#8AA2B8"
+      ctx.font = "10px Arial"
+      ctx.fillText("MA(20)", chartLeft + 4, chartTop + 12)
+      ctx.fillStyle = "rgba(33, 150, 243, 0.9)"
+      ctx.fillText("BB(20, 2)", chartLeft + 50, chartTop + 12)
     } else {
       ctx.fillStyle = "#445566"
       ctx.font = "italic 14px Arial"
@@ -553,16 +623,21 @@ export function SignalManager() {
               </p>
             )}
 
-            {/* TradingView chart with draw tools */}
-            <div className="overflow-hidden rounded-xl border border-border" style={{ height: "400px" }}>
+            {/* TradingView chart with FULL drawing tools (left toolbar) + indicators.
+                Uses the advanced embed with all drawing tools enabled: trendline,
+                horizontal (S/R) lines, Fibonacci retracement, shapes, etc.
+                hidesidetoolbar=0 → shows the left drawing toolbar.
+                saveimage=1 → camera icon lets you export a PNG of the chart.
+                The studies below (MA + BB) also render on the captured canvas. */}
+            <div className="overflow-hidden rounded-xl border border-border" style={{ height: "450px" }}>
               <iframe
-                src={`https://s.tradingview.com/widgetembed/?frameElementId=tvchart&symbol=${encodeURIComponent(symbol)}&interval=15&theme=dark&style=1&timezone=Asia%2FKarachi&hidesidetoolbar=0&toolbarbg=f1f3f6&studies=[]&hideideas=1&saveimage=1`}
+                src={`https://s.tradingview.com/widgetembed/?frameElementId=tvchart&symbol=${encodeURIComponent(symbol)}&interval=15&theme=dark&style=1&timezone=Asia%2FKarachi&hidesidetoolbar=0&toolbarbg=f1f3f6&studies=%5B%22MASimple%40tv-basicstudies%22%2C%22BB%40tv-basicstudies%22%5D&hideideas=1&saveimage=1&hidetoptoolbar=0&hidelegend=0&allow_symbol_change=1&withdateranges=1`}
                 style={{ width: "100%", height: "100%", border: "none" }}
                 allowFullScreen
               />
             </div>
             <p className="text-[10px] text-muted-foreground">
-              Use TradingView drawing tools (left toolbar) to draw S/R, Trendlines, Fibonacci. The chart image preview below auto-updates as you fill levels.
+              <span className="font-bold text-brand">Drawing tools:</span> Use the left toolbar to draw S/R (horizontal) lines, Trendlines, Fibonacci retracement. <span className="font-bold text-brand">Capture</span> me bhi MA(20) + Bollinger Bands + candles + Entry/SL/TP levels sab aate hain.
             </p>
           </div>
 
