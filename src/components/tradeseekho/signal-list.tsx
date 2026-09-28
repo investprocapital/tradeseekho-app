@@ -20,6 +20,9 @@ interface Signal {
   tp3: string | null
   note: string | null
   screenshot: string
+  // Alias returned by the API for mobile/Flutter clients; web uses screenshot
+  // first and falls back to this.
+  chart_image_url?: string
   status: string // active | tp1_hit | tp2_hit | tp3_hit | sl_hit
   tp1HitAt: string | null
   tp2HitAt: string | null
@@ -33,6 +36,12 @@ async function fetchSignals() {
   const res = await fetch("/api/signals")
   if (!res.ok) throw new Error("failed")
   return res.json() as Promise<{ signals: Signal[] }>
+}
+
+// Resolve the chart image URL. Prefers `screenshot` (web), falls back to the
+// `chart_image_url` alias (Flutter compat). Returns "" when neither exists.
+function chartImage(s: Signal): string {
+  return s.screenshot || s.chart_image_url || ""
 }
 
 // Client-side status badge (mirrors the admin config).
@@ -87,7 +96,16 @@ export function SignalList() {
                 onClick={() => setSelected(s)}
                 className="flex items-center gap-3 rounded-xl border border-border bg-card p-3 text-start transition hover:border-brand/50"
               >
-                {s.screenshot && <img src={s.screenshot} alt="" className="h-12 w-16 shrink-0 rounded-lg object-cover" draggable={false} />}
+                {chartImage(s) ? (
+                  <img src={chartImage(s)} alt="" className="h-12 w-16 shrink-0 rounded-lg object-cover" draggable={false} />
+                ) : (
+                  // Fallback mini signal-card when no captured image exists.
+                  <div className="flex h-12 w-16 shrink-0 flex-col justify-center rounded-lg bg-gradient-to-br from-[#0B1B2E] to-[#0A1929] px-1.5">
+                    <span className="text-[8px] font-bold text-white">{pairLabel(s.symbol)}</span>
+                    <span className={`text-[8px] font-bold ${s.signalType === "BUY" ? "text-emerald-400" : "text-red-400"}`}>{s.signalType}</span>
+                    <span className="text-[7px] text-white/60">{s.entry}</span>
+                  </div>
+                )}
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-1.5 flex-wrap">
                     <span className="text-sm font-bold">{pairLabel(s.symbol)}</span>
@@ -151,10 +169,10 @@ export function SignalList() {
                 </Button>
               </div>
 
-              {/* Screenshot */}
-              {selected.screenshot && (
+              {/* Chart image — captured screenshot, or a styled fallback card */}
+              {chartImage(selected) ? (
                 <div className="relative">
-                  <img src={selected.screenshot} alt="Chart" className="w-full" draggable={false} />
+                  <img src={chartImage(selected)} alt="Chart" className="w-full" draggable={false} />
                   {/* Entry/SL/TP labels overlay — highlight the hit ones */}
                   <div className="absolute top-2 left-2 flex flex-col gap-1">
                     <span className="rounded bg-brand/90 px-2 py-0.5 text-[10px] font-bold text-white">Entry: {selected.entry}</span>
@@ -178,6 +196,10 @@ export function SignalList() {
                     )}
                   </div>
                 </div>
+              ) : (
+                // Fallback: a styled signal-card "chart" built from the levels
+                // so the client never shows an empty dark box.
+                <FallbackSignalCard s={selected} />
               )}
 
               {/* Signal details */}
@@ -267,5 +289,73 @@ export function SignalList() {
         )}
       </AnimatePresence>
     </>
+  )
+}
+
+/**
+ * Fallback "chart" shown in the detail modal when a signal has no captured
+ * screenshot image (chart_image_url was null). Renders a styled signal-card
+ * with the price-level ladder so the client never shows an empty dark box.
+ */
+function FallbackSignalCard({ s }: { s: Signal }) {
+  const isBuy = s.signalType === "BUY"
+  const accent = isBuy ? "#00D09C" : "#FF6B6B"
+  const nums = [
+    { label: "SL", val: parseFloat(s.stopLoss), color: "#FF6B6B", hit: !!s.slHitAt },
+    { label: "ENTRY", val: parseFloat(s.entry), color: "#FFFFFF", hit: false },
+    { label: "TP1", val: s.tp1 ? parseFloat(s.tp1) : NaN, color: "#00D09C", hit: !!s.tp1HitAt },
+    { label: "TP2", val: s.tp2 ? parseFloat(s.tp2) : NaN, color: "#22D3EE", hit: !!s.tp2HitAt },
+    { label: "TP3", val: s.tp3 ? parseFloat(s.tp3) : NaN, color: "#3B82F6", hit: !!s.tp3HitAt },
+  ].filter((n) => Number.isFinite(n.val))
+
+  const min = Math.min(...nums.map((n) => n.val))
+  const max = Math.max(...nums.map((n) => n.val))
+  const range = Math.max(max - min, 1e-6)
+  const pad = range * 0.15
+  const lo = min - pad
+  const hi = max + pad
+  const pct = (v: number) => `${((hi - v) / (hi - lo)) * 100}%`
+
+  return (
+    <div
+      className="relative w-full overflow-hidden"
+      style={{ background: "linear-gradient(180deg,#0B1B2E 0%,#0A1929 100%)" }}
+    >
+      <div style={{ height: 4, background: accent }} />
+      <div className="p-4">
+        {/* Header: pair + BUY/SELL pill */}
+        <div className="flex items-center justify-between">
+          <span className="text-2xl font-extrabold text-white">{pairLabel(s.symbol)}</span>
+          <span
+            className="rounded-full px-3 py-1 text-xs font-bold"
+            style={{ background: accent, color: "#0A1929" }}
+          >
+            {s.signalType}
+          </span>
+        </div>
+        {/* Ladder */}
+        <div className="relative mt-4 mb-2" style={{ height: 200 }}>
+          <div className="absolute left-3 top-0 bottom-0 w-0.5 bg-[#1E3A5F]" />
+          {nums.map((n) => (
+            <div
+              key={n.label}
+              className="absolute flex items-center"
+              style={{ top: pct(n.val), left: 0, right: 0 }}
+            >
+              <div className="h-0.5 flex-1" style={{ background: n.color }} />
+              <div
+                className="ms-auto me-3 rounded px-2 py-0.5 text-[11px] font-bold"
+                style={{ background: n.color, color: "#0A1929" }}
+              >
+                {n.label}: {n.val} {n.hit ? "✅" : ""}
+              </div>
+            </div>
+          ))}
+        </div>
+        <div className="mt-1 text-center text-[10px] text-white/40">
+          TradeSeekho PK · LEARN TRADE GROW
+        </div>
+      </div>
+    </div>
   )
 }

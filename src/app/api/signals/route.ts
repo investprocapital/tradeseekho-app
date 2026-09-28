@@ -24,6 +24,10 @@ export async function GET() {
       tp3: s.tp3,
       note: s.note,
       screenshot: s.screenshot,
+      // Alias for Flutter/mobile clients that expect "chart_image_url".
+      // Always present (never null) so client image widgets don't break —
+      // falls back to an empty string only when no capture exists.
+      chart_image_url: s.screenshot ?? "",
       status: s.status,
       // ISO timestamps for each hit (null if not yet hit)
       tp1HitAt: s.tp1HitAt?.toISOString() ?? null,
