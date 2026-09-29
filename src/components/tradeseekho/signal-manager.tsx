@@ -388,9 +388,24 @@ export function SignalManager() {
   const [uploadedScreenshot, setUploadedScreenshot] = useState<string>("")
   const fileInputRef = useRef<HTMLInputElement>(null)
 
+  // Auto Card availability: the auto-generated canvas card (candles + MA + BB +
+  // Entry/SL/TP levels) is only applicable when we have real OHLC candle data
+  // for the pair. If the /api/candles fetch fails (unsupported pair, market
+  // closed, Yahoo down) we hide the Auto Card entirely — no blank/broken card.
+  // Per the user's requirement: if autoCardData == null, hideAutoCard().
+  const autoCardAvailable = candles.length >= 5 // need at least ~5 candles for a chart
+  const autoCardStatus: "loading" | "available" | "no-data" = (() => {
+    // While the first fetch hasn't completed we don't know yet.
+    if (candles.length === 0 && symbol === "") return "loading"
+    if (autoCardAvailable) return "available"
+    return "no-data"
+  })()
+
   // The final screenshot used for publish + preview:
-  // uploaded real chart (with drawings) takes priority over the canvas card.
-  const finalScreenshot = uploadedScreenshot || screenshot
+  // uploaded real chart (with drawings) takes priority.
+  // The auto canvas card is only used when it's available (candles present).
+  const autoCardScreenshot = autoCardAvailable ? screenshot : ""
+  const finalScreenshot = uploadedScreenshot || autoCardScreenshot
 
   const createMutation = useMutation({
     mutationFn: async (data: Record<string, unknown>) => {
@@ -606,10 +621,14 @@ export function SignalManager() {
 
   const publish = () => {
     if (!entry || !stopLoss) { toast.error("Entry and SL required"); return }
-    // Priority: uploaded real-chart screenshot (with admin's drawings) > canvas card.
-    // Ensure the canvas card is fresh as a fallback.
+    // Priority: uploaded real-chart screenshot (with admin's drawings) > auto card.
+    // The auto card is only valid when candle data is available for the pair.
     let shot = uploadedScreenshot
     if (!shot) {
+      if (!autoCardAvailable) {
+        toast.error("Auto Card not available for this pair. Please upload a chart screenshot (📷 camera icon → Upload Chart).")
+        return
+      }
       shot = captureScreenshot()
     }
     if (!shot) { toast.error("Could not capture chart image"); return }
@@ -721,14 +740,20 @@ export function SignalManager() {
               <div ref={tvChartRef} style={{ height: "100%", width: "100%" }} />
             </div>
 
-            {/* 3-STEP FLOW instructions */}
+            {/* 3-STEP FLOW instructions — this IS the drawing-sync mechanism.
+                TradingView's iframe is cross-origin so JS can't read drawings;
+                the camera-icon → upload flow is how drawings reach the signal. */}
             <div className="rounded-lg border border-brand/30 bg-brand-muted/20 p-3">
-              <p className="text-[11px] font-bold text-foreground">📤 How to capture your drawn chart:</p>
+              <p className="text-[11px] font-bold text-foreground">📤 Drawing Sync — apni drawings ko capture me laane ka tareeqa:</p>
               <ol className="mt-1.5 space-y-0.5 text-[10px] text-muted-foreground">
-                <li><span className="font-bold text-brand">1.</span> Uper chart par left toolbar se S/R, Trendline, Fibonacci draw karein</li>
-                <li><span className="font-bold text-brand">2.</span> Chart ke top-right par <span className="font-bold">📷 camera icon</span> par click karein → PNG download ho jayegi (drawings + indicators ke saath)</li>
+                <li><span className="font-bold text-brand">1.</span> Uper chart par left toolbar se Trendline, Horizontal (S/R), Triangle, Channel, Fibonacci draw karein</li>
+                <li><span className="font-bold text-brand">2.</span> Chart ke top-right par <span className="font-bold">📷 camera icon</span> par click karein → PNG download ho jayegi (aapki drawings + MA + BB sab ke saath)</li>
                 <li><span className="font-bold text-brand">3.</span> Niche <span className="font-bold text-brand">"Upload Chart"</span> button par click karein → wo PNG select karein → preview me foran aa jayegi!</li>
               </ol>
+              <p className="mt-1.5 text-[9px] text-muted-foreground/80">
+                ℹ TradingView drawings ko direct canvas me sync nahi kiya ja sakta (CORS). Upload hi drawing-sync ka tareeqa hai.
+                {!autoCardAvailable && " • Is pair par Auto Card nahi ban raha — upload zaroori hai."}
+              </p>
             </div>
 
             {/* Upload Chart button + hidden file input */}
@@ -760,19 +785,33 @@ export function SignalManager() {
               <span className="text-[10px] text-muted-foreground">
                 {uploadedScreenshot
                   ? <span className="font-bold text-emerald-500">✓ Real chart uploaded (with your drawings)</span>
-                  : "No upload — using auto card (candles + MA + BB + levels)"}
+                  : autoCardAvailable
+                    ? "No upload — using auto card (candles + MA + BB + levels)"
+                    : <span className="font-bold text-amber-500">⚠ Auto Card not available for this pair — upload required</span>}
               </span>
             </div>
           </div>
 
           {/* Screenshot preview — shows uploaded real chart if present,
-              otherwise the auto-generated canvas card. */}
+              otherwise the auto-generated canvas card (only when available).
+              If neither exists (no upload + no candle data), show a "No data"
+              notice instead of a blank/broken card. */}
           {finalScreenshot ? (
             <div className="rounded-xl border-2 border-brand/40 overflow-hidden">
               <div className="bg-brand/10 px-3 py-1.5 text-[10px] font-bold text-brand">
                 {uploadedScreenshot ? "📷 Real Chart (with your drawings)" : "📊 Auto Card (candles + MA + BB + levels)"}
               </div>
               <img src={finalScreenshot} alt="Chart screenshot" className="w-full" />
+            </div>
+          ) : !uploadedScreenshot && !autoCardAvailable ? (
+            <div className="rounded-xl border-2 border-dashed border-amber-500/40 bg-amber-500/5 p-6 text-center">
+              <p className="text-sm font-bold text-amber-600">⚠ Auto Card not available for this pair</p>
+              <p className="mt-1 text-[11px] text-muted-foreground">
+                Candle data for this pair nahi mila (market band ho sakta hai ya pair supported nahi).
+                <br />
+                Chart ke <span className="font-bold">📷 camera icon</span> se PNG save karein aur
+                <span className="font-bold text-brand"> "Upload Chart"</span> button se upload karein.
+              </p>
             </div>
           ) : null}
 
