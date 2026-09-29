@@ -10,7 +10,7 @@ import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
 import {
   Save, Trash2, Loader2, TrendingUp, TrendingDown, Camera,
-  CheckCircle2, XCircle, Bell, Zap, RefreshCw,
+  CheckCircle2, XCircle, Bell, Zap, RefreshCw, Maximize2, Minimize2, X,
 } from "lucide-react"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { toast } from "sonner"
@@ -379,6 +379,14 @@ export function SignalManager() {
   // it uses the `hide_side_toolbar: false` config option.
   const tvChartRef = useRef<HTMLDivElement>(null)
 
+  // Fullscreen chart overlay — when open, the chart renders in a full-viewport
+  // overlay so the admin has maximum space to draw + zoom. Also fixes the
+  // touch-scroll bug: the overlay container uses touch-action:none +
+  // overscroll-behavior:contain so chart gestures (pan/zoom/draw) don't
+  // scroll the parent page.
+  const [chartFullscreen, setChartFullscreen] = useState(false)
+  const fullscreenChartRef = useRef<HTMLDivElement>(null)
+
   // Uploaded real-chart screenshot (from TradingView's camera icon). When set,
   // this OVERRIDES the auto-generated canvas card — so the signal shows the
   // admin's ACTUAL drawings (SELL box, S/R lines, Fibonacci) + indicators.
@@ -503,15 +511,9 @@ export function SignalManager() {
     void fetchCandles(symbol)
   }, [symbol, fetchPrice, fetchCandles])
 
-  // Mount/reload the TradingView advanced chart widget whenever the symbol
-  // changes. Uses the embed-widget-advanced-chart.js script (NOT the old
-  // widgetembed iframe) because only this approach reliably renders the LEFT
-  // DRAWING TOOLBAR (S/R lines, Trendline, Fibonacci retracement) via
-  // hide_side_toolbar: false. Also includes MA(20) + Bollinger Bands studies
-  // on the live chart.
-  useEffect(() => {
-    if (!tvChartRef.current) return
-    const container = tvChartRef.current
+  // Helper: inject the TradingView advanced-chart widget into a given container.
+  // Used by both the inline chart + the fullscreen overlay.
+  const mountTradingView = useCallback((container: HTMLDivElement) => {
     container.innerHTML = ""
 
     const widgetContainer = document.createElement("div")
@@ -546,11 +548,42 @@ export function SignalManager() {
 
     widgetContainer.appendChild(script)
     container.appendChild(widgetContainer)
+  }, [symbol])
 
+  // Mount/reload the inline chart whenever the symbol changes OR fullscreen
+  // closes (the container ref re-attaches). When fullscreen is open we don't
+  // mount the inline chart (it would be hidden anyway).
+  useEffect(() => {
+    if (chartFullscreen) return
+    if (!tvChartRef.current) return
+    const container = tvChartRef.current
+    mountTradingView(container)
     return () => {
       container.innerHTML = ""
     }
-  }, [symbol])
+  }, [symbol, chartFullscreen, mountTradingView])
+
+  // Mount the chart in the fullscreen overlay when it opens.
+  useEffect(() => {
+    if (!chartFullscreen) return
+    if (!fullscreenChartRef.current) return
+    const container = fullscreenChartRef.current
+    mountTradingView(container)
+    return () => {
+      container.innerHTML = ""
+    }
+  }, [chartFullscreen, mountTradingView])
+
+  // Lock body scroll while fullscreen chart is open (prevents background scroll).
+  useEffect(() => {
+    if (chartFullscreen) {
+      const prev = document.body.style.overflow
+      document.body.style.overflow = "hidden"
+      return () => {
+        document.body.style.overflow = prev
+      }
+    }
+  }, [chartFullscreen])
 
   // Fill Entry/SL/TP from the live price using per-pair default offsets.
   // Returns the screenshot data URL so publish can use it synchronously.
@@ -735,9 +768,32 @@ export function SignalManager() {
             {/* TradingView Advanced Chart widget — script-based embed.
                 Left drawing toolbar (S/R, Trendline, Fibonacci) + MA/BB studies.
                 Admin draws analysis here, then uses the camera icon to export a
-                PNG, then uploads it via the "Upload Chart" button below. */}
-            <div className="overflow-hidden rounded-xl border border-border" style={{ height: "500px" }}>
-              <div ref={tvChartRef} style={{ height: "100%", width: "100%" }} />
+                PNG, then uploads it via the "Upload Chart" button below.
+
+                TOUCH-SCROLL FIX: touch-action:none + overscroll-behavior:contain
+                on the wrapper so chart gestures (pan/zoom/draw) don't scroll the
+                parent page. The Fullscreen button opens the chart in a
+                full-viewport overlay for maximum drawing space. */}
+            <div className="relative">
+              <div
+                className="overflow-hidden rounded-xl border border-border"
+                style={{
+                  height: "500px",
+                  touchAction: "none",
+                  overscrollBehavior: "contain",
+                }}
+              >
+                <div ref={tvChartRef} style={{ height: "100%", width: "100%" }} />
+              </div>
+              {/* Fullscreen toggle button (top-right of chart) */}
+              <button
+                type="button"
+                onClick={() => setChartFullscreen(true)}
+                title="Open chart in fullscreen"
+                className="absolute right-2 top-2 z-10 flex h-8 w-8 items-center justify-center rounded-lg border border-border bg-background/80 text-foreground backdrop-blur transition hover:bg-background active:scale-95"
+              >
+                <Maximize2 className="h-4 w-4" />
+              </button>
             </div>
 
             {/* 3-STEP FLOW instructions — this IS the drawing-sync mechanism.
@@ -967,6 +1023,46 @@ export function SignalManager() {
         <p className="text-center text-[10px] text-muted-foreground">
           {signals.length - activeSignals.length} closed signal(s) hidden.
         </p>
+      )}
+
+      {/* ─────────────────────────────────────────────────────────────
+          FULLSCREEN CHART OVERLAY
+          Opens when chartFullscreen = true. Renders the TradingView chart in
+          a full-viewport overlay with touch-action:none so the admin can draw
+          + zoom without the page scrolling. Body scroll is locked via the
+          useEffect above. Exit via the X button (top-right) or the Exit button.
+          ───────────────────────────────────────────────────────────── */}
+      {chartFullscreen && (
+        <div
+          className="fixed inset-0 z-[300] flex flex-col bg-[#0A1929]"
+          style={{ touchAction: "none", overscrollBehavior: "contain" }}
+        >
+          {/* Overlay header — pair name + exit */}
+          <div className="flex items-center justify-between border-b border-white/10 bg-[#0B1B2E] px-3 py-2">
+            <div className="flex items-center gap-2">
+              <span className="text-sm font-extrabold text-white">{pairLabel(symbol)}</span>
+              {livePrice !== null && (
+                <span className="flex items-center gap-1 rounded bg-emerald-500/10 px-1.5 py-0.5 text-[11px] font-bold text-emerald-400">
+                  <span className="h-1 w-1 rounded-full bg-emerald-400 animate-pulse" />
+                  {formatPrice(symbol, livePrice)}
+                </span>
+              )}
+              <span className="text-[10px] text-white/40">Fullscreen · Draw freely, page won't scroll</span>
+            </div>
+            <button
+              type="button"
+              onClick={() => setChartFullscreen(false)}
+              title="Exit fullscreen"
+              className="flex h-9 items-center gap-1.5 rounded-lg bg-white/10 px-3 text-xs font-bold text-white transition hover:bg-white/20 active:scale-95"
+            >
+              <Minimize2 className="h-4 w-4" /> Exit
+            </button>
+          </div>
+          {/* Chart fills the rest of the overlay */}
+          <div className="relative flex-1" style={{ minHeight: 0 }}>
+            <div ref={fullscreenChartRef} style={{ height: "100%", width: "100%" }} />
+          </div>
+        </div>
       )}
     </div>
   )
