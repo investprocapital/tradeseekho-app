@@ -508,7 +508,7 @@ EUR/USD ने 1.0950 पर 3 बार same low बनाया। सबन�
 صنع EUR/USD نفس القاع عند 1.0950 ثلاث مرات. وضع الجميع وقف الخسارة عند 1.0945. سيدفع البنك السعر إلى 1.0940، يأكل وقف خسارة الجميع، ثم يصعد إلى 1.1050.`,
     },
     durationMin: 7,
-    isFree: true,
+    isFree: false,
     questions: [
       {
         type: "MCQ",
@@ -640,7 +640,7 @@ EUR/USD का Bullish OB 1.0900 था। Price 1.0890 पर close हुआ =
 كان OB الصعودي لـ EUR/USD عند 1.0900. أغلق السعر عند 1.0890 = فشل OB. الآن 1.0900 - 1.0910 يصبح بلوك كسر = منطقة بيع.`,
     },
     durationMin: 7,
-    isFree: true,
+    isFree: false,
     questions: [
       {
         type: "MCQ",
@@ -772,7 +772,7 @@ Price 1.1000, 1.1020, 1.1040 High बना रहा = BOS। अचानक 1
 صنع السعر قمم عند 1.1000، 1.1020، 1.1040 = BOS. فجأة كسر القاع عند 1.1020 = CHOCH = انتهى الصعود، الآن بيع.`,
     },
     durationMin: 7,
-    isFree: true,
+    isFree: false,
     questions: [
       {
         type: "MCQ",
@@ -896,7 +896,7 @@ London session सबसे ज़्यादा volatile है। इसक�
 عند الظهر النطاق 1.1000 - 1.1010. عند 1:30 ذهب السعر إلى 1.1015 (التقط BSL) ثم عاد بسرعة إلى 1.0990. هذا كان تلاعب لندن. بيع رابح.`,
     },
     durationMin: 7,
-    isFree: true,
+    isFree: false,
     questions: [
       {
         type: "MCQ",
@@ -1016,7 +1016,7 @@ NY open के बाद 3 candle का reversal। पहली liquidity ल�
 ابحث عن نماذج SMC فقط في هذا الوقت، لا تنظر إلى الرسم طوال اليوم.`,
     },
     durationMin: 7,
-    isFree: true,
+    isFree: false,
     questions: [
       {
         type: "MCQ",
@@ -1156,7 +1156,7 @@ Lot Size = Risk $ / (SL Pips × 0.10)`,
 حجم اللوت = المخاطرة $ / (نقاط الوقف × 0.10)`,
     },
     durationMin: 7,
-    isFree: true,
+    isFree: false,
     questions: [
       {
         type: "MCQ",
@@ -1284,7 +1284,7 @@ Strategy 10% है, Psychology 90% है।
 صفقتان فقط يومياً. أغلق اللابتوب بعد ربح واحد أو خسارتين. اكتب في اليوميات "اليوم كنت طماعاً".`,
     },
     durationMin: 7,
-    isFree: true,
+    isFree: false,
     questions: [
       {
         type: "MCQ",
@@ -1416,7 +1416,7 @@ NFP से पहले price ऊपर गई, NFP आया तो 100 pips �
 قبل NFP، صعد السعر. جاء NFP فهبط 100 نقطة. الذين اشتروا أولاً أُكل وقف خسارتهم.`,
     },
     durationMin: 7,
-    isFree: true,
+    isFree: false,
     questions: [
       {
         type: "MCQ",
@@ -1560,7 +1560,7 @@ Daily Uptrend, H1 ने CHOCH नहीं किया, M15 पर Bullish OB 
 صعود يومي، H1 لم يصنع CHOCH، OB صعودي على M15 = شراء مؤكد.`,
     },
     durationMin: 7,
-    isFree: true,
+    isFree: false,
     questions: [
       {
         type: "MCQ",
@@ -1688,7 +1688,7 @@ Backtest this setup 100 times on TradingView. If you get 60% win rate, this is y
 اختبر هذا النموذج 100 مرة على TradingView. إذا حصلت على معدل ربح 60%، فهذه استراتيجيتك الاحترافية.`,
     },
     durationMin: 7,
-    isFree: true,
+    isFree: false,
     questions: [
       {
         type: "MCQ",
@@ -1820,7 +1820,7 @@ SMC ليس للفوركس فقط، يعمل على BTC — بل أفضل لأن 
 في BTC اجعل وقف الخسارة كبيراً واللوت صغيراً.`,
     },
     durationMin: 7,
-    isFree: true,
+    isFree: false,
     questions: [
       {
         type: "MCQ",
@@ -1952,7 +1952,7 @@ $10,000 funded account = रोज़ $50 risk = 0.05 lot EUR/USD पर 20 pips
 حساب ممول $10,000 = مخاطرة يومية $50 = 0.05 لوت على EUR/USD بوقف 20 نقطة.`,
     },
     durationMin: 7,
-    isFree: true,
+    isFree: false,
     questions: [
       {
         type: "MCQ",
@@ -2116,7 +2116,7 @@ Live Trading + Journal + Funded Account।`,
 تداول مباشر + يوميات + حساب ممول.`,
     },
     durationMin: 7,
-    isFree: true,
+    isFree: false,
     questions: [
       {
         type: "MCQ",

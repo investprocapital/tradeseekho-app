@@ -276,6 +276,10 @@ function LevelBox({
 function LessonRow({ lesson, lang, isPro, onOpen, onPro, seqLocked }: { lesson: LessonListItemDTO; lang: string; isPro: boolean; onOpen: () => void; onPro: () => void; seqLocked?: boolean }) {
   const proLocked = !lesson.isFree && !isPro
   const isLocked = proLocked || seqLocked
+  // Show a blurred placeholder title for Pro-locked lessons so the user can't
+  // read the lesson name without upgrading. (Per requirement: blur titles.)
+  const titleText = lesson.title[lang] || lesson.title.en
+  const blurredTitle = proLocked ? "Locked — Upgrade to Pro to unlock" : titleText
   return (
     <button
       onClick={() => {
@@ -286,14 +290,22 @@ function LessonRow({ lesson, lang, isPro, onOpen, onPro, seqLocked }: { lesson: 
         }
         onOpen()
       }}
-      className={`flex items-center gap-3 rounded-xl border border-border bg-card p-3 text-start transition ${isLocked ? "opacity-60" : "hover:border-brand/50"}`}
+      className={`flex items-center gap-3 rounded-xl border border-border bg-card p-3 text-start transition ${proLocked ? "border-gold/30 opacity-90" : isLocked ? "opacity-60" : "hover:border-brand/50"}`}
     >
-      <span className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-white" style={{ background: lesson.categoryColor || "var(--brand)" }}>
-        <span className="text-xs font-extrabold">{lesson.orderInCategory}</span>
+      <span
+        className={`inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-white ${proLocked ? "bg-gold/80" : ""}`}
+        style={proLocked ? {} : { background: lesson.categoryColor || "var(--brand)" }}
+      >
+        {proLocked ? <Lock className="h-4 w-4" /> : <span className="text-xs font-extrabold">{lesson.orderInCategory}</span>}
       </span>
       <div className="min-w-0 flex-1">
-        <div className="truncate text-sm font-bold">{lesson.title[lang] || lesson.title.en}</div>
-        <div className="text-[11px] text-muted-foreground">{lesson.categorySlug} · {lesson.durationMin} min{!lesson.isFree && " · PRO"}{seqLocked && " · Locked"}</div>
+        <div className={`truncate text-sm font-bold ${proLocked ? "select-none blur-[3px]" : ""}`}>{blurredTitle}</div>
+        <div className="text-[11px] text-muted-foreground">
+          {lesson.categorySlug} · {lesson.durationMin} min
+          {proLocked && <span className="font-bold text-gold-foreground"> · PRO</span>}
+          {!proLocked && !lesson.isFree && " · PRO"}
+          {seqLocked && " · Locked"}
+        </div>
       </div>
       {proLocked ? (
         <span className="inline-flex items-center gap-1 rounded-full bg-gold/20 px-2 py-0.5 text-[10px] font-bold text-gold-foreground">
