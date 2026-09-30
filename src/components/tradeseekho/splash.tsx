@@ -3,6 +3,20 @@
 import { motion, AnimatePresence } from "framer-motion"
 import { useEffect, useState } from "react"
 
+/**
+ * Splash / Loading screen — shown on app load (and after login while data
+ * hydrates). Displays the TradeSeekho PK brand image (boy + T logo + tagline).
+ *
+ * Responsive across mobile / tablet / PC:
+ *   - Mobile (portrait): image fills width, height auto, centered.
+ *   - Tablet (portrait/landscape): image scales up, max 80vh height.
+ *   - PC (landscape): image constrained to max 600px width, centered.
+ *
+ * The image (splash-loading.jpg) is a full promotional graphic with the T
+ * logo, "TradeSeekho PK" text, "Learn. Trade. Grow." tagline, and a boy
+ * illustration — so we render it as a single responsive image instead of
+ * compositing separate elements.
+ */
 export function Splash({ onDone }: { onDone: () => void }) {
   const [visible, setVisible] = useState(true)
 
@@ -24,59 +38,32 @@ export function Splash({ onDone }: { onDone: () => void }) {
           className="fixed inset-0 z-[200] flex flex-col items-center justify-center overflow-hidden"
           style={{ backgroundColor: "#050D17" }}
         >
-          {/* Top section: Logo + Brand name + Tagline */}
-          <div className="flex flex-col items-center pt-[8vh]">
-            <motion.img
-              src="/tradeseekho-logo.png"
-              alt="TradeSeekho PK"
-              initial={{ scale: 0.8, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              transition={{ duration: 0.6, ease: "easeOut" }}
-              className="h-28 w-28 sm:h-32 sm:w-32"
-              draggable={false}
-            />
-            <motion.p
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.3, duration: 0.5 }}
-              className="mt-3 text-lg font-extrabold tracking-tight text-white"
-            >
-              TradeSeekho <span className="text-[#00D09C]">PK</span>
-            </motion.p>
-            <motion.p
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 0.5, duration: 0.4 }}
-              className="mt-1 text-[10px] font-medium tracking-[0.2em] text-white/30"
-            >
-              LEARN • TRADE • GROW
-            </motion.p>
-          </div>
-
-          {/* Bottom section: Boy illustration (solid dark bg, blends with splash) */}
-          <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.4, duration: 0.7 }}
-            className="flex flex-1 items-end justify-center"
-          >
-            <img
-              src="/splash-boy.png"
-              alt="Trader"
-              className="h-[50vh] w-auto max-w-[95vw] object-contain"
-              draggable={false}
-              style={{
-                maskImage: "linear-gradient(to top, #000 80%, transparent 100%)",
-                WebkitMaskImage: "linear-gradient(to top, #000 80%, transparent 100%)",
-              }}
-            />
-          </motion.div>
+          {/* Responsive brand image — scales to fit all screen sizes.
+              - Mobile:  w-full max-w-[420px], height auto
+              - Tablet:  sm:max-w-[520px]
+              - PC:      md:max-w-[600px], max-h-[85vh] (won't overflow vertically)
+              The image has a portrait aspect (~9:16) so on mobile it fills nicely;
+              on PC it's centered + capped so it doesn't get too tall. */}
+          <motion.img
+            src="/splash-loading.jpg"
+            alt="TradeSeekho PK — Learn. Trade. Grow."
+            initial={{ scale: 0.92, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            transition={{ duration: 0.7, ease: "easeOut" }}
+            className="h-auto w-full max-w-[420px] object-contain sm:max-w-[520px] md:max-w-[600px] md:max-h-[85vh]"
+            draggable={false}
+          />
 
           {/* Loading spinner — bottom center */}
-          <div className="absolute bottom-6 flex flex-col items-center gap-2">
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.5, duration: 0.4 }}
+            className="absolute bottom-6 flex flex-col items-center gap-2"
+          >
             <div className="h-7 w-7 animate-spin rounded-full border-2 border-[#00D09C]/30 border-t-[#00D09C]" />
-            <p className="text-[10px] font-medium tracking-[0.2em] text-white/30">LOADING...</p>
-          </div>
+            <p className="text-[10px] font-medium tracking-[0.2em] text-white/40">LOADING...</p>
+          </motion.div>
         </motion.div>
       )}
     </AnimatePresence>
