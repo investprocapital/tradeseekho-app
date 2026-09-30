@@ -6,15 +6,21 @@
   "scope": "/",
   "display": "standalone",
   "orientation": "portrait",
-  "background_color": "#0b1410",
+  "background_color": "#0A1929",
   "theme_color": "#00c853",
   "categories": ["education", "finance"],
   "icons": [
     {
-      "src": "/tradeseekho-logo.png",
+      "src": "/tradeseekho-icon-fullbleed.png",
       "sizes": "1024x1024",
       "type": "image/png",
-      "purpose": "any maskable"
+      "purpose": "any"
+    },
+    {
+      "src": "/tradeseekho-icon-fullbleed.png",
+      "sizes": "1024x1024",
+      "type": "image/png",
+      "purpose": "maskable"
     }
   ]
 }

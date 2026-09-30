@@ -43,8 +43,8 @@ export const metadata: Metadata = {
   authors: [{ name: "TradeSeekho PK" }],
   creator: "TradeSeekho PK",
   icons: {
-    icon: "/tradeseekho-logo.png",
-    apple: "/tradeseekho-logo.png",
+    icon: "/tradeseekho-icon-fullbleed.png",
+    apple: "/tradeseekho-icon-fullbleed.png",
   },
   openGraph: {
     type: "website",
