@@ -8,7 +8,6 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
-import { Switch } from "@/components/ui/switch"
 import {
   Save, Trash2, Loader2, TrendingUp, TrendingDown, Camera,
   CheckCircle2, XCircle, Bell, Zap, RefreshCw, Maximize2, Minimize2, X, EyeOff,
@@ -672,6 +671,7 @@ export function SignalManager() {
     }
     if (!shot) { toast.error("Could not capture chart image"); return }
     setBusy(true)
+    toast.info(hideLevels ? "🔒 Publishing chart-only signal (levels hidden)" : "📊 Publishing signal with levels")
     createMutation.mutateAsync({
       symbol, signalType, entry, stopLoss,
       tp1: tp1 || null, tp2: tp2 || null, tp3: tp3 || null,
@@ -882,23 +882,33 @@ export function SignalManager() {
 
           {/* HIDE ENTRY/SL/TP TOGGLE — when ON, the published signal shows ONLY
               the chart image (no Entry/SL/TP values on the client). Used for
-              chart-only signals. Chart image always goes through regardless. */}
-          <div className={`flex items-center justify-between rounded-xl border p-3 transition ${hideLevels ? "border-gold/50 bg-gold/5" : "border-border bg-card"}`}>
-            <div className="flex items-center gap-2.5">
-              <span className={`inline-flex h-8 w-8 items-center justify-center rounded-lg ${hideLevels ? "bg-gold/20 text-gold-foreground" : "bg-muted text-muted-foreground"}`}>
-                <EyeOff className="h-4 w-4" />
+              chart-only signals. Chart image always goes through regardless.
+              Big prominent toggle so the admin can clearly see when it's ON. */}
+          <button
+            type="button"
+            onClick={() => {
+              const next = !hideLevels
+              setHideLevels(next)
+              toast.success(next ? "🔒 Hide ON — Entry/SL/TP will be hidden from clients" : "🔓 Hide OFF — Entry/SL/TP will be visible to clients")
+            }}
+            className={`flex w-full items-center justify-between rounded-xl border-2 p-4 transition active:scale-[0.99] ${hideLevels ? "border-gold bg-gold/10" : "border-border bg-card"}`}
+          >
+            <div className="flex items-center gap-3">
+              <span className={`inline-flex h-10 w-10 items-center justify-center rounded-lg transition ${hideLevels ? "bg-gold text-white" : "bg-muted text-muted-foreground"}`}>
+                <EyeOff className="h-5 w-5" />
               </span>
-              <div>
-                <div className="text-sm font-bold text-foreground">Hide Entry / SL / TP</div>
-                <div className="text-[10px] text-muted-foreground">
-                  {hideLevels
-                    ? "ON — sirf chart image jayegi, levels client par hide honge"
-                    : "OFF — Entry/SL/TP values client ko dikhenge"}
+              <div className="text-start">
+                <div className="text-sm font-extrabold text-foreground">Hide Entry / SL / TP</div>
+                <div className={`text-[11px] font-bold ${hideLevels ? "text-gold-foreground" : "text-muted-foreground"}`}>
+                  {hideLevels ? "🔒 ON — sirf chart image jayegi" : "🔓 OFF — levels visible"}
                 </div>
               </div>
             </div>
-            <Switch checked={hideLevels} onCheckedChange={setHideLevels} />
-          </div>
+            {/* Big custom toggle indicator */}
+            <div className={`flex h-7 w-12 items-center rounded-full p-1 transition ${hideLevels ? "bg-gold" : "bg-muted"}`}>
+              <div className={`h-5 w-5 rounded-full bg-white shadow transition-transform ${hideLevels ? "translate-x-5" : "translate-x-0"}`} />
+            </div>
+          </button>
 
           <div className="grid grid-cols-2 gap-3">
             <div className="col-span-2">
