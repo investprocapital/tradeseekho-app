@@ -148,6 +148,18 @@ const en: Dict = {
   "signal.chartOnlyTitle": "Chart Analysis Only",
   "signal.chartOnlyBody": "Entry/SL/TP levels are not shared in this signal. View the chart image only.",
   "signal.chartOnlyTap": "Chart analysis only — tap to view",
+  "pro.address": "Address:",
+  "pro.network": "Network:",
+  "pro.amount": "Amount:",
+  "pro.usdtWarning": "⚠ Do not send on the wrong network — only TRC20 (Tron). After sending USDT, writing Transaction Hash / TxID is mandatory.",
+  "pro.uploadScreenshot": "Upload payment screenshot",
+  "pro.tapToUpload": "Tap to upload",
+  "pro.txIdNote": "Transaction ID / note",
+  "pro.txIdRequired": "(TxID required for USDT)",
+  "pro.txIdPlaceholderUsdt": "Paste Transaction Hash / TxID here (required)",
+  "pro.txIdPlaceholderOther": "e.g. JazzCash TID 12345678",
+  "pro.copyAddress": "Copy Address",
+  "pro.usdtSectionTitle": "USDT TRC20 · Binance · Tron Network",
 }
 
 const ur: Dict = {
@@ -276,6 +288,18 @@ const ur: Dict = {
   "signal.chartOnlyTitle": "صرف چارٹ تجزیہ",
   "signal.chartOnlyBody": "اس سگنل میں Entry/SL/TP levels شیئر نہیں کیے گئے۔ صرف چارٹ امیج دیکھیں۔",
   "signal.chartOnlyTap": "صرف چارٹ تجزیہ — دیکھنے کے لیے ٹیپ کریں",
+  "pro.address": "ایڈریس:",
+  "pro.network": "نیٹ ورک:",
+  "pro.amount": "رقم:",
+  "pro.usdtWarning": "⚠ غلط نیٹ ورک پر مت بھیجیں — صرف TRC20 (Tron)۔ USDT بھیجنے کے بعد Transaction Hash / TxID لازمی لکھیں۔",
+  "pro.uploadScreenshot": "ادائیگی کا اسکرین شاٹ اپ لوڈ کریں",
+  "pro.tapToUpload": "اپ لوڈ کرنے کے لیے ٹیپ کریں",
+  "pro.txIdNote": "ٹرانزیکشن ID / نوٹ",
+  "pro.txIdRequired": "(USDT کے لیے TxID ضروری ہے)",
+  "pro.txIdPlaceholderUsdt": "Transaction Hash / TxID یہاں پیسٹ کریں (ضروری)",
+  "pro.txIdPlaceholderOther": "مثلاً JazzCash TID 12345678",
+  "pro.copyAddress": "ایڈریس کاپی کریں",
+  "pro.usdtSectionTitle": "USDT TRC20 · Binance · Tron Network",
 }
 
 const hi: Dict = {
@@ -404,6 +428,18 @@ const hi: Dict = {
   "signal.chartOnlyTitle": "केवल चार्ट विश्लेषण",
   "signal.chartOnlyBody": "इस सिग्नल में Entry/SL/TP levels शेयर नहीं किए गए हैं। केवल चार्ट इमेज देखें।",
   "signal.chartOnlyTap": "केवल चार्ट विश्लेषण — देखने के लिए टैप करें",
+  "pro.address": "पता:",
+  "pro.network": "नेटवर्क:",
+  "pro.amount": "राशि:",
+  "pro.usdtWarning": "⚠ गलत नेटवर्क पर मत भेजें — केवल TRC20 (Tron)। USDT भेजने के बाद Transaction Hash / TxID जरूर लिखें।",
+  "pro.uploadScreenshot": "भुगतान स्क्रीनशॉट अपलोड करें",
+  "pro.tapToUpload": "अपलोड करने के लिए टैप करें",
+  "pro.txIdNote": "ट्रांज़ैक्शन ID / नोट",
+  "pro.txIdRequired": "(USDT के लिए TxID आवश्यक)",
+  "pro.txIdPlaceholderUsdt": "Transaction Hash / TxID यहाँ पेस्ट करें (आवश्यक)",
+  "pro.txIdPlaceholderOther": "जैसे JazzCash TID 12345678",
+  "pro.copyAddress": "पता कॉपी करें",
+  "pro.usdtSectionTitle": "USDT TRC20 · Binance · Tron Network",
 }
 
 const ar: Dict = {
@@ -532,6 +568,18 @@ const ar: Dict = {
   "signal.chartOnlyTitle": "تحليل الرسم البياني فقط",
   "signal.chartOnlyBody": "لم تتم مشاركة مستويات Entry/SL/TP في هذه الإشارة. اعرض صورة الرسم البياني فقط.",
   "signal.chartOnlyTap": "تحليل الرسم البياني فقط — اضغط للعرض",
+  "pro.address": "العنوان:",
+  "pro.network": "الشبكة:",
+  "pro.amount": "المبلغ:",
+  "pro.usdtWarning": "⚠ لا ترسل على شبكة خاطئة — فقط TRC20 (Tron). بعد إرسال USDT، كتابة Transaction Hash / TxID إلزامية.",
+  "pro.uploadScreenshot": "ارفع لقطة شاشة الدفع",
+  "pro.tapToUpload": "اضغط للرفع",
+  "pro.txIdNote": "معرف المعاملة / ملاحظة",
+  "pro.txIdRequired": "(TxID مطلوب لـ USDT)",
+  "pro.txIdPlaceholderUsdt": "الصق Transaction Hash / TxID هنا (مطلوب)",
+  "pro.txIdPlaceholderOther": "مثلاً JazzCash TID 12345678",
+  "pro.copyAddress": "نسخ العنوان",
+  "pro.usdtSectionTitle": "USDT TRC20 · Binance · Tron Network",
 }
 
 export const DICTS: Record<Lang, Dict> = { en, ur, hi, ar }

@@ -11,7 +11,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
 import { Crown, Copy, Upload, Loader2, AlertCircle, CheckCircle2, Clock, Smartphone, Image as ImageIcon, CreditCard, Globe, Coins } from "lucide-react"
-import { useStore } from "@/lib/store"
+import { useStore, useT } from "@/lib/store"
 import { useProMe, useSubmitProRequest } from "./use-data"
 import { toast } from "sonner"
 
@@ -43,6 +43,9 @@ export function ProDialog() {
   const open = useStore((s) => s.proOpen)
   const setOpen = useStore((s) => s.setProOpen)
   const setLoginOpen = useStore((s) => s.setLoginOpen)
+  const t = useT()
+  const lang = useStore((s) => s.lang)
+  const rtlFont = lang === "ur" ? "font-urdu" : lang === "ar" ? "font-arabic" : ""
   const { data: session } = useSession()
   const { data: proMe, isLoading } = useProMe()
   const submit = useSubmitProRequest()
@@ -237,28 +240,28 @@ export function ProDialog() {
                   <div className="flex items-start gap-2">
                     <Coins className="mt-0.5 h-5 w-5 shrink-0 text-[#26A17B]" />
                     <div className="flex-1">
-                      <div className="text-[11px] uppercase tracking-wide text-muted-foreground">USDT TRC20 · Binance · Tron Network</div>
+                      <div className={`text-[11px] uppercase tracking-wide text-muted-foreground ${rtlFont}`}>{t("pro.usdtSectionTitle")}</div>
                       <div className="mt-1.5 space-y-1">
                         <div className="flex items-center justify-between gap-2">
-                          <span className="text-[10px] text-muted-foreground">Address:</span>
+                          <span className={`text-[10px] text-muted-foreground ${rtlFont}`}>{t("pro.address")}</span>
                           <span className="break-all text-right font-mono text-[11px] font-bold text-foreground">{settings?.usdtAddress || "Paste your TRC20 wallet address here"}</span>
                         </div>
                         <div className="flex items-center justify-between">
-                          <span className="text-[10px] text-muted-foreground">Network:</span>
+                          <span className={`text-[10px] text-muted-foreground ${rtlFont}`}>{t("pro.network")}</span>
                           <span className="text-xs font-bold text-[#26A17B]">TRC20 / Tron</span>
                         </div>
                         <div className="flex items-center justify-between">
-                          <span className="text-[10px] text-muted-foreground">Amount:</span>
+                          <span className={`text-[10px] text-muted-foreground ${rtlFont}`}>{t("pro.amount")}</span>
                           <span className="text-xs font-bold text-foreground">${usdPrice} USDT</span>
                         </div>
                       </div>
                       <div className="mt-2 flex justify-end">
                         <Button type="button" size="sm" variant="outline" className="gap-1.5" onClick={() => copy(settings?.usdtAddress || "")}>
-                          <Copy className="h-3.5 w-3.5" /> Copy Address
+                          <Copy className="h-3.5 w-3.5" /> {t("pro.copyAddress")}
                         </Button>
                       </div>
-                      <div className="mt-2 rounded-lg bg-red-500/10 p-2 text-[10px] font-bold text-destructive">
-                        ⚠ Galat network pe mat bhejen — sirf TRC20 (Tron). USDT bhejne ke baad Transaction Hash / TxID lazmi likhen.
+                      <div className={`mt-2 rounded-lg bg-red-500/10 p-2 text-[10px] font-bold text-destructive ${rtlFont}`}>
+                        {t("pro.usdtWarning")}
                       </div>
                     </div>
                   </div>
@@ -283,7 +286,7 @@ export function ProDialog() {
               {/* Screenshot upload (not required for Card method) */}
               {method !== "Card" && (
               <div>
-                <Label className="mb-2 block text-xs font-bold uppercase tracking-wide text-muted-foreground">2. Upload payment screenshot</Label>
+                <Label className={`mb-2 block text-xs font-bold uppercase tracking-wide text-muted-foreground ${rtlFont}`}>2. {t("pro.uploadScreenshot")}</Label>
                 <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={onFile} />
                 {filePreview ? (
                   <div className="relative overflow-hidden rounded-xl border border-border">
@@ -293,7 +296,7 @@ export function ProDialog() {
                 ) : (
                   <button type="button" onClick={() => fileRef.current?.click()} className="flex w-full flex-col items-center gap-2 rounded-xl border-2 border-dashed border-border bg-muted/30 py-6 text-center transition hover:border-brand/50 hover:bg-muted/50">
                     <ImageIcon className="h-6 w-6 text-muted-foreground" />
-                    <span className="text-sm font-bold">Tap to upload</span>
+                    <span className={`text-sm font-bold ${rtlFont}`}>{t("pro.tapToUpload")}</span>
                     <span className="text-[10px] text-muted-foreground">JPG/PNG • max 4MB</span>
                   </button>
                 )}
@@ -302,8 +305,8 @@ export function ProDialog() {
 
               {/* Optional note */}
               <div className="space-y-1.5">
-                <Label htmlFor="note">Transaction ID / note {method === "USDT" && <span className="font-bold text-destructive">(TxID required for USDT)</span>}</Label>
-                <Textarea id="note" value={note} onChange={(e) => setNote(e.target.value)} rows={2} placeholder={method === "USDT" ? "Paste Transaction Hash / TxID here (required)" : "e.g. JazzCash TID 12345678"} className="text-sm" />
+                <Label htmlFor="note" className={rtlFont}>{t("pro.txIdNote")} {method === "USDT" && <span className="font-bold text-destructive">{t("pro.txIdRequired")}</span>}</Label>
+                <Textarea id="note" value={note} onChange={(e) => setNote(e.target.value)} rows={2} placeholder={method === "USDT" ? t("pro.txIdPlaceholderUsdt") : t("pro.txIdPlaceholderOther")} className="text-sm" />
               </div>
 
               {err && (
