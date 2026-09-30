@@ -51,6 +51,10 @@ interface AppState {
   bookmarksOpen: boolean
   setBookmarksOpen: (v: boolean) => void
 
+  // Live Signals list sheet (opened from the home-screen summary box)
+  signalsOpen: boolean
+  setSignalsOpen: (v: boolean) => void
+
   certOpen: boolean
   setCertOpen: (v: boolean) => void
 
@@ -132,6 +136,9 @@ export const useStore = create<AppState>()(
 
       bookmarksOpen: false,
       setBookmarksOpen: (v) => set({ bookmarksOpen: v }),
+
+      signalsOpen: false,
+      setSignalsOpen: (v) => set({ signalsOpen: v }),
 
       certOpen: false,
       setCertOpen: (v) => set({ certOpen: v }),

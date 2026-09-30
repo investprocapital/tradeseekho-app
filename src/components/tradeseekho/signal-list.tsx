@@ -2,11 +2,14 @@
 
 import { useState } from "react"
 import { motion, AnimatePresence } from "framer-motion"
-import { TrendingUp, TrendingDown, X, Copy, BarChart3, ChevronRight, CheckCircle2, XCircle } from "lucide-react"
+import { TrendingUp, TrendingDown, X, Copy, BarChart3, ChevronRight, CheckCircle2, XCircle, Radio } from "lucide-react"
 import { useQuery } from "@tanstack/react-query"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet"
+import { ScrollArea } from "@/components/ui/scroll-area"
 import { toast } from "sonner"
+import { useStore } from "@/lib/store"
 import { pairLabel } from "@/lib/signals"
 
 interface Signal {
@@ -61,6 +64,8 @@ export function SignalList() {
   const { data, isLoading } = useQuery({ queryKey: ["signals"], queryFn: fetchSignals, staleTime: 30_000 })
   const [selected, setSelected] = useState<Signal | null>(null)
   const [showChart, setShowChart] = useState(false)
+  const signalsOpen = useStore((s) => s.signalsOpen)
+  const setSignalsOpen = useStore((s) => s.setSignalsOpen)
 
   const signals = data?.signals ?? []
 
@@ -78,82 +83,121 @@ export function SignalList() {
   if (isLoading) return null
   if (signals.length === 0) return null
 
+  // Summary box content:
+  // - 1 signal → show "PAIR - BUY/SELL" (e.g. "OIL - BUY")
+  // - multiple signals → show "N Active: GOLD, BTC, EURUSD" (max 4 names)
+  const pairNames = signals.map((s) => pairLabel(s.symbol))
+  const summaryText =
+    signals.length === 1
+      ? `${pairNames[0]} - ${signals[0].signalType}`
+      : `${signals.length} Active: ${pairNames.slice(0, 4).join(", ")}${pairNames.length > 4 ? "…" : ""}`
+
   return (
     <>
       <section className="mt-2">
-        <div className="mb-2 flex items-center justify-between px-1">
-          <h2 className="text-base font-extrabold tracking-tight text-foreground flex items-center gap-1.5">
-            <TrendingUp className="h-4 w-4 text-brand" />
-            Live Signals
-          </h2>
-          <span className="text-[10px] font-bold text-muted-foreground">{signals.length} active</span>
-        </div>
-        <div className="grid gap-2.5">
-          {signals.map((s) => {
-            const badge = STATUS_BADGE[s.status] ?? STATUS_BADGE.active
-            const isLoss = s.status === "sl_hit"
-            return (
-              <motion.button
-                key={s.id}
-                initial={{ opacity: 0, y: 8 }}
-                animate={{ opacity: 1, y: 0 }}
-                onClick={() => setSelected(s)}
-                className="flex items-center gap-3 rounded-xl border border-border bg-card p-3 text-start transition hover:border-brand/50"
-              >
-                {chartImage(s) ? (
-                  <img src={chartImage(s)} alt="" className="h-12 w-16 shrink-0 rounded-lg object-cover" draggable={false} />
-                ) : (
-                  // Fallback mini signal-card when no captured image exists.
-                  // When hideLevels=true, don't show the entry value.
-                  <div className="flex h-12 w-16 shrink-0 flex-col justify-center rounded-lg bg-gradient-to-br from-[#0B1B2E] to-[#0A1929] px-1.5">
-                    <span className="text-[8px] font-bold text-white">{pairLabel(s.symbol)}</span>
-                    <span className={`text-[8px] font-bold ${s.signalType === "BUY" ? "text-emerald-400" : "text-red-400"}`}>{s.signalType}</span>
-                    {!s.hideLevels && <span className="text-[7px] text-white/60">{s.entry}</span>}
-                    {s.hideLevels && <span className="text-[7px] text-gold/80">🔒</span>}
-                  </div>
-                )}
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-center gap-1.5 flex-wrap">
-                    <span className="text-sm font-bold">{pairLabel(s.symbol)}</span>
-                    <Badge className={s.signalType === "BUY" ? "bg-brand text-brand-foreground text-[9px]" : "bg-destructive text-white text-[9px]"}>
-                      {s.signalType === "BUY" ? <TrendingUp className="mr-0.5 h-2.5 w-2.5" /> : <TrendingDown className="mr-0.5 h-2.5 w-2.5" />}
-                      {s.signalType}
-                    </Badge>
-                    {/* TP/SL HIT badge — the key Phase-1 feature */}
-                    {s.status !== "active" && (
-                      <Badge className={`text-[9px] ${badge.cls}`}>{badge.label}</Badge>
-                    )}
-                    {/* Chart-only badge when levels are hidden */}
-                    {s.hideLevels && (
-                      <Badge className="text-[9px] bg-gold/20 text-gold-foreground">CHART ONLY</Badge>
-                    )}
-                  </div>
-                  {/* Entry/SL/TP line — hidden when hideLevels is true */}
-                  {!s.hideLevels && (
-                    <div className="mt-0.5 text-[11px] text-muted-foreground">
-                      Entry: <span className="font-bold text-foreground">{s.entry}</span>
-                      {" · "}SL: <span className="font-bold text-destructive">{s.stopLoss}</span>
-                      {s.tp1 && <span>{" · "}TP: <span className="font-bold text-brand">{s.tp1}</span></span>}
-                    </div>
-                  )}
-                  {s.hideLevels && (
-                    <div className="mt-0.5 text-[11px] text-muted-foreground italic">
-                      Chart analysis only — tap to view
-                    </div>
-                  )}
-                  {/* Profit/loss line when a hit has occurred (only if levels visible) */}
-                  {!s.hideLevels && s.profitUsd !== null && (
-                    <div className={`mt-0.5 text-[10px] font-bold ${s.profitUsd >= 0 ? "text-emerald-500" : "text-destructive"}`}>
-                      {isLoss ? "❌ " : "✅ "}{s.profitUsd >= 0 ? `+$${s.profitUsd}` : `-$${Math.abs(s.profitUsd)}`} {s.profitUsd >= 0 ? "Profit" : "Loss"}
-                    </div>
-                  )}
-                </div>
-                <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" />
-              </motion.button>
-            )
-          })}
-        </div>
+        {/* Clickable summary box — opens the full signals list in a Sheet.
+            Single signal → "OIL - BUY". Multiple → "3 Active: GOLD, BTC, EURUSD". */}
+        <motion.button
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          onClick={() => setSignalsOpen(true)}
+          className="flex w-full items-center gap-3 rounded-xl border-2 border-brand/30 bg-gradient-to-r from-brand/5 to-transparent p-3 text-start transition hover:border-brand/60 hover:from-brand/10 active:scale-[0.99]"
+        >
+          <span className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-brand text-brand-foreground">
+            <Radio className="h-5 w-5 animate-pulse" />
+          </span>
+          <div className="min-w-0 flex-1">
+            <div className="flex items-center gap-1.5">
+              <span className="text-sm font-extrabold text-foreground">Live Signals</span>
+              <span className="rounded-full bg-brand/15 px-1.5 py-0.5 text-[9px] font-bold text-brand">
+                {signals.length} active
+              </span>
+            </div>
+            <div className="mt-0.5 truncate text-[11px] font-bold text-muted-foreground">
+              {summaryText}
+            </div>
+          </div>
+          <ChevronRight className="h-5 w-5 shrink-0 text-brand" />
+        </motion.button>
       </section>
+
+      {/* Full signals list — opens in a right-side Sheet when the summary box
+          is clicked. Shows all active signals as individual cards. */}
+      <Sheet open={signalsOpen} onOpenChange={setSignalsOpen}>
+        <SheetContent side="right" className="flex h-full w-full flex-col gap-0 p-0 sm:max-w-md">
+          <SheetHeader className="border-b border-border p-5">
+            <SheetTitle className="flex items-center gap-2 text-xl font-extrabold">
+              <Radio className="h-5 w-5 text-brand animate-pulse" /> Live Signals
+            </SheetTitle>
+            <SheetDescription>
+              {signals.length} active signal{signals.length !== 1 ? "s" : ""} · tap any to view details
+            </SheetDescription>
+          </SheetHeader>
+          <ScrollArea className="ts-scroll flex-1">
+            <div className="p-4">
+              <div className="grid gap-2.5">
+                {signals.map((s) => {
+                  const badge = STATUS_BADGE[s.status] ?? STATUS_BADGE.active
+                  const isLoss = s.status === "sl_hit"
+                  return (
+                    <motion.button
+                      key={s.id}
+                      initial={{ opacity: 0, y: 8 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      onClick={() => { setSelected(s); setSignalsOpen(false) }}
+                      className="flex items-center gap-3 rounded-xl border border-border bg-card p-3 text-start transition hover:border-brand/50"
+                    >
+                      {chartImage(s) ? (
+                        <img src={chartImage(s)} alt="" className="h-12 w-16 shrink-0 rounded-lg object-cover" draggable={false} />
+                      ) : (
+                        <div className="flex h-12 w-16 shrink-0 flex-col justify-center rounded-lg bg-gradient-to-br from-[#0B1B2E] to-[#0A1929] px-1.5">
+                          <span className="text-[8px] font-bold text-white">{pairLabel(s.symbol)}</span>
+                          <span className={`text-[8px] font-bold ${s.signalType === "BUY" ? "text-emerald-400" : "text-red-400"}`}>{s.signalType}</span>
+                          {!s.hideLevels && <span className="text-[7px] text-white/60">{s.entry}</span>}
+                          {s.hideLevels && <span className="text-[7px] text-gold/80">🔒</span>}
+                        </div>
+                      )}
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          <span className="text-sm font-bold">{pairLabel(s.symbol)}</span>
+                          <Badge className={s.signalType === "BUY" ? "bg-brand text-brand-foreground text-[9px]" : "bg-destructive text-white text-[9px]"}>
+                            {s.signalType === "BUY" ? <TrendingUp className="mr-0.5 h-2.5 w-2.5" /> : <TrendingDown className="mr-0.5 h-2.5 w-2.5" />}
+                            {s.signalType}
+                          </Badge>
+                          {s.status !== "active" && (
+                            <Badge className={`text-[9px] ${badge.cls}`}>{badge.label}</Badge>
+                          )}
+                          {s.hideLevels && (
+                            <Badge className="text-[9px] bg-gold/20 text-gold-foreground">CHART ONLY</Badge>
+                          )}
+                        </div>
+                        {!s.hideLevels && (
+                          <div className="mt-0.5 text-[11px] text-muted-foreground">
+                            Entry: <span className="font-bold text-foreground">{s.entry}</span>
+                            {" · "}SL: <span className="font-bold text-destructive">{s.stopLoss}</span>
+                            {s.tp1 && <span>{" · "}TP: <span className="font-bold text-brand">{s.tp1}</span></span>}
+                          </div>
+                        )}
+                        {s.hideLevels && (
+                          <div className="mt-0.5 text-[11px] text-muted-foreground italic">
+                            Chart analysis only — tap to view
+                          </div>
+                        )}
+                        {!s.hideLevels && s.profitUsd !== null && (
+                          <div className={`mt-0.5 text-[10px] font-bold ${s.profitUsd >= 0 ? "text-emerald-500" : "text-destructive"}`}>
+                            {isLoss ? "❌ " : "✅ "}{s.profitUsd >= 0 ? `+$${s.profitUsd}` : `-$${Math.abs(s.profitUsd)}`} {s.profitUsd >= 0 ? "Profit" : "Loss"}
+                          </div>
+                        )}
+                      </div>
+                      <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" />
+                    </motion.button>
+                  )
+                })}
+              </div>
+            </div>
+          </ScrollArea>
+        </SheetContent>
+      </Sheet>
 
       {/* Signal Detail Modal */}
       <AnimatePresence>
