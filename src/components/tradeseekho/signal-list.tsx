@@ -104,10 +104,12 @@ export function SignalList() {
                   <img src={chartImage(s)} alt="" className="h-12 w-16 shrink-0 rounded-lg object-cover" draggable={false} />
                 ) : (
                   // Fallback mini signal-card when no captured image exists.
+                  // When hideLevels=true, don't show the entry value.
                   <div className="flex h-12 w-16 shrink-0 flex-col justify-center rounded-lg bg-gradient-to-br from-[#0B1B2E] to-[#0A1929] px-1.5">
                     <span className="text-[8px] font-bold text-white">{pairLabel(s.symbol)}</span>
                     <span className={`text-[8px] font-bold ${s.signalType === "BUY" ? "text-emerald-400" : "text-red-400"}`}>{s.signalType}</span>
-                    <span className="text-[7px] text-white/60">{s.entry}</span>
+                    {!s.hideLevels && <span className="text-[7px] text-white/60">{s.entry}</span>}
+                    {s.hideLevels && <span className="text-[7px] text-gold/80">🔒</span>}
                   </div>
                 )}
                 <div className="min-w-0 flex-1">
@@ -185,32 +187,46 @@ export function SignalList() {
                 </Button>
               </div>
 
-              {/* Chart image — captured screenshot, or a styled fallback card */}
+              {/* Chart image — captured screenshot, or a styled fallback card.
+                  When hideLevels is true, the Entry/SL/TP overlay labels on top
+                  of the chart are ALSO hidden (per user requirement). Only the
+                  raw chart image + the admin's drawings (S/R, Trendline) show. */}
               {chartImage(selected) ? (
                 <div className="relative">
                   <img src={chartImage(selected)} alt="Chart" className="w-full" draggable={false} />
-                  {/* Entry/SL/TP labels overlay — highlight the hit ones */}
-                  <div className="absolute top-2 left-2 flex flex-col gap-1">
-                    <span className="rounded bg-brand/90 px-2 py-0.5 text-[10px] font-bold text-white">Entry: {selected.entry}</span>
-                    <span className={`rounded px-2 py-0.5 text-[10px] font-bold text-white ${selected.slHitAt ? "bg-red-600" : "bg-destructive/90"}`}>
-                      SL: {selected.stopLoss} {selected.slHitAt && "❌"}
-                    </span>
-                    {selected.tp1 && (
-                      <span className={`rounded px-2 py-0.5 text-[10px] font-bold text-white ${selected.tp1HitAt ? "bg-emerald-500" : "bg-brand/90"}`}>
-                        TP1: {selected.tp1} {selected.tp1HitAt && "✅"}
+                  {/* Entry/SL/TP labels overlay — HIDDEN when hideLevels is true.
+                      Only show when levels are meant to be visible. */}
+                  {!selected.hideLevels && (
+                    <div className="absolute top-2 left-2 flex flex-col gap-1">
+                      <span className="rounded bg-brand/90 px-2 py-0.5 text-[10px] font-bold text-white">Entry: {selected.entry}</span>
+                      <span className={`rounded px-2 py-0.5 text-[10px] font-bold text-white ${selected.slHitAt ? "bg-red-600" : "bg-destructive/90"}`}>
+                        SL: {selected.stopLoss} {selected.slHitAt && "❌"}
                       </span>
-                    )}
-                    {selected.tp2 && (
-                      <span className={`rounded px-2 py-0.5 text-[10px] font-bold text-white ${selected.tp2HitAt ? "bg-sky-500" : "bg-brand/80"}`}>
-                        TP2: {selected.tp2} {selected.tp2HitAt && "✅"}
-                      </span>
-                    )}
-                    {selected.tp3 && (
-                      <span className={`rounded px-2 py-0.5 text-[10px] font-bold text-white ${selected.tp3HitAt ? "bg-blue-800" : "bg-brand/70"}`}>
-                        TP3: {selected.tp3} {selected.tp3HitAt && "✅"}
-                      </span>
-                    )}
-                  </div>
+                      {selected.tp1 && (
+                        <span className={`rounded px-2 py-0.5 text-[10px] font-bold text-white ${selected.tp1HitAt ? "bg-emerald-500" : "bg-brand/90"}`}>
+                          TP1: {selected.tp1} {selected.tp1HitAt && "✅"}
+                        </span>
+                      )}
+                      {selected.tp2 && (
+                        <span className={`rounded px-2 py-0.5 text-[10px] font-bold text-white ${selected.tp2HitAt ? "bg-sky-500" : "bg-brand/80"}`}>
+                          TP2: {selected.tp2} {selected.tp2HitAt && "✅"}
+                        </span>
+                      )}
+                      {selected.tp3 && (
+                        <span className={`rounded px-2 py-0.5 text-[10px] font-bold text-white ${selected.tp3HitAt ? "bg-blue-800" : "bg-brand/70"}`}>
+                          TP3: {selected.tp3} {selected.tp3HitAt && "✅"}
+                        </span>
+                      )}
+                    </div>
+                  )}
+                </div>
+              ) : selected.hideLevels ? (
+                // No chart image + hideLevels=true → show a simple placeholder.
+                <div
+                  className="flex w-full items-center justify-center"
+                  style={{ background: "linear-gradient(180deg,#0B1B2E 0%,#0A1929 100%)", height: 200 }}
+                >
+                  <span className="text-sm text-white/40">🔒 Chart Analysis Only</span>
                 </div>
               ) : (
                 // Fallback: a styled signal-card "chart" built from the levels
