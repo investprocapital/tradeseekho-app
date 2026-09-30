@@ -21,5 +21,7 @@ export async function GET() {
     sadapayName: s.sadapayName,
     sadapayNumber: s.sadapayNumber,
     sadapayIban: s.sadapayIban,
+    usdtEnabled: s.usdtEnabled,
+    usdtAddress: s.usdtAddress,
   })
 }

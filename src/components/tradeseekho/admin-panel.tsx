@@ -1131,6 +1131,8 @@ function PaymentSettingsTab() {
   const [sadapayName, setSadapayName] = useState("")
   const [sadapayNumber, setSadapayNumber] = useState("")
   const [sadapayIban, setSadapayIban] = useState("")
+  const [usdtEnabled, setUsdtEnabled] = useState(true)
+  const [usdtAddress, setUsdtAddress] = useState("")
   const [loaded, setLoaded] = useState(false)
 
   // Sync local inputs when server data arrives
@@ -1145,6 +1147,8 @@ function PaymentSettingsTab() {
     setSadapayName(data.sadapayName || "")
     setSadapayNumber(data.sadapayNumber || "")
     setSadapayIban(data.sadapayIban || "")
+    setUsdtEnabled(data.usdtEnabled ?? true)
+    setUsdtAddress(data.usdtAddress || "")
     setLoaded(true)
   }
 
@@ -1161,6 +1165,8 @@ function PaymentSettingsTab() {
         sadapayName,
         sadapayNumber,
         sadapayIban,
+        usdtEnabled,
+        usdtAddress,
       })
       toast.success("Payment settings saved!")
     } catch {
@@ -1242,6 +1248,24 @@ function PaymentSettingsTab() {
               <div className="space-y-1">
                 <label className="text-xs font-bold uppercase tracking-wide text-muted-foreground">SadaPay IBAN</label>
                 <Input value={sadapayIban} onChange={(e) => setSadapayIban(e.target.value)} className="h-9 font-mono text-xs" placeholder="PK36SAPK0000000000000000" />
+              </div>
+            </div>
+          )}
+
+          {/* USDT TRC20 (Binance) — Crypto */}
+          <div className="flex items-center justify-between rounded-lg border border-[#26A17B]/30 bg-[#26A17B]/5 p-3">
+            <div>
+              <div className="text-sm font-bold">USDT TRC20 (Binance)</div>
+              <div className="text-[11px] text-muted-foreground">Crypto payment via Tron network</div>
+            </div>
+            <Switch checked={usdtEnabled} onCheckedChange={setUsdtEnabled} />
+          </div>
+          {usdtEnabled && (
+            <div className="space-y-2 rounded-lg border border-[#26A17B]/20 p-3">
+              <div className="space-y-1">
+                <label className="text-xs font-bold uppercase tracking-wide text-muted-foreground">TRC20 Wallet Address</label>
+                <Input value={usdtAddress} onChange={(e) => setUsdtAddress(e.target.value)} className="h-9 font-mono text-xs" placeholder="Paste your TRC20 wallet address here" />
+                <p className="text-[10px] text-muted-foreground">Ye address clients ko dikhaya jayega. USDT sirf TRC20 (Tron) network par receive hoga.</p>
               </div>
             </div>
           )}

@@ -239,6 +239,9 @@ model ProSettings {
   sadapayName     String   @default("TradeSeekho PK")
   sadapayNumber   String   @default("03XX-XXXXXXX")
   sadapayIban     String   @default("PK36SAPK0000000000000000")
+  // USDT TRC20 (Binance) — crypto payment via Tron network
+  usdtEnabled     Boolean  @default(true)
+  usdtAddress     String   @default("Paste your TRC20 wallet address here")
   updatedAt       DateTime @updatedAt
 }
 

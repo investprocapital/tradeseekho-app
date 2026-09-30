@@ -23,6 +23,8 @@ export async function GET() {
     sadapayName: s.sadapayName,
     sadapayNumber: s.sadapayNumber,
     sadapayIban: s.sadapayIban,
+    usdtEnabled: s.usdtEnabled,
+    usdtAddress: s.usdtAddress,
   })
 }
 
@@ -43,6 +45,9 @@ export async function PUT(req: Request) {
   if ("sadapayName" in body) data.sadapayName = String(body.sadapayName)
   if ("sadapayNumber" in body) data.sadapayNumber = String(body.sadapayNumber)
   if ("sadapayIban" in body) data.sadapayIban = String(body.sadapayIban)
+  // USDT TRC20
+  if ("usdtEnabled" in body) data.usdtEnabled = !!body.usdtEnabled
+  if ("usdtAddress" in body) data.usdtAddress = String(body.usdtAddress)
 
   const updated = await db.proSettings.upsert({
     where: { id: "singleton" },
@@ -60,5 +65,7 @@ export async function PUT(req: Request) {
     sadapayName: updated.sadapayName,
     sadapayNumber: updated.sadapayNumber,
     sadapayIban: updated.sadapayIban,
+    usdtEnabled: updated.usdtEnabled,
+    usdtAddress: updated.usdtAddress,
   })
 }

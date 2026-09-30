@@ -10,7 +10,7 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
-import { Crown, Copy, Upload, Loader2, AlertCircle, CheckCircle2, Clock, Smartphone, Image as ImageIcon, CreditCard, Globe } from "lucide-react"
+import { Crown, Copy, Upload, Loader2, AlertCircle, CheckCircle2, Clock, Smartphone, Image as ImageIcon, CreditCard, Globe, Coins } from "lucide-react"
 import { useStore } from "@/lib/store"
 import { useProMe, useSubmitProRequest } from "./use-data"
 import { toast } from "sonner"
@@ -27,6 +27,8 @@ interface ProSettings {
   sadapayName: string
   sadapayNumber: string
   sadapayIban: string
+  usdtEnabled: boolean
+  usdtAddress: string
 }
 
 async function fetchProSettings(): Promise<ProSettings> {
@@ -35,7 +37,7 @@ async function fetchProSettings(): Promise<ProSettings> {
   return res.json()
 }
 
-type Method = "JazzCash" | "Easypaisa" | "Card" | "SadaPay"
+type Method = "JazzCash" | "Easypaisa" | "Card" | "SadaPay" | "USDT"
 
 export function ProDialog() {
   const open = useStore((s) => s.proOpen)
@@ -76,6 +78,9 @@ export function ProDialog() {
   if (settings?.sadapayEnabled !== false) {
     methods.push({ id: "SadaPay", label: "SadaPay", color: "#6C2BD9", accent: "bg-[#6C2BD9]", icon: Globe, subtitle: "For International / Worldwide Clients" })
   }
+  if (settings?.usdtEnabled !== false) {
+    methods.push({ id: "USDT", label: "USDT TRC20 (Binance)", color: "#26A17B", accent: "bg-[#26A17B]", icon: Coins, subtitle: "Crypto · Tron Network" })
+  }
 
   const currentNumber = method === "JazzCash" ? settings?.jazzcashNumber : method === "Easypaisa" ? settings?.easypaisaNumber : ""
 
@@ -98,6 +103,7 @@ export function ProDialog() {
       return
     }
     if (method !== "Card" && !file) { setErr("Please upload a payment screenshot."); return }
+    if (method === "USDT" && !note.trim()) { setErr("Please paste your Transaction Hash / TxID for the USDT payment."); return }
     try {
       await submit.mutateAsync({ method, amount: Number(displayAmount) || 0, note, file })
       toast.success("Payment submitted!", { description: "We'll review and activate Pro within 24h." })
@@ -226,6 +232,37 @@ export function ProDialog() {
                     </div>
                   </div>
                 </div>
+              ) : method === "USDT" ? (
+                <div className="rounded-xl border border-dashed border-[#26A17B]/40 bg-[#26A17B]/5 p-3">
+                  <div className="flex items-start gap-2">
+                    <Coins className="mt-0.5 h-5 w-5 shrink-0 text-[#26A17B]" />
+                    <div className="flex-1">
+                      <div className="text-[11px] uppercase tracking-wide text-muted-foreground">USDT TRC20 · Binance · Tron Network</div>
+                      <div className="mt-1.5 space-y-1">
+                        <div className="flex items-center justify-between gap-2">
+                          <span className="text-[10px] text-muted-foreground">Address:</span>
+                          <span className="break-all text-right font-mono text-[11px] font-bold text-foreground">{settings?.usdtAddress || "Paste your TRC20 wallet address here"}</span>
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <span className="text-[10px] text-muted-foreground">Network:</span>
+                          <span className="text-xs font-bold text-[#26A17B]">TRC20 / Tron</span>
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <span className="text-[10px] text-muted-foreground">Amount:</span>
+                          <span className="text-xs font-bold text-foreground">${usdPrice} USDT</span>
+                        </div>
+                      </div>
+                      <div className="mt-2 flex justify-end">
+                        <Button type="button" size="sm" variant="outline" className="gap-1.5" onClick={() => copy(settings?.usdtAddress || "")}>
+                          <Copy className="h-3.5 w-3.5" /> Copy Address
+                        </Button>
+                      </div>
+                      <div className="mt-2 rounded-lg bg-red-500/10 p-2 text-[10px] font-bold text-destructive">
+                        ⚠ Galat network pe mat bhejen — sirf TRC20 (Tron). USDT bhejne ke baad Transaction Hash / TxID lazmi likhen.
+                      </div>
+                    </div>
+                  </div>
+                </div>
               ) : (
                 <div className="rounded-xl border border-dashed border-border bg-muted/30 p-3">
                   <div className="flex items-center justify-between">
@@ -265,8 +302,8 @@ export function ProDialog() {
 
               {/* Optional note */}
               <div className="space-y-1.5">
-                <Label htmlFor="note">Transaction ID / note (optional)</Label>
-                <Textarea id="note" value={note} onChange={(e) => setNote(e.target.value)} rows={2} placeholder="e.g. JazzCash TID 12345678" className="text-sm" />
+                <Label htmlFor="note">Transaction ID / note {method === "USDT" && <span className="font-bold text-destructive">(TxID required for USDT)</span>}</Label>
+                <Textarea id="note" value={note} onChange={(e) => setNote(e.target.value)} rows={2} placeholder={method === "USDT" ? "Paste Transaction Hash / TxID here (required)" : "e.g. JazzCash TID 12345678"} className="text-sm" />
               </div>
 
               {err && (
