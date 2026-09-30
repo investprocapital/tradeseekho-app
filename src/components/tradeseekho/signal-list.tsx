@@ -30,6 +30,8 @@ interface Signal {
   tp3HitAt: string | null
   slHitAt: string | null
   profitUsd: number | null
+  // When true, the client hides Entry/SL/TP values — only shows chart image.
+  hideLevels?: boolean
   createdAt: string
 }
 
@@ -119,14 +121,26 @@ export function SignalList() {
                     {s.status !== "active" && (
                       <Badge className={`text-[9px] ${badge.cls}`}>{badge.label}</Badge>
                     )}
+                    {/* Chart-only badge when levels are hidden */}
+                    {s.hideLevels && (
+                      <Badge className="text-[9px] bg-gold/20 text-gold-foreground">CHART ONLY</Badge>
+                    )}
                   </div>
-                  <div className="mt-0.5 text-[11px] text-muted-foreground">
-                    Entry: <span className="font-bold text-foreground">{s.entry}</span>
-                    {" · "}SL: <span className="font-bold text-destructive">{s.stopLoss}</span>
-                    {s.tp1 && <span>{" · "}TP: <span className="font-bold text-brand">{s.tp1}</span></span>}
-                  </div>
-                  {/* Profit/loss line when a hit has occurred */}
-                  {s.profitUsd !== null && (
+                  {/* Entry/SL/TP line — hidden when hideLevels is true */}
+                  {!s.hideLevels && (
+                    <div className="mt-0.5 text-[11px] text-muted-foreground">
+                      Entry: <span className="font-bold text-foreground">{s.entry}</span>
+                      {" · "}SL: <span className="font-bold text-destructive">{s.stopLoss}</span>
+                      {s.tp1 && <span>{" · "}TP: <span className="font-bold text-brand">{s.tp1}</span></span>}
+                    </div>
+                  )}
+                  {s.hideLevels && (
+                    <div className="mt-0.5 text-[11px] text-muted-foreground italic">
+                      Chart analysis only — tap to view
+                    </div>
+                  )}
+                  {/* Profit/loss line when a hit has occurred (only if levels visible) */}
+                  {!s.hideLevels && s.profitUsd !== null && (
                     <div className={`mt-0.5 text-[10px] font-bold ${s.profitUsd >= 0 ? "text-emerald-500" : "text-destructive"}`}>
                       {isLoss ? "❌ " : "✅ "}{s.profitUsd >= 0 ? `+$${s.profitUsd}` : `-$${Math.abs(s.profitUsd)}`} {s.profitUsd >= 0 ? "Profit" : "Loss"}
                     </div>
@@ -206,47 +220,60 @@ export function SignalList() {
 
               {/* Signal details */}
               <div className="p-4 space-y-3">
-                <div className="grid grid-cols-2 gap-2">
-                  <div className="rounded-lg bg-muted/40 p-2.5">
-                    <div className="text-[10px] uppercase text-muted-foreground">Entry</div>
-                    <div className="text-sm font-bold text-foreground">{selected.entry}</div>
-                  </div>
-                  <div className={`rounded-lg p-2.5 ${selected.slHitAt ? "bg-red-500/15 ring-1 ring-red-500/40" : "bg-destructive/10"}`}>
-                    <div className="text-[10px] uppercase text-muted-foreground flex items-center gap-1">
-                      Stop Loss {selected.slHitAt && <XCircle className="h-3 w-3 text-destructive" />}
+                {/* Entry/SL/TP grid — HIDDEN when hideLevels is true.
+                    Chart image always shows above; only the level values are hidden. */}
+                {selected.hideLevels ? (
+                  <div className="rounded-lg border border-gold/30 bg-gold/5 p-3 text-center">
+                    <div className="text-sm font-bold text-gold-foreground">🔒 Chart Analysis Only</div>
+                    <div className="mt-0.5 text-[11px] text-muted-foreground">
+                      Is signal me Entry/SL/TP levels share nahi kiye gaye. Sirf chart image dekhein.
                     </div>
-                    <div className="text-sm font-bold text-destructive">{selected.stopLoss}</div>
                   </div>
-                  <div className={`rounded-lg p-2.5 ${selected.tp1HitAt ? "bg-emerald-500/15 ring-1 ring-emerald-500/40" : "bg-brand-muted/40"}`}>
-                    <div className="text-[10px] uppercase text-muted-foreground flex items-center gap-1">
-                      TP1 {selected.tp1HitAt && <CheckCircle2 className="h-3 w-3 text-emerald-500" />}
+                ) : (
+                  <>
+                    <div className="grid grid-cols-2 gap-2">
+                      <div className="rounded-lg bg-muted/40 p-2.5">
+                        <div className="text-[10px] uppercase text-muted-foreground">Entry</div>
+                        <div className="text-sm font-bold text-foreground">{selected.entry}</div>
+                      </div>
+                      <div className={`rounded-lg p-2.5 ${selected.slHitAt ? "bg-red-500/15 ring-1 ring-red-500/40" : "bg-destructive/10"}`}>
+                        <div className="text-[10px] uppercase text-muted-foreground flex items-center gap-1">
+                          Stop Loss {selected.slHitAt && <XCircle className="h-3 w-3 text-destructive" />}
+                        </div>
+                        <div className="text-sm font-bold text-destructive">{selected.stopLoss}</div>
+                      </div>
+                      <div className={`rounded-lg p-2.5 ${selected.tp1HitAt ? "bg-emerald-500/15 ring-1 ring-emerald-500/40" : "bg-brand-muted/40"}`}>
+                        <div className="text-[10px] uppercase text-muted-foreground flex items-center gap-1">
+                          TP1 {selected.tp1HitAt && <CheckCircle2 className="h-3 w-3 text-emerald-500" />}
+                        </div>
+                        <div className="text-sm font-bold text-brand">{selected.tp1 ?? "—"}</div>
+                      </div>
+                      <div className={`rounded-lg p-2.5 ${selected.tp2HitAt ? "bg-sky-500/15 ring-1 ring-sky-500/40" : "bg-brand-muted/40"}`}>
+                        <div className="text-[10px] uppercase text-muted-foreground flex items-center gap-1">
+                          TP2 {selected.tp2HitAt && <CheckCircle2 className="h-3 w-3 text-sky-500" />}
+                        </div>
+                        <div className="text-sm font-bold text-brand">{selected.tp2 ?? "—"}</div>
+                      </div>
+                      <div className={`col-span-2 rounded-lg p-2.5 ${selected.tp3HitAt ? "bg-blue-800/15 ring-1 ring-blue-800/40" : "bg-brand-muted/40"}`}>
+                        <div className="text-[10px] uppercase text-muted-foreground flex items-center gap-1">
+                          TP3 {selected.tp3HitAt && <CheckCircle2 className="h-3 w-3 text-blue-800" />}
+                        </div>
+                        <div className="text-sm font-bold text-brand">{selected.tp3 ?? "—"}</div>
+                      </div>
                     </div>
-                    <div className="text-sm font-bold text-brand">{selected.tp1 ?? "—"}</div>
-                  </div>
-                  <div className={`rounded-lg p-2.5 ${selected.tp2HitAt ? "bg-sky-500/15 ring-1 ring-sky-500/40" : "bg-brand-muted/40"}`}>
-                    <div className="text-[10px] uppercase text-muted-foreground flex items-center gap-1">
-                      TP2 {selected.tp2HitAt && <CheckCircle2 className="h-3 w-3 text-sky-500" />}
-                    </div>
-                    <div className="text-sm font-bold text-brand">{selected.tp2 ?? "—"}</div>
-                  </div>
-                  <div className={`col-span-2 rounded-lg p-2.5 ${selected.tp3HitAt ? "bg-blue-800/15 ring-1 ring-blue-800/40" : "bg-brand-muted/40"}`}>
-                    <div className="text-[10px] uppercase text-muted-foreground flex items-center gap-1">
-                      TP3 {selected.tp3HitAt && <CheckCircle2 className="h-3 w-3 text-blue-800" />}
-                    </div>
-                    <div className="text-sm font-bold text-brand">{selected.tp3 ?? "—"}</div>
-                  </div>
-                </div>
 
-                {/* Profit banner when a hit has occurred */}
-                {selected.profitUsd !== null && (
-                  <div className={`rounded-lg p-3 text-center ${selected.profitUsd >= 0 ? "bg-emerald-500/10" : "bg-destructive/10"}`}>
-                    <div className={`text-xl font-extrabold ${selected.profitUsd >= 0 ? "text-emerald-500" : "text-destructive"}`}>
-                      {selected.profitUsd >= 0 ? `+$${selected.profitUsd}` : `-$${Math.abs(selected.profitUsd)}`}
-                    </div>
-                    <div className="text-[10px] text-muted-foreground">
-                      {selected.profitUsd >= 0 ? "Realized Profit" : "Realized Loss"}
-                    </div>
-                  </div>
+                    {/* Profit banner when a hit has occurred */}
+                    {selected.profitUsd !== null && (
+                      <div className={`rounded-lg p-3 text-center ${selected.profitUsd >= 0 ? "bg-emerald-500/10" : "bg-destructive/10"}`}>
+                        <div className={`text-xl font-extrabold ${selected.profitUsd >= 0 ? "text-emerald-500" : "text-destructive"}`}>
+                          {selected.profitUsd >= 0 ? `+$${selected.profitUsd}` : `-$${Math.abs(selected.profitUsd)}`}
+                        </div>
+                        <div className="text-[10px] text-muted-foreground">
+                          {selected.profitUsd >= 0 ? "Realized Profit" : "Realized Loss"}
+                        </div>
+                      </div>
+                    )}
+                  </>
                 )}
 
                 {selected.note && (

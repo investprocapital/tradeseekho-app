@@ -8,9 +8,10 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
+import { Switch } from "@/components/ui/switch"
 import {
   Save, Trash2, Loader2, TrendingUp, TrendingDown, Camera,
-  CheckCircle2, XCircle, Bell, Zap, RefreshCw, Maximize2, Minimize2, X,
+  CheckCircle2, XCircle, Bell, Zap, RefreshCw, Maximize2, Minimize2, X, EyeOff,
 } from "lucide-react"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { toast } from "sonner"
@@ -361,6 +362,10 @@ export function SignalManager() {
   const [screenshot, setScreenshot] = useState("")
   const [busy, setBusy] = useState(false)
 
+  // When true, the published signal hides Entry/SL/TP values — only the chart
+  // image is shown to clients. Used for "chart-only" signals.
+  const [hideLevels, setHideLevels] = useState(false)
+
   // Live price state (BUG 1: auto-fill from live price).
   const [livePrice, setLivePrice] = useState<number | null>(null)
   const [priceLoading, setPriceLoading] = useState(false)
@@ -431,6 +436,7 @@ export function SignalManager() {
       toast.success("Signal published!")
       setEntry(""); setStopLoss(""); setTp1(""); setTp2(""); setTp3(""); setNote(""); setScreenshot("")
       setUploadedScreenshot("")
+      setHideLevels(false)
       setAutoFilled(false)
     },
   })
@@ -670,6 +676,7 @@ export function SignalManager() {
       symbol, signalType, entry, stopLoss,
       tp1: tp1 || null, tp2: tp2 || null, tp3: tp3 || null,
       note: note || null, screenshot: shot,
+      hideLevels,
     }).finally(() => setBusy(false))
   }
 
@@ -872,6 +879,26 @@ export function SignalManager() {
           ) : null}
 
           <Separator />
+
+          {/* HIDE ENTRY/SL/TP TOGGLE — when ON, the published signal shows ONLY
+              the chart image (no Entry/SL/TP values on the client). Used for
+              chart-only signals. Chart image always goes through regardless. */}
+          <div className={`flex items-center justify-between rounded-xl border p-3 transition ${hideLevels ? "border-gold/50 bg-gold/5" : "border-border bg-card"}`}>
+            <div className="flex items-center gap-2.5">
+              <span className={`inline-flex h-8 w-8 items-center justify-center rounded-lg ${hideLevels ? "bg-gold/20 text-gold-foreground" : "bg-muted text-muted-foreground"}`}>
+                <EyeOff className="h-4 w-4" />
+              </span>
+              <div>
+                <div className="text-sm font-bold text-foreground">Hide Entry / SL / TP</div>
+                <div className="text-[10px] text-muted-foreground">
+                  {hideLevels
+                    ? "ON — sirf chart image jayegi, levels client par hide honge"
+                    : "OFF — Entry/SL/TP values client ko dikhenge"}
+                </div>
+              </div>
+            </div>
+            <Switch checked={hideLevels} onCheckedChange={setHideLevels} />
+          </div>
 
           <div className="grid grid-cols-2 gap-3">
             <div className="col-span-2">

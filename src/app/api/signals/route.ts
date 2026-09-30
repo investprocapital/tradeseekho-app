@@ -37,6 +37,8 @@ export async function GET() {
       tp3HitAt: s.tp3HitAt?.toISOString() ?? null,
       slHitAt: s.slHitAt?.toISOString() ?? null,
       profitUsd: s.profitUsd,
+      // When true, the client hides Entry/SL/TP values — only shows chart image.
+      hideLevels: s.hideLevels,
       createdAt: s.createdAt.toISOString(),
     })),
   })
