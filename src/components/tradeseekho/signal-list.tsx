@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button"
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { toast } from "sonner"
-import { useStore } from "@/lib/store"
+import { useStore, useT } from "@/lib/store"
 import { pairLabel } from "@/lib/signals"
 
 interface Signal {
@@ -66,6 +66,9 @@ export function SignalList() {
   const [showChart, setShowChart] = useState(false)
   const signalsOpen = useStore((s) => s.signalsOpen)
   const setSignalsOpen = useStore((s) => s.setSignalsOpen)
+  const t = useT()
+  const lang = useStore((s) => s.lang)
+  const rtlFont = lang === "ur" ? "font-urdu" : lang === "ar" ? "font-arabic" : ""
 
   const signals = data?.signals ?? []
 
@@ -179,8 +182,8 @@ export function SignalList() {
                           </div>
                         )}
                         {s.hideLevels && (
-                          <div className="mt-0.5 text-[11px] text-muted-foreground italic">
-                            Chart analysis only — tap to view
+                          <div className={`mt-0.5 text-[11px] text-muted-foreground italic ${rtlFont}`}>
+                            {t("signal.chartOnlyTap")}
                           </div>
                         )}
                         {!s.hideLevels && s.profitUsd !== null && (
@@ -263,6 +266,21 @@ export function SignalList() {
                       )}
                     </div>
                   )}
+                  {/* Watermark: "TradeSeekho PK" diagonally across the chart center.
+                      Low opacity so it doesn't obscure the chart, but visible on
+                      all shared chart images. Pointer-events:none so it doesn't
+                      block chart interaction. */}
+                  <div
+                    className="pointer-events-none absolute inset-0 flex items-center justify-center"
+                    style={{ opacity: 0.12 }}
+                  >
+                    <span
+                      className="select-none text-2xl font-extrabold text-white"
+                      style={{ transform: "rotate(-15deg)" }}
+                    >
+                      TradeSeekho PK
+                    </span>
+                  </div>
                 </div>
               ) : selected.hideLevels ? (
                 // No chart image + hideLevels=true → show a simple placeholder.
@@ -270,7 +288,7 @@ export function SignalList() {
                   className="flex w-full items-center justify-center"
                   style={{ background: "linear-gradient(180deg,#0B1B2E 0%,#0A1929 100%)", height: 200 }}
                 >
-                  <span className="text-sm text-white/40">🔒 Chart Analysis Only</span>
+                  <span className={`text-sm text-white/40 ${rtlFont}`}>🔒 {t("signal.chartOnlyTitle")}</span>
                 </div>
               ) : (
                 // Fallback: a styled signal-card "chart" built from the levels
@@ -284,9 +302,9 @@ export function SignalList() {
                     Chart image always shows above; only the level values are hidden. */}
                 {selected.hideLevels ? (
                   <div className="rounded-lg border border-gold/30 bg-gold/5 p-3 text-center">
-                    <div className="text-sm font-bold text-gold-foreground">🔒 Chart Analysis Only</div>
-                    <div className="mt-0.5 text-[11px] text-muted-foreground">
-                      Is signal me Entry/SL/TP levels share nahi kiye gaye. Sirf chart image dekhein.
+                    <div className={`text-sm font-bold text-gold-foreground ${rtlFont}`}>🔒 {t("signal.chartOnlyTitle")}</div>
+                    <div className={`mt-0.5 text-[11px] text-muted-foreground ${rtlFont}`}>
+                      {t("signal.chartOnlyBody")}
                     </div>
                   </div>
                 ) : (

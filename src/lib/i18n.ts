@@ -145,6 +145,9 @@ const en: Dict = {
   "common.error": "Something went wrong",
   "common.empty": "Nothing here yet",
   "common.search": "Search lessons...",
+  "signal.chartOnlyTitle": "Chart Analysis Only",
+  "signal.chartOnlyBody": "Entry/SL/TP levels are not shared in this signal. View the chart image only.",
+  "signal.chartOnlyTap": "Chart analysis only — tap to view",
 }
 
 const ur: Dict = {
@@ -270,6 +273,9 @@ const ur: Dict = {
   "common.error": "کچھ غلط ہو گیا",
   "common.empty": "یہاں ابھی کچھ نہیں",
   "common.search": "اسباق تلاش کریں...",
+  "signal.chartOnlyTitle": "صرف چارٹ تجزیہ",
+  "signal.chartOnlyBody": "اس سگنل میں Entry/SL/TP levels شیئر نہیں کیے گئے۔ صرف چارٹ امیج دیکھیں۔",
+  "signal.chartOnlyTap": "صرف چارٹ تجزیہ — دیکھنے کے لیے ٹیپ کریں",
 }
 
 const hi: Dict = {
@@ -395,6 +401,9 @@ const hi: Dict = {
   "common.error": "कुछ गड़बड़ हो गई",
   "common.empty": "यहाँ अभी कुछ नहीं",
   "common.search": "पाठ खोजें...",
+  "signal.chartOnlyTitle": "केवल चार्ट विश्लेषण",
+  "signal.chartOnlyBody": "इस सिग्नल में Entry/SL/TP levels शेयर नहीं किए गए हैं। केवल चार्ट इमेज देखें।",
+  "signal.chartOnlyTap": "केवल चार्ट विश्लेषण — देखने के लिए टैप करें",
 }
 
 const ar: Dict = {
@@ -520,6 +529,9 @@ const ar: Dict = {
   "common.error": "حدث خطأ ما",
   "common.empty": "لا شيء هنا بعد",
   "common.search": "ابحث في الدروس...",
+  "signal.chartOnlyTitle": "تحليل الرسم البياني فقط",
+  "signal.chartOnlyBody": "لم تتم مشاركة مستويات Entry/SL/TP في هذه الإشارة. اعرض صورة الرسم البياني فقط.",
+  "signal.chartOnlyTap": "تحليل الرسم البياني فقط — اضغط للعرض",
 }
 
 export const DICTS: Record<Lang, Dict> = { en, ur, hi, ar }

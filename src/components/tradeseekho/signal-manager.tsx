@@ -320,9 +320,25 @@ function renderSignalCard(a: RenderArgs): string {
       ctx.fillText(`📝 ${trimmed}`, 24, 455)
     }
 
+    // ─── Watermark: "TradeSeekho PK" diagonally across the chart center ───
+    // Low opacity so it doesn't obscure the candles, but visible enough that
+    // shared chart images carry the brand. Appears on ALL auto-captured cards.
+    ctx.save()
+    ctx.globalAlpha = 0.08
+    ctx.translate(W / 2, H / 2 + 20)
+    ctx.rotate(-Math.PI / 12) // slight diagonal tilt
+    ctx.fillStyle = "#FFFFFF"
+    ctx.font = "bold 48px Arial"
+    ctx.textAlign = "center"
+    ctx.textBaseline = "middle"
+    ctx.fillText("TradeSeekho PK", 0, 0)
+    ctx.restore()
+
     // Branding footer
     ctx.fillStyle = "#445566"
     ctx.font = "11px Arial"
+    ctx.textAlign = "left"
+    ctx.textBaseline = "alphabetic"
     ctx.fillText("TradeSeekho PK · LEARN TRADE GROW", 24, 482)
     const now = new Date().toLocaleString("en-GB", {
       day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit",
