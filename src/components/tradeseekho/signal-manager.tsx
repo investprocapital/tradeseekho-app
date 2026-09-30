@@ -510,8 +510,20 @@ export function SignalManager() {
   }, [])
 
   // Auto-fetch live price + candles on mount + whenever the symbol changes.
+  // IMPORTANT: when the symbol changes we also CLEAR Entry/SL/TP fields +
+  // uploaded screenshot. Otherwise stale values from the previous pair
+  // (e.g. Gold entry 4211) would be published against a new pair (e.g. BTC)
+  // — which is a critical bug (wrong price on the client).
   useEffect(() => {
     setAutoFilled(false)
+    setEntry("")
+    setStopLoss("")
+    setTp1("")
+    setTp2("")
+    setTp3("")
+    setNote("")
+    setScreenshot("")
+    setUploadedScreenshot("")
     void fetchPrice(symbol)
     void fetchCandles(symbol)
   }, [symbol, fetchPrice, fetchCandles])
@@ -659,6 +671,33 @@ export function SignalManager() {
 
   const publish = () => {
     if (!entry || !stopLoss) { toast.error("Entry and SL required"); return }
+
+    // SANITY CHECK: detect mismatched pair/price (e.g. BTC symbol with a Gold-
+    // sized entry like 4211). This prevents publishing a signal where the
+    // chart pair doesn't match the price levels — a critical client-facing bug.
+    const entryNum = parseFloat(entry)
+    if (Number.isFinite(entryNum)) {
+      let mismatch = false
+      let hint = ""
+      if (symbol === "BINANCE:BTCUSDT" && entryNum < 1000) {
+        mismatch = true
+        hint = "BTC price ~80,000+ hai. Aap ka entry 4211 Gold jaisa lag raha hai."
+      } else if (symbol === "OANDA:XAUUSD" && entryNum > 10000) {
+        mismatch = true
+        hint = "Gold price ~4,000-5,000 hai. Aap ka entry 80,000+ BTC jaisa lag raha hai."
+      } else if ((symbol === "FX:EURUSD" || symbol === "FX:GBPUSD") && entryNum > 10) {
+        mismatch = true
+        hint = "Forex pairs ~1.0000 hote hain. Aap ka entry bahut bada hai."
+      } else if (symbol === "TVC:USOIL" && (entryNum > 500 || entryNum < 10)) {
+        mismatch = true
+        hint = "Oil price ~$60-120 hota hai. Aap ka entry is range me nahi hai."
+      }
+      if (mismatch) {
+        toast.error(`⚠ Price mismatch! ${hint} Symbol badal liya tha par purane values reh gaye. Please "Auto-Fill" se naye values lein ya manually correct karein.`)
+        return
+      }
+    }
+
     // Priority: uploaded real-chart screenshot (with admin's drawings) > auto card.
     // The auto card is only valid when candle data is available for the pair.
     let shot = uploadedScreenshot
