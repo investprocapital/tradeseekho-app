@@ -224,9 +224,11 @@ function LevelBox({
       <motion.button
         initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3, delay: index * 0.06 }}
         onClick={onOpen}
-        className="group flex flex-col items-center gap-2 overflow-hidden rounded-2xl border-2 p-3 text-center transition-all hover:-translate-y-0.5"
-        style={{ borderColor: `${category.color || "#00c853"}40`, background: `linear-gradient(135deg, ${category.color || "#00c853"}10, transparent)` }}
+        className="group relative flex flex-col items-center gap-2 overflow-hidden rounded-2xl border-2 p-3 text-center transition-all hover:-translate-y-0.5"
+        style={{ borderColor: `${category.color || "#00c853"}80`, background: `linear-gradient(135deg, ${category.color || "#00c853"}25, ${category.color || "#00c853"}08)` }}
       >
+        {/* Colored top accent bar */}
+        <div className="absolute left-0 right-0 top-0 h-1" style={{ background: category.color || "#00c853" }} />
         <span className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-white shadow" style={{ background: category.color || "#00c853" }}>
           <Icon className="h-5 w-5" />
         </span>
@@ -250,8 +252,10 @@ function LevelBox({
       initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3, delay: index * 0.06 }}
       onClick={onOpen}
       className="group relative flex items-center gap-3 overflow-hidden rounded-2xl border-2 p-3 text-start transition-all hover:-translate-y-0.5"
-      style={{ borderColor: `${category.color || "#00c853"}40`, background: `linear-gradient(135deg, ${category.color || "#00c853"}10, transparent)` }}
+      style={{ borderColor: `${category.color || "#00c853"}80`, background: `linear-gradient(135deg, ${category.color || "#00c853"}25, ${category.color || "#00c853"}08)` }}
     >
+      {/* Colored top accent bar */}
+      <div className="absolute left-0 right-0 top-0 h-1.5" style={{ background: category.color || "#00c853" }} />
       <span className="inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-xl text-white shadow" style={{ background: category.color || "#00c853" }}>
         <Icon className="h-6 w-6" />
       </span>

@@ -44,7 +44,7 @@ export async function seedTradeSeekho(db: import("@prisma/client").PrismaClient)
         descriptionUr: 'مسلسل ٹریڈنگ کے لیے رسک، نفسیات اور حکمت عملی۔',
         descriptionHi: 'निरंतर ट्रेडिंग के लिए जोखिम, मनोविज्ञान और रणनीति।',
         descriptionAr: 'المخاطر وعلم النفس والاستراتيجية للتداول المستمر.',
-        icon: 'Trophy', color: '#00BFA5', order: 3,
+        icon: 'Trophy', color: '#2196F3', order: 3,
       },
     }),
   ])
