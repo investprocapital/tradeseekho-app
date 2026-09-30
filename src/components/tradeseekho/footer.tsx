@@ -42,24 +42,24 @@ export function Footer() {
           <div className="min-w-0 leading-tight">
             {isPro ? (
               <>
-                <p className="truncate text-[11px] font-bold text-foreground">You're Pro 🎉</p>
-                <p className="truncate text-[9px] text-muted-foreground">Unlimited access</p>
+                <p className="truncate text-[11px] font-black text-foreground">You're Pro 🎉</p>
+                <p className="truncate text-[9px] font-semibold text-muted-foreground">Unlimited access</p>
               </>
             ) : isPending ? (
               <>
-                <p className="truncate text-[11px] font-bold text-foreground">Pro under review ⏳</p>
-                <p className="truncate text-[9px] text-muted-foreground">Activates within 24h</p>
+                <p className="truncate text-[11px] font-black text-foreground">Pro under review ⏳</p>
+                <p className="truncate text-[9px] font-semibold text-muted-foreground">Activates within 24h</p>
               </>
             ) : (
               <>
-                <p className="truncate text-[11px] font-bold text-foreground">TradeSeekho PK Pro</p>
-                <p className="truncate text-[9px] text-muted-foreground">JazzCash / Easypaisa</p>
+                <p className="truncate text-[11px] font-black text-foreground">TradeSeekho PK Pro</p>
+                <p className="truncate text-[9px] font-semibold text-muted-foreground">JazzCash / Easypaisa</p>
               </>
             )}
           </div>
         </div>
         {!isPro && (
-          <button onClick={() => setProOpen(true)} className="shrink-0 rounded-full bg-brand px-2.5 py-0.5 text-[10px] font-bold text-brand-foreground">
+          <button onClick={() => setProOpen(true)} className="shrink-0 rounded-full bg-brand px-2.5 py-0.5 text-[10px] font-black text-brand-foreground">
             {isPending ? "View" : "Get Pro"}
           </button>
         )}

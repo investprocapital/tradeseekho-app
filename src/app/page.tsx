@@ -82,7 +82,7 @@ export default function Home() {
 
             {/* Choose Your Level */}
             <section className="mb-4">
-              <h2 className="mb-2 px-1 text-base font-extrabold tracking-tight text-foreground">
+              <h2 className="mb-2 px-1 text-base font-black tracking-tight text-foreground">
                 {lang === "ur" || lang === "ar" ? "اپنا لیول منتخب کریں" : lang === "hi" ? "अपना स्तर चुनें" : "Choose Your Level"}
               </h2>
               {isLoading ? (
@@ -202,8 +202,8 @@ function ProgressMini({ icon: Icon, value, label, color }: { icon: any; value: s
   return (
     <div className="flex flex-col items-center rounded-xl border border-border bg-card px-2 py-2">
       <Icon className="h-4 w-4" style={{ color }} />
-      <span className="mt-0.5 text-sm font-extrabold leading-none">{value}</span>
-      <span className="text-[9px] uppercase tracking-wide text-muted-foreground">{label}</span>
+      <span className="mt-0.5 text-sm font-black leading-none">{value}</span>
+      <span className="text-[9px] font-bold uppercase tracking-wide text-muted-foreground">{label}</span>
     </div>
   )
 }
@@ -231,13 +231,13 @@ function LevelBox({
           <Icon className="h-5 w-5" />
         </span>
         <div className="w-full">
-          <h3 className={`text-sm font-extrabold leading-tight ${lang === "ur" || lang === "ar" ? "font-urdu" : ""}`}>{category.name[lang] || category.name.en}</h3>
+          <h3 className={`text-sm font-black leading-tight ${lang === "ur" || lang === "ar" ? "font-urdu" : ""}`}>{category.name[lang] || category.name.en}</h3>
           <span className="mt-0.5 inline-block rounded-full bg-background/70 px-1.5 py-0.5 text-[9px] font-bold text-muted-foreground">{done}/{total}</span>
         </div>
         <div className="h-1 w-full overflow-hidden rounded-full bg-muted">
           <div className="h-full rounded-full transition-all" style={{ width: `${pct}%`, background: category.color || "var(--brand)" }} />
         </div>
-        <span className="inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[10px] font-bold text-white shadow-sm transition group-hover:scale-105" style={{ background: category.color || "var(--brand)" }}>
+        <span className="inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[10px] font-black text-white shadow-sm transition group-hover:scale-105" style={{ background: category.color || "var(--brand)" }}>
           {done > 0 ? "Continue" : "Start"}
           <ArrowRight className="h-3 w-3 rtl:rotate-180" />
         </span>
@@ -257,15 +257,15 @@ function LevelBox({
       </span>
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-2">
-          <h3 className={`text-base font-extrabold ${lang === "ur" || lang === "ar" ? "font-urdu" : ""}`}>{category.name[lang] || category.name.en}</h3>
+          <h3 className={`text-base font-black ${lang === "ur" || lang === "ar" ? "font-urdu" : ""}`}>{category.name[lang] || category.name.en}</h3>
           <span className="rounded-full bg-background/70 px-1.5 py-0.5 text-[10px] font-bold text-muted-foreground">{done}/{total}</span>
         </div>
-        <p className={`mt-0.5 line-clamp-1 text-xs text-muted-foreground ${lang === "ur" || lang === "ar" ? "font-urdu" : ""}`}>{category.description[lang] || category.description.en}</p>
+        <p className={`mt-0.5 line-clamp-1 text-xs font-semibold text-muted-foreground ${lang === "ur" || lang === "ar" ? "font-urdu" : ""}`}>{category.description[lang] || category.description.en}</p>
         <div className="mt-1.5 h-1 w-full overflow-hidden rounded-full bg-muted">
           <div className="h-full rounded-full transition-all" style={{ width: `${pct}%`, background: category.color || "var(--brand)" }} />
         </div>
       </div>
-      <span className="inline-flex shrink-0 items-center gap-1 rounded-full px-2.5 py-1 text-xs font-bold text-white shadow-sm transition group-hover:scale-105" style={{ background: category.color || "var(--brand)" }}>
+      <span className="inline-flex shrink-0 items-center gap-1 rounded-full px-2.5 py-1 text-xs font-black text-white shadow-sm transition group-hover:scale-105" style={{ background: category.color || "var(--brand)" }}>
         {done > 0 ? "Continue" : "Start"}
         <ArrowRight className="h-3.5 w-3.5 rtl:rotate-180" />
       </span>

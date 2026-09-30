@@ -111,12 +111,12 @@ export function SignalList() {
           </span>
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-1.5">
-              <span className="text-sm font-extrabold text-foreground">Live Signals</span>
+              <span className="text-sm font-black text-foreground">Live Signals</span>
               <span className="rounded-full bg-brand/15 px-1.5 py-0.5 text-[9px] font-bold text-brand">
                 {signals.length} active
               </span>
             </div>
-            <div className="mt-0.5 truncate text-[11px] font-bold text-muted-foreground">
+            <div className="mt-0.5 truncate text-[11px] font-black text-muted-foreground">
               {summaryText}
             </div>
           </div>
@@ -129,7 +129,7 @@ export function SignalList() {
       <Sheet open={signalsOpen} onOpenChange={setSignalsOpen}>
         <SheetContent side="right" className="flex h-full w-full flex-col gap-0 p-0 sm:max-w-md">
           <SheetHeader className="border-b border-border p-5">
-            <SheetTitle className="flex items-center gap-2 text-xl font-extrabold">
+            <SheetTitle className="flex items-center gap-2 text-xl font-black">
               <Radio className="h-5 w-5 text-brand animate-pulse" /> Live Signals
             </SheetTitle>
             <SheetDescription>
