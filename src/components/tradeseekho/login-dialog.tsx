@@ -128,7 +128,11 @@ export function LoginDialog() {
                     Don't have an account? <button onClick={() => { setView("signup"); setErr(null) }} className="font-bold text-[#00D09C] hover:underline">Sign Up</button>
                   </p>
 
-                  {/* Girl illustration — transparent PNG, blends with dark bg */}
+                  {/* Girl illustration — transparent PNG, blends with dark bg.
+                      RESPONSIVE FIX: use max-width + auto height so the portrait
+                      image (768×1152, ~2:3) scales down without side cropping.
+                      On mobile it caps at 240px wide, tablet 260px, PC 280px.
+                      No fixed height → image keeps aspect ratio, no white gap. */}
                   <div className="relative mt-6 flex w-full flex-col items-center">
                     {/* Waves BEHIND girl's feet (bottom) */}
                     <div className="pointer-events-none absolute bottom-0 left-0 right-0 z-0">
@@ -146,8 +150,8 @@ export function LoginDialog() {
                     <div className="pointer-events-none absolute bottom-4 left-1/2 h-32 w-44 -translate-x-1/2 rounded-full bg-[#00D09C] opacity-20 blur-[50px]" />
                     <div className="relative z-10">
                       <img src="/login-girl-transparent.png" alt="TradeSeekho PK trader girl"
-                        className="w-full object-contain"
-                        style={{ height: "260px", filter: "brightness(1.2) contrast(1.05) drop-shadow(0 0 10px rgba(0,208,156,0.12))" }} />
+                        className="h-auto w-auto object-contain sm:max-w-[240px] md:max-w-[280px]"
+                        style={{ maxWidth: "70vw", maxHeight: "38vh", filter: "brightness(1.2) contrast(1.05) drop-shadow(0 0 10px rgba(0,208,156,0.12))" }} />
                       {/* Floating green forex candlestick in girl's raised hand area */}
                       <motion.div
                         className="absolute"
