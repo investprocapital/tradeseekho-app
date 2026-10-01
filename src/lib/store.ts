@@ -183,13 +183,17 @@ export const useStore = create<AppState>()(
       // client's first render uses the SAME defaults → no hydration mismatch.
       // We rehydrate manually in <Providers/> after mount.
       skipHydration: true,
-      // Only persist user-facing prefs + data, not ephemeral view state
+      // Only persist user-facing prefs + data, not ephemeral view state.
+      // showAdmin IS persisted so that minimizing + reopening the app keeps
+      // the admin panel open (mobile browsers reload the page on resume,
+      // which would reset showAdmin to false otherwise).
       partialize: (s) => ({
         lang: s.lang,
         onboardingSeen: s.onboardingSeen,
         bookmarks: s.bookmarks,
         progress: s.progress,
         adminAuthed: s.adminAuthed,
+        showAdmin: s.showAdmin,
       }),
     },
   ),

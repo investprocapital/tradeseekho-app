@@ -52,6 +52,20 @@ export default function Home() {
     }
   }, [status, loginOpen, setLoginOpen])
 
+  // AUTO-RESTORE ADMIN MODE: when the session loads + the user's role is admin,
+  // ensure showAdmin=true. This handles the "minimize + reopen" case where the
+  // browser reloads the page — the persisted showAdmin flag is already restored
+  // by Zustand, but this is a safety net: if the admin logs in fresh (or the
+  // persisted flag was cleared), they still land in the admin panel.
+  useEffect(() => {
+    if (status === "authenticated" && (session?.user as { role?: string })?.role === "admin") {
+      // Only set if not already true (avoid unnecessary re-renders)
+      if (!showAdmin) {
+        setShowAdmin(true)
+      }
+    }
+  }, [status, session, showAdmin, setShowAdmin])
+
   const lessons = data?.lessons ?? []
   const categories = data?.categories ?? []
   const visibleLessons = activeCategory === "all" ? lessons : lessons.filter((l) => l.categorySlug === activeCategory)
