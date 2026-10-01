@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useRef } from "react"
+import { signOut } from "next-auth/react"
 import { motion } from "framer-motion"
 import {
   Download, Users, BookOpen, BarChart3, Shield, Lock, LogOut, Eye,
@@ -103,7 +104,16 @@ export function AdminPanel() {
             variant="ghost"
             size="sm"
             className="gap-1.5 text-destructive hover:text-destructive"
-            onClick={() => logout.mutateAsync().then(() => setAdminAuthed(false))}
+            onClick={async () => {
+              // Clear admin cookie + adminAuthed + showAdmin (goes to client view)
+              await logout.mutateAsync()
+              setAdminAuthed(false)
+              setShowAdmin(false)
+              // Also sign out of NextAuth so the session is fully cleared
+              try { await signOut({ redirect: false }) } catch { /* ignore */ }
+              // Reload to reset all client state cleanly
+              window.location.reload()
+            }}
           >
             <LogOut className="h-4 w-4" /> <span className="hidden sm:inline">{t("action.logout")}</span>
           </Button>
@@ -147,16 +157,47 @@ function AdminLogin() {
   const setAdminAuthed = useStore((s) => s.setAdminAuthed)
   const setShowAdmin = useStore((s) => s.setShowAdmin)
   const [pw, setPw] = useState("")
+  // Toggle between "demo password" login + "email + password" login.
+  // Demo password = quick access (tradeseekho). Email+password = real admin
+  // account via NextAuth credentials (checks role=admin in DB).
+  const [mode, setMode] = useState<"demo" | "email">("demo")
+  const [email, setEmail] = useState("")
+  const [emailPw, setEmailPw] = useState("")
+  const [emailErr, setEmailErr] = useState<string | null>(null)
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault()
-    try {
-      await login.mutateAsync({ password: pw })
-      setAdminAuthed(true)
-      toast.success(t("toast.loginSuccess"))
-      setPw("")
-    } catch {
-      toast.error(t("admin.loginError"))
+    if (mode === "demo") {
+      try {
+        await login.mutateAsync({ password: pw })
+        setAdminAuthed(true)
+        toast.success(t("toast.loginSuccess"))
+        setPw("")
+      } catch {
+        toast.error(t("admin.loginError"))
+      }
+    } else {
+      // Email + password login via NextAuth credentials
+      setEmailErr(null)
+      try {
+        const { signIn } = await import("next-auth/react")
+        const r = await signIn("credentials", { email, password: emailPw, redirect: false })
+        if (!r || r.error || !r.ok) {
+          setEmailErr("Invalid email or password.")
+          return
+        }
+        // Check if the user is admin
+        const sres = await fetch("/api/auth/session").then((x) => x.json())
+        if ((sres?.user as { role?: string })?.role !== "admin") {
+          setEmailErr("This account is not an admin. Use the demo password or an admin account.")
+          return
+        }
+        setAdminAuthed(true)
+        toast.success(t("toast.loginSuccess"))
+        setEmail(""); setEmailPw("")
+      } catch {
+        setEmailErr("Login failed. Try again.")
+      }
     }
   }
 
@@ -172,28 +213,87 @@ function AdminLogin() {
             <CardDescription>{t("admin.loginSubtitle")}</CardDescription>
           </CardHeader>
           <CardContent>
+            {/* Mode toggle */}
+            <div className="mb-4 flex gap-1 rounded-lg bg-muted p-1">
+              <button
+                type="button"
+                onClick={() => setMode("demo")}
+                className={`flex-1 rounded-md py-1.5 text-xs font-bold transition ${mode === "demo" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground"}`}
+              >
+                Demo Password
+              </button>
+              <button
+                type="button"
+                onClick={() => setMode("email")}
+                className={`flex-1 rounded-md py-1.5 text-xs font-bold transition ${mode === "email" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground"}`}
+              >
+                Email + Password
+              </button>
+            </div>
+
             <form onSubmit={submit} className="space-y-4">
-              <div className="space-y-1.5">
-                <Label htmlFor="pw">{t("admin.password")}</Label>
-                <Input
-                  id="pw"
-                  type="password"
-                  autoFocus
-                  value={pw}
-                  onChange={(e) => setPw(e.target.value)}
-                  placeholder={t("admin.passwordPlaceholder")}
-                  className="h-11"
-                />
-              </div>
-              {login.isError && (
-                <p className="text-xs font-semibold text-destructive">{t("admin.loginError")}</p>
+              {mode === "demo" ? (
+                <>
+                  <div className="space-y-1.5">
+                    <Label htmlFor="pw">{t("admin.password")}</Label>
+                    <Input
+                      id="pw"
+                      type="password"
+                      autoFocus
+                      value={pw}
+                      onChange={(e) => setPw(e.target.value)}
+                      placeholder={t("admin.passwordPlaceholder")}
+                      className="h-11"
+                    />
+                  </div>
+                  {login.isError && (
+                    <p className="text-xs font-semibold text-destructive">{t("admin.loginError")}</p>
+                  )}
+                  <p className="text-center text-[11px] text-muted-foreground">
+                    Demo password: <code className="rounded bg-muted px-1 py-0.5 font-mono">tradeseekho</code>
+                  </p>
+                </>
+              ) : (
+                <>
+                  <div className="space-y-1.5">
+                    <Label htmlFor="admin-email">Admin Email</Label>
+                    <Input
+                      id="admin-email"
+                      type="email"
+                      autoFocus
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      placeholder="admin@example.com"
+                      className="h-11"
+                      required
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label htmlFor="admin-email-pw">Password</Label>
+                    <Input
+                      id="admin-email-pw"
+                      type="password"
+                      value={emailPw}
+                      onChange={(e) => setEmailPw(e.target.value)}
+                      placeholder="Your account password"
+                      className="h-11"
+                      required
+                    />
+                  </div>
+                  {emailErr && (
+                    <p className="text-xs font-semibold text-destructive">{emailErr}</p>
+                  )}
+                  {/* Forgot Password link */}
+                  <div className="text-right">
+                    <a href="/reset-password" className="text-xs font-bold text-brand hover:underline">
+                      Forgot Password?
+                    </a>
+                  </div>
+                </>
               )}
               <Button type="submit" className="h-11 w-full gap-2 bg-brand font-bold text-brand-foreground hover:bg-brand/90" disabled={login.isPending}>
                 {login.isPending ? t("common.loading") : t("action.login")}
               </Button>
-              <p className="text-center text-[11px] text-muted-foreground">
-                Demo password: <code className="rounded bg-muted px-1 py-0.5 font-mono">tradeseekho</code>
-              </p>
               <Button type="button" variant="ghost" size="sm" className="w-full gap-1.5" onClick={() => setShowAdmin(false)}>
                 <ArrowLeft className="h-4 w-4" /> {t("action.backToHome")}
               </Button>

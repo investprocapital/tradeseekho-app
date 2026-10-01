@@ -30,12 +30,11 @@ import type { LucideIcon } from "lucide-react"
 const LEVEL_ICONS: Record<string, LucideIcon> = { Sprout, LineChart, Trophy }
 
 export default function Home() {
-  const { data: session, status } = useSession()
+  const { status } = useSession()
   const setLoginOpen = useStore((s) => s.setLoginOpen)
   const loginOpen = useStore((s) => s.loginOpen)
   const activeCategory = useStore((s) => s.activeCategorySlug)
   const showAdmin = useStore((s) => s.showAdmin)
-  const setShowAdmin = useStore((s) => s.setShowAdmin)
   const lang = useStore((s) => s.lang)
   const bottomTab = useStore((s) => s.bottomTab)
   const openLesson = useStore((s) => s.openLesson)
@@ -53,19 +52,10 @@ export default function Home() {
     }
   }, [status, loginOpen, setLoginOpen])
 
-  // AUTO-RESTORE ADMIN MODE: when the session loads + the user's role is admin,
-  // ensure showAdmin=true. This handles the "minimize + reopen" case where the
-  // browser reloads the page — the persisted showAdmin flag is already restored
-  // by Zustand, but this is a safety net: if the admin logs in fresh (or the
-  // persisted flag was cleared), they still land in the admin panel.
-  useEffect(() => {
-    if (status === "authenticated" && (session?.user as { role?: string })?.role === "admin") {
-      // Only set if not already true (avoid unnecessary re-renders)
-      if (!showAdmin) {
-        setShowAdmin(true)
-      }
-    }
-  }, [status, session, showAdmin, setShowAdmin])
+  // NOTE: showAdmin is persisted in Zustand (localStorage) so it survives
+  // app minimize/reopen + page reloads. We do NOT auto-restore it here because
+  // that would fight with the "Exit Admin" button (setShowAdmin(false) would
+  // be immediately reverted). The persisted flag is sufficient.
 
   const lessons = data?.lessons ?? []
   const categories = data?.categories ?? []
