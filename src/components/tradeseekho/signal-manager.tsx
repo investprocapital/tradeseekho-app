@@ -15,7 +15,7 @@ import {
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { toast } from "sonner"
 import {
-  SIGNAL_SYMBOLS, pairLabel, suggestLevels, formatPrice,
+  SIGNAL_SYMBOLS, pairLabel, suggestLevels, formatPrice, getOffsets,
   type HitAction,
 } from "@/lib/signals"
 
@@ -66,6 +66,7 @@ interface RenderArgs {
   symbol: string
   signalType: string
   entry: string
+  entry2: string
   stopLoss: string
   tp1: string
   tp2: string
@@ -133,11 +134,12 @@ function renderSignalCard(a: RenderArgs): string {
 
     // ---- Compute price range: include candle highs/lows + Entry/SL/TP levels ----
     const entryNum = parseFloat(a.entry)
+    const entry2Num = parseFloat(a.entry2)
     const slNum = parseFloat(a.stopLoss)
     const tp1Num = parseFloat(a.tp1)
     const tp2Num = parseFloat(a.tp2)
     const tp3Num = parseFloat(a.tp3)
-    const levelNums = [entryNum, slNum, tp1Num, tp2Num, tp3Num].filter((n) =>
+    const levelNums = [entryNum, entry2Num, slNum, tp1Num, tp2Num, tp3Num].filter((n) =>
       Number.isFinite(n),
     )
 
@@ -307,7 +309,41 @@ function renderSignalCard(a: RenderArgs): string {
     }
 
     drawLevel(slNum, "#FF4D6D", "SL", a.stopLoss)
-    drawLevel(entryNum, "#FFFFFF", "ENTRY", a.entry)
+
+    // ---- Draw ENTRY ZONE (range box) if entry2 is set, else single Entry line ----
+    if (Number.isFinite(entryNum) && Number.isFinite(entry2Num) && entry2Num !== 0) {
+      // Entry Zone: filled rectangle between entry1 and entry2
+      const y1 = yFor(entryNum)
+      const y2 = yFor(entry2Num)
+      const topY = Math.min(y1, y2)
+      const botY = Math.max(y1, y2)
+      // Filled zone (semi-transparent white)
+      ctx.fillStyle = "rgba(255, 255, 255, 0.12)"
+      ctx.fillRect(chartLeft, topY, chartRight - chartLeft, botY - topY)
+      // Border lines (top + bottom of zone)
+      ctx.strokeStyle = "#FFFFFF"
+      ctx.lineWidth = 1.5
+      ctx.setLineDash([6, 4])
+      ctx.beginPath()
+      ctx.moveTo(chartLeft, y1); ctx.lineTo(chartRight, y1)
+      ctx.moveTo(chartLeft, y2); ctx.lineTo(chartRight, y2)
+      ctx.stroke()
+      ctx.setLineDash([])
+      // Label box on the right edge
+      const labelText = `ENTRY ZONE: ${a.entry} - ${a.entry2}`
+      ctx.font = "bold 10px Arial"
+      const boxW = ctx.measureText(labelText).width + 12
+      const midY = (y1 + y2) / 2
+      ctx.fillStyle = "#FFFFFF"
+      roundRect(ctx, chartRight + 2, midY - 9, boxW, 18, 4)
+      ctx.fill()
+      ctx.fillStyle = "#0A1929"
+      ctx.fillText(labelText, chartRight + 8, midY + 4)
+    } else {
+      // Single entry line (no entry2)
+      drawLevel(entryNum, "#FFFFFF", "ENTRY", a.entry)
+    }
+
     drawLevel(tp1Num, "#00D09C", "TP1", a.tp1)
     drawLevel(tp2Num, "#22D3EE", "TP2", a.tp2)
     drawLevel(tp3Num, "#3B82F6", "TP3", a.tp3)
@@ -369,6 +405,7 @@ export function SignalManager() {
   const [symbol, setSymbol] = useState("OANDA:XAUUSD")
   const [signalType, setSignalType] = useState("BUY")
   const [entry, setEntry] = useState("")
+  const [entry2, setEntry2] = useState("")
   const [stopLoss, setStopLoss] = useState("")
   const [tp1, setTp1] = useState("")
   const [tp2, setTp2] = useState("")
@@ -449,7 +486,7 @@ export function SignalManager() {
       qc.invalidateQueries({ queryKey: ["admin-signals"] })
       qc.invalidateQueries({ queryKey: ["signals"] })
       toast.success("Signal published!")
-      setEntry(""); setStopLoss(""); setTp1(""); setTp2(""); setTp3(""); setNote(""); setScreenshot("")
+      setEntry(""); setEntry2(""); setStopLoss(""); setTp1(""); setTp2(""); setTp3(""); setNote(""); setScreenshot("")
       setUploadedScreenshot("")
       setHideLevels(false)
       setAutoFilled(false)
@@ -533,6 +570,7 @@ export function SignalManager() {
   useEffect(() => {
     setAutoFilled(false)
     setEntry("")
+    setEntry2("")
     setStopLoss("")
     setTp1("")
     setTp2("")
@@ -630,6 +668,12 @@ export function SignalManager() {
         p,
       )
       const newEntry = levels.entry
+      // Entry Zone: entry2 = entry + a small range (e.g. +5 for Gold, +50 for BTC)
+      // so the admin gets a pre-filled zone they can tweak.
+      const offsets = getOffsets(symbol)
+      const dir = signalType === "SELL" ? -1 : 1
+      const d = symbol === "FX:EURUSD" || symbol === "FX:GBPUSD" ? 4 : 2
+      const newEntry2 = mode === "all" ? (p + dir * offsets.tp1 * 0.5).toFixed(d) : entry2
       const newSL = mode === "all" ? levels.stopLoss : stopLoss
       const newTp1 = mode === "all" ? levels.tp1 : tp1
       const newTp2 = mode === "all" ? levels.tp2 : tp2
@@ -637,6 +681,7 @@ export function SignalManager() {
 
       setEntry(newEntry)
       if (mode === "all") {
+        setEntry2(newEntry2)
         setStopLoss(newSL)
         setTp1(newTp1)
         setTp2(newTp2)
@@ -647,13 +692,13 @@ export function SignalManager() {
 
       // Render screenshot synchronously with the NEW values (not stale state).
       const shot = renderSignalCard({
-        symbol, signalType, entry: newEntry, stopLoss: newSL,
+        symbol, signalType, entry: newEntry, entry2: newEntry2, stopLoss: newSL,
         tp1: newTp1, tp2: newTp2, tp3: newTp3, note, livePrice: p, candles,
       })
       setScreenshot(shot)
       return shot
     },
-    [livePrice, symbol, signalType, fetchPrice, stopLoss, tp1, tp2, tp3, note, candles],
+    [livePrice, symbol, signalType, fetchPrice, stopLoss, tp1, tp2, tp3, note, candles, entry2],
   )
 
   // BUG 3 FIX: Auto-fill Entry/SL/TP the moment the live price arrives — so
@@ -669,21 +714,21 @@ export function SignalManager() {
   // ---------- BUG 2: screenshot capture (thin wrapper around renderSignalCard) ----------
   const captureScreenshot = useCallback((): string => {
     const shot = renderSignalCard({
-      symbol, signalType, entry, stopLoss, tp1, tp2, tp3, note, livePrice, candles,
+      symbol, signalType, entry, entry2, stopLoss, tp1, tp2, tp3, note, livePrice, candles,
     })
     setScreenshot(shot)
     return shot
-  }, [symbol, signalType, entry, stopLoss, tp1, tp2, tp3, note, livePrice, candles])
+  }, [symbol, signalType, entry, entry2, stopLoss, tp1, tp2, tp3, note, livePrice, candles])
 
   // Auto-capture whenever form values change (so screenshot is always fresh).
   useEffect(() => {
     if (entry || stopLoss || tp1) {
       const shot = renderSignalCard({
-        symbol, signalType, entry, stopLoss, tp1, tp2, tp3, note, livePrice, candles,
+        symbol, signalType, entry, entry2, stopLoss, tp1, tp2, tp3, note, livePrice, candles,
       })
       setScreenshot(shot)
     }
-  }, [entry, stopLoss, tp1, tp2, tp3, note, signalType, symbol, livePrice, candles])
+  }, [entry, entry2, stopLoss, tp1, tp2, tp3, note, signalType, symbol, livePrice, candles])
 
   const publish = () => {
     if (!entry || !stopLoss) { toast.error("Entry and SL required"); return }
@@ -729,6 +774,7 @@ export function SignalManager() {
     toast.info(hideLevels ? "🔒 Publishing chart-only signal (levels hidden)" : "📊 Publishing signal with levels")
     createMutation.mutateAsync({
       symbol, signalType, entry, stopLoss,
+      entry2: entry2 || null,
       tp1: tp1 || null, tp2: tp2 || null, tp3: tp3 || null,
       note: note || null, screenshot: shot,
       hideLevels,
@@ -984,11 +1030,12 @@ export function SignalManager() {
               </div>
             </div>
 
-            {/* BUG 1 FIX: Entry field auto-fills live price on focus (tap). */}
-            <div className="space-y-1">
+            {/* ENTRY ZONE — 2 entry prices (From / To). Client can take entry
+                anywhere between these 2 prices. Auto-fills on tap. */}
+            <div className="col-span-2 space-y-1">
               <Label className="text-xs flex items-center justify-between">
                 <span className="flex items-center gap-1">
-                  Entry Price
+                  Entry Zone (From - To)
                   <span className="rounded bg-brand/10 px-1 py-0.5 text-[9px] font-bold text-brand">tap to auto-fill</span>
                 </span>
                 <button
@@ -999,19 +1046,26 @@ export function SignalManager() {
                   use live
                 </button>
               </Label>
-              <Input
-                value={entry}
-                onChange={(e) => setEntry(e.target.value)}
-                onFocus={() => {
-                  // BUG 1: tapping the Entry field auto-fills live price + SL + TP.
-                  // Only fires when field is empty + hasn't auto-filled yet for this symbol.
-                  if (!entry && !autoFilled) {
-                    void applyLivePrice("all")
-                  }
-                }}
-                placeholder="Tap to auto-fill from live price"
-                className="h-9"
-              />
+              <div className="flex items-center gap-2">
+                <Input
+                  value={entry}
+                  onChange={(e) => setEntry(e.target.value)}
+                  onFocus={() => {
+                    if (!entry && !autoFilled) {
+                      void applyLivePrice("all")
+                    }
+                  }}
+                  placeholder="Entry 1 (From)"
+                  className="h-9"
+                />
+                <span className="text-xs font-bold text-muted-foreground">to</span>
+                <Input
+                  value={entry2}
+                  onChange={(e) => setEntry2(e.target.value)}
+                  placeholder="Entry 2 (To)"
+                  className="h-9"
+                />
+              </div>
             </div>
 
             <div className="space-y-1">

@@ -17,6 +17,7 @@ interface Signal {
   symbol: string
   signalType: string
   entry: string
+  entry2: string | null
   stopLoss: string
   tp1: string | null
   tp2: string | null
@@ -73,13 +74,15 @@ export function SignalList() {
   const signals = data?.signals ?? []
 
   const copyTrade = (s: Signal) => {
-    const text = `${s.signalType} ${pairLabel(s.symbol)}\nEntry: ${s.entry}\nSL: ${s.stopLoss}${s.tp1 ? `\nTP1: ${s.tp1}` : ""}${s.tp2 ? `\nTP2: ${s.tp2}` : ""}${s.tp3 ? `\nTP3: ${s.tp3}` : ""}${s.note ? `\nNote: ${s.note}` : ""}\n\n— TradeSeekho PK`
+    const entryText = s.entry2 ? `Entry Zone: ${s.entry} - ${s.entry2}` : `Entry: ${s.entry}`
+    const text = `${s.signalType} ${pairLabel(s.symbol)}\n${entryText}\nSL: ${s.stopLoss}${s.tp1 ? `\nTP1: ${s.tp1}` : ""}${s.tp2 ? `\nTP2: ${s.tp2}` : ""}${s.tp3 ? `\nTP3: ${s.tp3}` : ""}${s.note ? `\nNote: ${s.note}` : ""}\n\n— TradeSeekho PK`
     navigator.clipboard?.writeText(text)
     toast.success("Signal copied!")
   }
 
   const shareSignal = (s: Signal) => {
-    const text = `${s.signalType} ${pairLabel(s.symbol)}\nEntry: ${s.entry}\nSL: ${s.stopLoss}${s.tp1 ? `\nTP1: ${s.tp1}` : ""}${s.tp2 ? `\nTP2: ${s.tp2}` : ""}${s.tp3 ? `\nTP3: ${s.tp3}` : ""}\n\n— TradeSeekho PK\nhttps://tradeseekho-app.vercel.app`
+    const entryText = s.entry2 ? `Entry Zone: ${s.entry} - ${s.entry2}` : `Entry: ${s.entry}`
+    const text = `${s.signalType} ${pairLabel(s.symbol)}\n${entryText}\nSL: ${s.stopLoss}${s.tp1 ? `\nTP1: ${s.tp1}` : ""}${s.tp2 ? `\nTP2: ${s.tp2}` : ""}${s.tp3 ? `\nTP3: ${s.tp3}` : ""}\n\n— TradeSeekho PK\nhttps://tradeseekho-app.vercel.app`
     window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, "_blank")
   }
 
@@ -176,7 +179,11 @@ export function SignalList() {
                         </div>
                         {!s.hideLevels && (
                           <div className="mt-0.5 text-[11px] text-muted-foreground">
-                            Entry: <span className="font-bold text-foreground">{s.entry}</span>
+                            {s.entry2 ? (
+                              <>Entry Zone: <span className="font-bold text-foreground">{s.entry} - {s.entry2}</span></>
+                            ) : (
+                              <>Entry: <span className="font-bold text-foreground">{s.entry}</span></>
+                            )}
                             {" · "}SL: <span className="font-bold text-destructive">{s.stopLoss}</span>
                             {s.tp1 && <span>{" · "}TP: <span className="font-bold text-brand">{s.tp1}</span></span>}
                           </div>
@@ -245,7 +252,9 @@ export function SignalList() {
                       Only show when levels are meant to be visible. */}
                   {!selected.hideLevels && (
                     <div className="absolute top-2 left-2 flex flex-col gap-1">
-                      <span className="rounded bg-brand/90 px-2 py-0.5 text-[10px] font-bold text-white">Entry: {selected.entry}</span>
+                      <span className="rounded bg-brand/90 px-2 py-0.5 text-[10px] font-bold text-white">
+                        {selected.entry2 ? `Entry Zone: ${selected.entry} - ${selected.entry2}` : `Entry: ${selected.entry}`}
+                      </span>
                       <span className={`rounded px-2 py-0.5 text-[10px] font-bold text-white ${selected.slHitAt ? "bg-red-600" : "bg-destructive/90"}`}>
                         SL: {selected.stopLoss} {selected.slHitAt && "❌"}
                       </span>
@@ -310,9 +319,11 @@ export function SignalList() {
                 ) : (
                   <>
                     <div className="grid grid-cols-2 gap-2">
-                      <div className="rounded-lg bg-muted/40 p-2.5">
-                        <div className="text-[10px] uppercase text-muted-foreground">Entry</div>
-                        <div className="text-sm font-bold text-foreground">{selected.entry}</div>
+                      <div className={`rounded-lg p-2.5 ${selected.entry2 ? "col-span-2 bg-brand/10 ring-1 ring-brand/30" : "bg-muted/40"}`}>
+                        <div className="text-[10px] uppercase text-muted-foreground">{selected.entry2 ? "Entry Zone" : "Entry"}</div>
+                        <div className="text-sm font-bold text-foreground">
+                          {selected.entry2 ? `${selected.entry} - ${selected.entry2}` : selected.entry}
+                        </div>
                       </div>
                       <div className={`rounded-lg p-2.5 ${selected.slHitAt ? "bg-red-500/15 ring-1 ring-red-500/40" : "bg-destructive/10"}`}>
                         <div className="text-[10px] uppercase text-muted-foreground flex items-center gap-1">

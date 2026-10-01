@@ -260,7 +260,8 @@ model Signal {
   id          String   @id @default(cuid())
   symbol      String   // OANDA:XAUUSD | BINANCE:BTCUSDT | TVC:USOIL | FX:EURUSD | FX:GBPUSD
   signalType  String   // BUY | SELL
-  entry       String   // e.g. "1.0950"
+  entry       String   // e.g. "1.0950" — Entry Price 1 (From)
+  entry2      String?  // e.g. "1.0970" — Entry Price 2 (To). When set, client shows Entry Zone.
   stopLoss    String   // e.g. "1.0930"
   tp1         String?
   tp2         String?

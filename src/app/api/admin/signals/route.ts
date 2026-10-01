@@ -23,7 +23,7 @@ export async function POST(req: Request) {
   const guard = await requireAdmin()
   if (guard) return guard
   const body = await req.json()
-  const { symbol, signalType, entry, stopLoss, tp1, tp2, tp3, note, screenshot, hideLevels } = body
+  const { symbol, signalType, entry, entry2, stopLoss, tp1, tp2, tp3, note, screenshot, hideLevels } = body
   if (!symbol || !signalType || !entry || !stopLoss || !screenshot) {
     return NextResponse.json(
       { error: "symbol, signalType, entry, stopLoss, screenshot required" },
@@ -35,6 +35,7 @@ export async function POST(req: Request) {
       symbol,
       signalType,
       entry,
+      entry2: entry2 || null,
       stopLoss,
       tp1: tp1 || null,
       tp2: tp2 || null,

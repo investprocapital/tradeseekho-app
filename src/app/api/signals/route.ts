@@ -18,6 +18,7 @@ export async function GET() {
       symbol: s.symbol,
       signalType: s.signalType,
       entry: s.entry,
+      entry2: s.entry2,
       stopLoss: s.stopLoss,
       tp1: s.tp1,
       tp2: s.tp2,
