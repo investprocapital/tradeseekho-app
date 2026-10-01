@@ -35,6 +35,7 @@ export default function Home() {
   const loginOpen = useStore((s) => s.loginOpen)
   const activeCategory = useStore((s) => s.activeCategorySlug)
   const showAdmin = useStore((s) => s.showAdmin)
+  const setShowAdmin = useStore((s) => s.setShowAdmin)
   const lang = useStore((s) => s.lang)
   const bottomTab = useStore((s) => s.bottomTab)
   const openLesson = useStore((s) => s.openLesson)
