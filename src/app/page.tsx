@@ -5,7 +5,7 @@ import { useSession } from "next-auth/react"
 import { motion } from "framer-motion"
 import { Sprout, LineChart, Trophy, CheckCircle2, Award, BookOpen, Crown, ArrowRight, Lock, BarChart3, ChevronRight } from "lucide-react"
 import { useStore } from "@/lib/store"
-import { useLessonsBundle, useProMe } from "@/components/tradeseekho/use-data"
+import { useLessonsBundle, useProMe, useCurrentUser } from "@/components/tradeseekho/use-data"
 import { Header } from "@/components/tradeseekho/header"
 import { Footer } from "@/components/tradeseekho/footer"
 import { BrokerAdBanner } from "@/components/tradeseekho/broker-ad-banner"
@@ -35,6 +35,7 @@ export default function Home() {
   const loginOpen = useStore((s) => s.loginOpen)
   const activeCategory = useStore((s) => s.activeCategorySlug)
   const showAdmin = useStore((s) => s.showAdmin)
+  const setShowAdmin = useStore((s) => s.setShowAdmin)
   const lang = useStore((s) => s.lang)
   const bottomTab = useStore((s) => s.bottomTab)
   const openLesson = useStore((s) => s.openLesson)
@@ -43,6 +44,7 @@ export default function Home() {
   const setProOpen = useStore((s) => s.setProOpen)
   const { data: proMe } = useProMe()
   const isPro = proMe?.proStatus === "active"
+  const { data: userData } = useCurrentUser()
   const { data, isLoading } = useLessonsBundle("all")
 
   // Auth gate: if user is not logged in, show Login dialog automatically
@@ -52,10 +54,26 @@ export default function Home() {
     }
   }, [status, loginOpen, setLoginOpen])
 
-  // NOTE: showAdmin is persisted in Zustand (localStorage) so it survives
-  // app minimize/reopen + page reloads. We do NOT auto-restore it here because
-  // that would fight with the "Exit Admin" button (setShowAdmin(false) would
-  // be immediately reverted). The persisted flag is sufficient.
+  // ROLE-GATED ADMIN PANEL: showAdmin is persisted in localStorage, but it
+  // MUST only be active when the logged-in user's role is actually "admin".
+  // This prevents the admin panel from showing on client dashboards if the
+  // persisted flag is stale (e.g. admin logged out + a client logged in on
+  // the same device, or the admin's role was changed). We auto-CLEAR showAdmin
+  // if the user is not an admin. We do NOT auto-SET it (the admin chooses to
+  // enter via login) so that "Exit Admin" still works.
+  useEffect(() => {
+    if (showAdmin && status === "authenticated") {
+      const role = userData?.user?.role
+      if (role && role !== "admin") {
+        // User is NOT an admin — force-clear the admin panel
+        setShowAdmin(false)
+      }
+    }
+    if (showAdmin && status === "unauthenticated") {
+      // Not logged in at all — force-clear
+      setShowAdmin(false)
+    }
+  }, [showAdmin, status, userData, setShowAdmin])
 
   const lessons = data?.lessons ?? []
   const categories = data?.categories ?? []
