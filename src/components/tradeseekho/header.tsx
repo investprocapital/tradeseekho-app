@@ -155,7 +155,20 @@ export function Header() {
               <DropdownMenuItem onSelect={(e) => { e.preventDefault(); setCertOpen(true) }} className="gap-2">
                 <Award className="h-4 w-4" /> Certificates
               </DropdownMenuItem>
-              <DropdownMenuItem onSelect={() => { setShowAdmin(false); signOut({ callbackUrl: "/", redirect: true }) }} className="gap-2 text-destructive focus:text-destructive">
+              <DropdownMenuItem
+                onSelect={async (e) => {
+                  e.preventDefault()
+                  // Clear admin mode + sign out of NextAuth + reset client state
+                  setShowAdmin(false)
+                  try {
+                    await signOut({ callbackUrl: "/", redirect: false })
+                  } catch { /* ignore */ }
+                  // Hard reload to home — clears all client state (Zustand,
+                  // TanStack cache) + ensures the login dialog shows fresh.
+                  window.location.href = "/"
+                }}
+                className="gap-2 text-destructive focus:text-destructive"
+              >
                 <LogOut className="h-4 w-4" /> Sign out
               </DropdownMenuItem>
             </DropdownMenuContent>
