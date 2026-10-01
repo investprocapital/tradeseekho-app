@@ -6,7 +6,7 @@ import { motion } from "framer-motion"
 import {
   Download, Users, BookOpen, BarChart3, Shield, Lock, LogOut, Eye,
   Plus, Pencil, Trash2, Save, Send, Megaphone, Check, ChevronRight, ArrowLeft,
-  Crown, X, Upload, CreditCard, Search, TrendingUp,
+  Crown, X, Upload, CreditCard, Search, TrendingUp, MessageSquare,
 } from "lucide-react"
 import {
   Card, CardContent, CardHeader, CardTitle, CardDescription,
@@ -133,6 +133,7 @@ export function AdminPanel() {
             <TabsTrigger value="pages" className="gap-1 whitespace-nowrap"><BookOpen className="h-4 w-4" /><span className="hidden xs:inline sm:inline">Pages</span></TabsTrigger>
             <TabsTrigger value="signals" className="gap-1 whitespace-nowrap"><TrendingUp className="h-4 w-4" /><span className="hidden xs:inline sm:inline">Signals</span></TabsTrigger>
             <TabsTrigger value="pro" className="gap-1 whitespace-nowrap"><Crown className="h-4 w-4" /><span className="hidden xs:inline sm:inline">Pro</span></TabsTrigger>
+            <TabsTrigger value="comments" className="gap-1 whitespace-nowrap"><MessageSquare className="h-4 w-4" /><span className="hidden xs:inline sm:inline">Comments</span></TabsTrigger>
           </TabsList>
         </div>
         <TabsContent value="dashboard" className="mt-5"><DashboardTab /></TabsContent>
@@ -145,6 +146,7 @@ export function AdminPanel() {
         <TabsContent value="pages" className="mt-5"><PagesTab /></TabsContent>
         <TabsContent value="signals" className="mt-5"><SignalManager /></TabsContent>
         <TabsContent value="pro" className="mt-5"><ProRequestsTab /></TabsContent>
+        <TabsContent value="comments" className="mt-5"><ManageCommentsTab /></TabsContent>
       </Tabs>
     </div>
   )
@@ -1637,6 +1639,136 @@ function PagesTab() {
               )}
             </div>
           ))}
+        </CardContent>
+      </Card>
+    </div>
+  )
+}
+
+/* ---------------- Manage Comments ---------------- */
+function ManageCommentsTab() {
+  const qc = useQueryClient()
+  const [filter, setFilter] = useState<"all" | "hidden" | "visible" | "reported">("all")
+
+  const { data, isLoading } = useQuery({
+    queryKey: ["admin-comments", filter],
+    queryFn: async () => {
+      const res = await fetch(`/api/admin/comments?filter=${filter}`)
+      if (!res.ok) throw new Error("failed")
+      return res.json()
+    },
+  })
+
+  const toggleMutation = useMutation({
+    mutationFn: async ({ id, hidden }: { id: string; hidden: boolean }) => {
+      const res = await fetch(`/api/admin/comments?id=${id}`, {
+        method: "PATCH",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ hidden }),
+      })
+      if (!res.ok) throw new Error("failed")
+      return res.json()
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["admin-comments"] })
+      toast.success("Comment updated")
+    },
+  })
+
+  const deleteMutation = useMutation({
+    mutationFn: async (id: string) => {
+      await fetch(`/api/admin/comments?id=${id}`, { method: "DELETE" })
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["admin-comments"] })
+      toast.success("Comment deleted")
+    },
+  })
+
+  const comments = data?.comments ?? []
+
+  return (
+    <div className="space-y-4">
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <MessageSquare className="h-5 w-5 text-brand" /> Manage Comments
+          </CardTitle>
+          <CardDescription>
+            Approve (show) or hide user comments. New comments are hidden by default.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          {/* Filter chips */}
+          <div className="flex flex-wrap gap-1.5">
+            {(["all", "hidden", "visible", "reported"] as const).map((f) => (
+              <button
+                key={f}
+                onClick={() => setFilter(f)}
+                className={`rounded-full px-2.5 py-1 text-[11px] font-bold transition ${filter === f ? "bg-brand text-brand-foreground" : "bg-muted text-muted-foreground"}`}
+              >
+                {f === "all" ? "All" : f === "hidden" ? "Hidden" : f === "visible" ? "Visible" : "Reported"}
+              </button>
+            ))}
+          </div>
+
+          {isLoading ? (
+            <p className="text-sm text-muted-foreground">Loading...</p>
+          ) : comments.length === 0 ? (
+            <p className="text-sm text-muted-foreground">No comments found.</p>
+          ) : (
+            <div className="space-y-2 max-h-[600px] overflow-y-auto">
+              {comments.map((c: any) => (
+                <div key={c.id} className={`rounded-xl border p-3 ${c.hidden ? "border-amber-500/40 bg-amber-500/5" : "border-border bg-card"}`}>
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="text-sm font-bold">{c.userName}</span>
+                        <span className="text-[10px] text-muted-foreground">
+                          {c.signalSymbol} {c.signalType}
+                        </span>
+                        <span className="text-[10px] text-muted-foreground">
+                          · {new Date(c.createdAt).toLocaleDateString("en-GB", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" })}
+                        </span>
+                        {c.hidden && (
+                          <span className="rounded-full bg-amber-500/20 px-1.5 py-0.5 text-[9px] font-bold text-amber-600">HIDDEN</span>
+                        )}
+                        {c.reports > 0 && (
+                          <span className="rounded-full bg-red-500/20 px-1.5 py-0.5 text-[9px] font-bold text-red-600">{c.reports} REPORTS</span>
+                        )}
+                        <span className="text-[10px] text-muted-foreground">❤️ {c.likes}</span>
+                      </div>
+                      <p className="mt-1 text-sm text-foreground">{c.text}</p>
+                      {c.image && (
+                        <img src={c.image} alt="" className="mt-2 max-h-32 w-auto rounded-lg border border-border" />
+                      )}
+                    </div>
+                  </div>
+                  {/* Actions */}
+                  <div className="mt-2 flex gap-2">
+                    <Button
+                      size="sm"
+                      variant={c.hidden ? "default" : "outline"}
+                      className="gap-1.5"
+                      onClick={() => toggleMutation.mutate({ id: c.id, hidden: !c.hidden })}
+                    >
+                      {c.hidden ? "Show" : "Hide"}
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="gap-1.5 text-destructive"
+                      onClick={() => {
+                        if (confirm("Delete this comment?")) deleteMutation.mutate(c.id)
+                      }}
+                    >
+                      <Trash2 className="h-3.5 w-3.5" /> Delete
+                    </Button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </CardContent>
       </Card>
     </div>

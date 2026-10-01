@@ -11,6 +11,7 @@ import { ScrollArea } from "@/components/ui/scroll-area"
 import { toast } from "sonner"
 import { useStore, useT } from "@/lib/store"
 import { pairLabel } from "@/lib/signals"
+import { CommentSection } from "./comment-section"
 
 interface Signal {
   id: string
@@ -405,6 +406,10 @@ export function SignalList() {
                 <p className="text-center text-[10px] text-muted-foreground">
                   Signal by TradeSeekho PK · {new Date(selected.createdAt).toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" })}
                 </p>
+
+                {/* Comments section — text + image upload, like/report.
+                    New comments are hidden by default (admin approves). */}
+                <CommentSection signalId={selected.id} />
               </div>
             </motion.div>
           </motion.div>

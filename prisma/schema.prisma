@@ -283,6 +283,7 @@ model Signal {
   updatedAt   DateTime @updatedAt
 
   notifications Notification[]
+  comments      Comment[]
 
   @@index([status])
 }
@@ -301,6 +302,28 @@ model Notification {
   createdAt DateTime @default(now())
 
   @@index([createdAt])
+}
+
+// Signal comments — users post text + optional image (chart screenshot) under
+// each signal. By default, new comments are HIDDEN — admin must manually approve
+// (show) them. This prevents spam/inappropriate content from appearing publicly.
+// Likes are a simple counter (no per-user tracking in Phase 1). Reports flag
+// comments for admin review.
+model Comment {
+  id        String   @id @default(cuid())
+  signalId  String
+  signal    Signal   @relation(fields: [signalId], references: [id], onDelete: Cascade)
+  userId    String
+  userName  String   @default("Anonymous")
+  text      String
+  image     String?  // base64 data URL (compressed, max ~200KB)
+  hidden    Boolean  @default(true) // new comments start hidden — admin approves
+  likes     Int      @default(0)
+  reports   Int      @default(0)
+  createdAt DateTime @default(now())
+
+  @@index([signalId])
+  @@index([hidden])
 }
 
 model AppStats {
