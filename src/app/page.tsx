@@ -173,15 +173,19 @@ export default function Home() {
             </section>
           </>
         ) : null}
-        <Footer />
+        {!showAdmin && <Footer />}
 
-        {/* Broker Ad Banner — fixed above bottom nav (rotates every 10s: Exness → XM → OctaFX) */}
-        <div className="shrink-0 mb-2 border-t border-border/50 bg-background/95 px-2 py-1.5">
-          <BrokerAdBanner fixed />
-        </div>
+        {/* Broker Ad Banner — only in client mode (not admin) */}
+        {!showAdmin && (
+          <div className="shrink-0 mb-2 border-t border-border/50 bg-background/95 px-2 py-1.5">
+            <BrokerAdBanner fixed />
+          </div>
+        )}
       </main>
 
-      <BottomNav />
+      {/* Bottom Nav — HIDDEN in admin mode. Admin panel has its own tab nav.
+          This prevents the admin from accidentally exiting to client pages. */}
+      {!showAdmin && <BottomNav />}
 
       {/* Overlays */}
       <LessonReader />

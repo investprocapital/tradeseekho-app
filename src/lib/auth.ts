@@ -81,22 +81,44 @@ export const authOptions: NextAuthOptions = {
       // If a user with the same email already exists (from email/password signup),
       // use that existing account — NO duplicates.
       if (account?.provider === "google" && user.email) {
-        const exists = await db.user.findUnique({ where: { email: user.email } })
+        const email = user.email.trim().toLowerCase()
+        const adminEmail = (process.env.ADMIN_EMAIL || "").trim().toLowerCase()
+
+        const exists = await db.user.findUnique({ where: { email } })
         if (!exists) {
+          // LOCK ADMIN ROLE: if this email matches ADMIN_EMAIL env var, create
+          // as role=admin. Otherwise create as role=student (default).
+          const isAdmin = adminEmail && email === adminEmail
           await db.user.create({
             data: {
-              email: user.email,
+              email,
               name: user.name ?? null,
               image: (user as { image?: string }).image ?? null,
+              ...(isAdmin ? { role: "admin" } : {}),
             },
           })
-        }
-        // If exists but has no image, update with Google image
-        if (exists && !exists.image && (user as { image?: string }).image) {
-          await db.user.update({
-            where: { id: exists.id },
-            data: { image: (user as { image?: string }).image ?? null, name: exists.name || user.name },
-          })
+        } else {
+          // LOCK ADMIN ROLE: if the existing user's email matches ADMIN_EMAIL,
+          // ensure role is ALWAYS "admin" (never allow downgrade to student).
+          // This prevents the admin account from becoming a normal client.
+          const isAdmin = adminEmail && email === adminEmail
+          if (isAdmin && exists.role !== "admin") {
+            await db.user.update({
+              where: { id: exists.id },
+              data: { role: "admin" },
+            })
+          }
+          // If exists but has no image, update with Google image
+          if (!exists.image && (user as { image?: string }).image) {
+            await db.user.update({
+              where: { id: exists.id },
+              data: {
+                image: (user as { image?: string }).image ?? null,
+                name: exists.name || user.name,
+                ...(isAdmin ? { role: "admin" } : {}),
+              },
+            })
+          }
         }
       }
       return true

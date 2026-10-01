@@ -19,7 +19,6 @@ export function BottomNav() {
   const setCertOpen = useStore((s) => s.setCertOpen)
   const setEditProfileOpen = useStore((s) => s.setEditProfileOpen)
   const setSettingsOpen = useStore((s) => s.setSettingsOpen)
-  const setShowAdmin = useStore((s) => s.setShowAdmin)
   const setLoginOpen = useStore((s) => s.setLoginOpen)
   const setProOpen = useStore((s) => s.setProOpen)
   const activeCategory = useStore((s) => s.activeCategorySlug)
@@ -27,7 +26,9 @@ export function BottomNav() {
   const { data } = useLessonsBundle("all")
 
   const onTab = (tab: BottomTab) => {
-    setShowAdmin(false)
+    // NOTE: do NOT call setShowAdmin(false) here — that was the old bug that
+    // caused admin to exit when clicking bottom nav. The bottom nav is now
+    // hidden in admin mode (see page.tsx), so this only runs in client mode.
     if (tab === "lessons") setActiveCategory("all")
     setBottomTab(tab)
   }

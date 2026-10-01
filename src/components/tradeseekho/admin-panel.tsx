@@ -96,8 +96,8 @@ export function AdminPanel() {
           </div>
         </div>
         <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm" className="gap-1.5" onClick={() => setShowAdmin(false)}>
-            <Eye className="h-4 w-4" /> <span className="hidden sm:inline">View Site</span>
+          <Button variant="outline" size="sm" className="gap-1.5 border-brand/40 text-brand hover:bg-brand-muted" onClick={() => setShowAdmin(false)}>
+            <Eye className="h-4 w-4" /> <span>Exit Admin</span>
           </Button>
           <Button
             variant="ghost"
