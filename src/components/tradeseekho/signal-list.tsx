@@ -371,6 +371,10 @@ export function SignalList() {
                   </div>
                 )}
 
+                {/* PRO GUIDE — auto-shown on every signal detail.
+                    Default message saved in admin panel (not per-signal). */}
+                <ProGuideCard />
+
                 {/* Live Chart */}
                 {showChart && (
                   <div className="overflow-hidden rounded-xl border border-border" style={{ height: "350px" }}>
@@ -473,6 +477,43 @@ function FallbackSignalCard({ s }: { s: Signal }) {
         <div className="mt-1 text-center text-[10px] text-white/40">
           TradeSeekho PK · LEARN TRADE GROW
         </div>
+      </div>
+    </div>
+  )
+}
+
+/**
+ * ProGuideCard — the "HOW TO USE SIGNAL" guide shown auto on every signal
+ * detail. This is the Default Message saved in admin panel — not per-signal.
+ * It teaches users how to manage the trade (Entry, TP1 → Breakeven, Secure 50%,
+ * 1-2% Risk Management).
+ */
+function ProGuideCard() {
+  return (
+    <div className="rounded-xl border border-brand/30 bg-gradient-to-br from-brand/5 to-transparent p-3">
+      <div className="mb-2 flex items-center gap-1.5">
+        <span className="text-sm">📈</span>
+        <span className="text-sm font-extrabold text-foreground">HOW TO USE SIGNAL — PRO GUIDE</span>
+      </div>
+      <ol className="space-y-2 text-[11px] leading-relaxed text-muted-foreground">
+        <li className="flex gap-2">
+          <span className="shrink-0 font-extrabold text-brand">1. ENTRY:</span>
+          <span>Place order at given ENTRY price with proper STOP LOSS.</span>
+        </li>
+        <li className="flex gap-2">
+          <span className="shrink-0 font-extrabold text-brand">2. TP1 HIT ✅ = RISK FREE:</span>
+          <span>When TP1 is hit, immediately <span className="font-bold text-foreground">MOVE your SL to ENTRY PRICE (Breakeven)</span>. Your trade is now Risk-Free.</span>
+        </li>
+        <li className="flex gap-2">
+          <span className="shrink-0 font-extrabold text-brand">3. SECURE PROFIT:</span>
+          <span>Close 50% lots on TP1, Hold 50% for TP2 / TP3 with Breakeven SL.</span>
+        </li>
+      </ol>
+      <div className="mt-2.5 rounded-lg bg-gold/10 p-2 text-[11px] font-bold text-gold-foreground">
+        ⭐ Golden Rule: Always use 1-2% Risk Management. Never trade without SL.
+      </div>
+      <div className="mt-2 text-center text-[9px] text-muted-foreground/70">
+        TradeSeekho PK · Educational Purpose Only
       </div>
     </div>
   )
