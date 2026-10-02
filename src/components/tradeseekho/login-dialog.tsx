@@ -131,28 +131,13 @@ export function LoginDialog() {
                     Don't have an account? <button onClick={() => { setView("signup"); setErr(null) }} className="font-bold text-[#00D09C] hover:underline">Sign Up</button>
                   </p>
 
-                  {/* Girl illustration — transparent PNG, blends with dark bg.
-                      RESPONSIVE FIX: use max-width + auto height so the portrait
-                      image (768×1152, ~2:3) scales down without side cropping.
-                      maxHeight reduced to 32vh + marginBottom 20px so the image
-                      is fully visible (no bottom crop) and doesn't touch the
-                      navigation bar on any device. Safe-area padding on the
-                      container handles iPhone home indicator + Android gesture bar. */}
+                  {/* Girl illustration — NOW a proper transparent PNG (no white box).
+                      The old image had a solid white background creating a visible
+                      rectangular box. New image is clean: only girl + laptop +
+                      floating charts, transparent background. No waves/box behind. */}
                   <div className="relative mt-4 flex w-full flex-col items-center" style={{ marginBottom: "20px" }}>
-                    {/* Waves BEHIND girl's feet (bottom) */}
-                    <div className="pointer-events-none absolute bottom-0 left-0 right-0 z-0">
-                      <svg viewBox="0 0 300 80" className="w-full" preserveAspectRatio="none" style={{ height: "60px" }}>
-                        <defs>
-                          <linearGradient id="gw1" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#00D09C" stopOpacity="0.25" /><stop offset="100%" stopColor="#00D09C" stopOpacity="0.05" /></linearGradient>
-                          <linearGradient id="gw2" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#0072FF" stopOpacity="0.15" /><stop offset="100%" stopColor="#0072FF" stopOpacity="0.03" /></linearGradient>
-                        </defs>
-                        <path d="M0,30 C40,50 80,10 150,25 C220,40 260,15 300,30 L300,80 L0,80 Z" fill="url(#gw1)" />
-                        <path d="M0,50 C40,65 80,30 150,45 C220,60 260,35 300,50 L300,80 L0,80 Z" fill="url(#gw2)" />
-                        <path d="M0,65 C40,75 80,50 150,60 C220,70 260,55 300,65 L300,80 L0,80 Z" fill="url(#gw1)" />
-                      </svg>
-                    </div>
-                    {/* Green glow behind girl */}
-                    <div className="pointer-events-none absolute bottom-4 left-1/2 h-32 w-44 -translate-x-1/2 rounded-full bg-[#00D09C] opacity-20 blur-[50px]" />
+                    {/* Green glow behind girl (soft, no box) */}
+                    <div className="pointer-events-none absolute bottom-4 left-1/2 h-32 w-44 -translate-x-1/2 rounded-full bg-[#00D09C] opacity-15 blur-[60px]" />
                     <div className="relative z-10">
                       <img src="/login-girl-transparent.png" alt="TradeSeekho PK trader girl"
                         className="h-auto w-auto object-contain sm:max-w-[220px] md:max-w-[260px]"
