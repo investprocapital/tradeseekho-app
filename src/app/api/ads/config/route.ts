@@ -43,5 +43,7 @@ export async function GET(req: Request) {
     adFrequency: s.adFrequency,
     bannerUnitId: s.bannerUnitId,
     interstitialUnitId: s.interstitialUnitId,
+    signalBottomAd: s.signalBottomAd,
+    signalBottomAdUnitId: s.signalBottomAdUnitId,
   })
 }

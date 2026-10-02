@@ -18,6 +18,8 @@ export async function GET() {
     adsenseEnabled: s.adsenseEnabled,
     autoMode: s.autoMode,
     adFrequency: s.adFrequency,
+    signalBottomAd: s.signalBottomAd,
+    signalBottomAdUnitId: s.signalBottomAdUnitId,
   })
 }
 
@@ -60,6 +62,10 @@ export async function PUT(req: Request) {
     }
   }
 
+  // Signal bottom ad
+  if ("signalBottomAd" in body) data.signalBottomAd = !!body.signalBottomAd
+  if ("signalBottomAdUnitId" in body) data.signalBottomAdUnitId = String(body.signalBottomAdUnitId)
+
   const updated = await db.adSettings.upsert({
     where: { id: "singleton" },
     update: data,
@@ -74,5 +80,7 @@ export async function PUT(req: Request) {
     adsenseEnabled: updated.adsenseEnabled,
     autoMode: updated.autoMode,
     adFrequency: updated.adFrequency,
+    signalBottomAd: updated.signalBottomAd,
+    signalBottomAdUnitId: updated.signalBottomAdUnitId,
   })
 }

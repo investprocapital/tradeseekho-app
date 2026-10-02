@@ -209,6 +209,9 @@ model AdSettings {
   adsenseEnabled       Boolean  @default(true)   // Web Ads (PC/Mobile Browser/iPhone) — Default ON
   autoMode             Boolean  @default(true)   // Auto Switch Mode — one network at a time
   adFrequency          Int      @default(4)      // Show ad every N questions
+  // Signal screen bottom banner ad
+  signalBottomAd       Boolean  @default(true)   // ON/OFF toggle for signal list bottom ad
+  signalBottomAdUnitId String   @default("ca-app-pub-DEMO/SIGNAL_BANNER") // AdMob/AdSense unit ID
   updatedAt            DateTime @updatedAt
 }
 

@@ -1084,6 +1084,30 @@ function AdsTab() {
             />
             <p className="text-[10px] text-muted-foreground">Default: 4 (ad shows after every 4th completed lesson)</p>
           </div>
+
+          {/* Signal Bottom Ad — ON/OFF + Unit ID */}
+          <div className="flex items-center justify-between rounded-lg border border-brand/30 bg-brand/5 p-3">
+            <div>
+              <div className="text-sm font-bold">Signal Screen Bottom Ad</div>
+              <div className="text-[11px] text-muted-foreground">Banner ad at the bottom of Signal List (below all signals)</div>
+            </div>
+            <Switch
+              checked={form.signalBottomAd ?? true}
+              onCheckedChange={(v) => setForm((f) => f && ({ ...f, signalBottomAd: v }))}
+            />
+          </div>
+          {(form.signalBottomAd ?? true) && (
+            <div className="space-y-1">
+              <label className="text-xs font-bold uppercase tracking-wide text-muted-foreground">Signal Bottom Ad Unit ID</label>
+              <Input
+                value={form.signalBottomAdUnitId || ""}
+                onChange={(e) => setForm((f) => f && ({ ...f, signalBottomAdUnitId: e.target.value }))}
+                className="h-9 font-mono text-xs"
+                placeholder="ca-app-pub-XXXX/XXXX or ca-XXXX"
+              />
+              <p className="text-[10px] text-muted-foreground">AdMob (ca-app-pub-) for mobile app · AdSense (ca-) for web</p>
+            </div>
+          )}
         </CardContent>
       </Card>
 
@@ -1105,6 +1129,8 @@ type AdminAdsForm = {
   adsenseEnabled?: boolean
   autoMode?: boolean
   adFrequency?: number
+  signalBottomAd?: boolean
+  signalBottomAdUnitId?: string
 }
 
 /* ---------------- Pro Requests ---------------- */

@@ -12,6 +12,7 @@ import { toast } from "sonner"
 import { useStore, useT } from "@/lib/store"
 import { pairLabel } from "@/lib/signals"
 import { CommentSection } from "./comment-section"
+import { SignalBottomAd } from "./signal-bottom-ad"
 
 interface Signal {
   id: string
@@ -205,6 +206,10 @@ export function SignalList() {
                   )
                 })}
               </div>
+
+              {/* Bottom banner ad — below all signals.
+                  Premium users see NO ads. Admin can toggle ON/OFF. */}
+              <SignalBottomAd />
             </div>
           </ScrollArea>
         </SheetContent>

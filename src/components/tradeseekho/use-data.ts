@@ -16,6 +16,8 @@ export interface AdSettings {
   interstitialEnabled: boolean
   bannerUnitId: string
   interstitialUnitId: string
+  signalBottomAd?: boolean
+  signalBottomAdUnitId?: string
 }
 
 async function j<T>(res: Response | Promise<Response>): Promise<T> {
