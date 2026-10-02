@@ -156,16 +156,16 @@ export function Header() {
                 <Award className="h-4 w-4" /> Certificates
               </DropdownMenuItem>
               <DropdownMenuItem
-                onSelect={async (e) => {
+                onSelect={(e) => {
                   e.preventDefault()
-                  // Clear admin mode + sign out of NextAuth + reset client state
+                  // Clear admin mode first
                   setShowAdmin(false)
-                  try {
-                    await signOut({ callbackUrl: "/", redirect: false })
-                  } catch { /* ignore */ }
-                  // Hard reload to home — clears all client state (Zustand,
-                  // TanStack cache) + ensures the login dialog shows fresh.
-                  window.location.href = "/"
+                  // signOut with redirect:true — NextAuth clears the session
+                  // cookie THEN redirects to "/". This is synchronous from the
+                  // user's perspective (page navigates after cookie is cleared).
+                  // Using redirect:false + manual href caused race conditions
+                  // where the cookie wasn't cleared before the page reloaded.
+                  signOut({ callbackUrl: "/", redirect: true })
                 }}
                 className="gap-2 text-destructive focus:text-destructive"
               >
