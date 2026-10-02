@@ -499,31 +499,36 @@ function FallbackSignalCard({ s }: { s: Signal }) {
  * 1-2% Risk Management).
  */
 function ProGuideCard() {
+  const t = useT()
+  const lang = useStore((s) => s.lang)
+  const rtlFont = lang === "ur" ? "font-urdu" : lang === "ar" ? "font-arabic" : ""
   return (
-    <div className="rounded-xl border border-brand/30 bg-gradient-to-br from-brand/5 to-transparent p-3">
+    <div className={`rounded-xl border border-brand/30 bg-gradient-to-br from-brand/5 to-transparent p-3 ${rtlFont}`}>
       <div className="mb-2 flex items-center gap-1.5">
         <span className="text-sm">📈</span>
-        <span className="text-sm font-extrabold text-foreground">HOW TO USE SIGNAL — PRO GUIDE</span>
+        <span className="text-sm font-extrabold text-foreground">{t("pro.guideTitle")}</span>
       </div>
       <ol className="space-y-2 text-[11px] leading-relaxed text-muted-foreground">
         <li className="flex gap-2">
-          <span className="shrink-0 font-extrabold text-brand">1. ENTRY:</span>
-          <span>Place order at given ENTRY price with proper STOP LOSS.</span>
+          <span className="shrink-0 font-extrabold text-brand">{t("pro.guideStep1Label")}</span>
+          <span>{t("pro.guideStep1")}</span>
         </li>
         <li className="flex gap-2">
-          <span className="shrink-0 font-extrabold text-brand">2. TP1 HIT ✅ = RISK FREE:</span>
-          <span>When TP1 is hit, immediately <span className="font-bold text-foreground">MOVE your SL to ENTRY PRICE (Breakeven)</span>. Your trade is now Risk-Free.</span>
+          <span className="shrink-0 font-extrabold text-brand">{t("pro.guideStep2Label")}</span>
+          <span>{t("pro.guideStep2")}</span>
         </li>
         <li className="flex gap-2">
-          <span className="shrink-0 font-extrabold text-brand">3. SECURE PROFIT:</span>
-          <span>Close 50% lots on TP1, Hold 50% for TP2 / TP3 with Breakeven SL.</span>
+          <span className="shrink-0 font-extrabold text-brand">{t("pro.guideStep3Label")}</span>
+          <span>{t("pro.guideStep3")}</span>
         </li>
       </ol>
-      <div className="mt-2.5 rounded-lg bg-gold/10 p-2 text-[11px] font-bold text-gold-foreground">
-        ⭐ Golden Rule: Always use 1-2% Risk Management. Never trade without SL.
+      {/* Golden Rule — high contrast for both dark + light themes.
+          Uses amber background with dark text (works on both themes). */}
+      <div className="mt-2.5 rounded-lg bg-amber-500 p-2 text-[11px] font-bold text-amber-950 dark:text-amber-50">
+        ⭐ {t("pro.guideGoldenRule")}
       </div>
-      <div className="mt-2 text-center text-[9px] text-muted-foreground/70">
-        TradeSeekho PK · Educational Purpose Only
+      <div className="mt-2 text-center text-[9px] text-muted-foreground">
+        {t("pro.guideFooter")}
       </div>
     </div>
   )

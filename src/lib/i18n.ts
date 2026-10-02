@@ -160,6 +160,15 @@ const en: Dict = {
   "pro.txIdPlaceholderOther": "e.g. JazzCash TID 12345678",
   "pro.copyAddress": "Copy Address",
   "pro.usdtSectionTitle": "USDT TRC20 · Binance · Tron Network",
+  "pro.guideTitle": "HOW TO USE SIGNAL — PRO GUIDE",
+  "pro.guideStep1": "Place order at given ENTRY price with proper STOP LOSS.",
+  "pro.guideStep1Label": "1. ENTRY:",
+  "pro.guideStep2": "When TP1 is hit, immediately MOVE your SL to ENTRY PRICE (Breakeven). Your trade is now Risk-Free.",
+  "pro.guideStep2Label": "2. TP1 HIT ✅ = RISK FREE:",
+  "pro.guideStep3": "Close 50% lots on TP1, Hold 50% for TP2 / TP3 with Breakeven SL.",
+  "pro.guideStep3Label": "3. SECURE PROFIT:",
+  "pro.guideGoldenRule": "Golden Rule: Always use 1-2% Risk Management. Never trade without SL.",
+  "pro.guideFooter": "TradeSeekho PK · Educational Purpose Only",
 }
 
 const ur: Dict = {
@@ -300,6 +309,15 @@ const ur: Dict = {
   "pro.txIdPlaceholderOther": "مثلاً JazzCash TID 12345678",
   "pro.copyAddress": "ایڈریس کاپی کریں",
   "pro.usdtSectionTitle": "USDT TRC20 · Binance · Tron Network",
+  "pro.guideTitle": "سگنل استعمال کرنے کا طریقہ — پرو گائیڈ",
+  "pro.guideStep1": "دیا گیہ ENTRY قیمت پر پرڈر لگائیں ساتھ میں درست STOP LOSS۔",
+  "pro.guideStep1Label": "1. اینٹری:",
+  "pro.guideStep2": "جب TP1 ہٹ ہو جائے، فوراً اپنا SL ENTRY PRICE (Breakeven) پر منتقل کریں۔ آپ کی ٹریڈ اب Risk-Free ہے۔",
+  "pro.guideStep2Label": "2. TP1 ہٹ ✅ = رِسک فری:",
+  "pro.guideStep3": "TP1 پر 50% لاٹس بند کریں، باقی 50% TP2 / TP3 کے لیے Breakeven SL کے ساتھ رکھیں۔",
+  "pro.guideStep3Label": "3. منافع محفوظ کریں:",
+  "pro.guideGoldenRule": "گولڈن رول: ہمیشہ 1-2% Risk Management استعمال کریں۔ بغیر SL کے ٹریڈ نہ کریں۔",
+  "pro.guideFooter": "ٹریڈسیکھو PK · تعلیمی مقاصد کے لیے",
 }
 
 const hi: Dict = {
@@ -440,6 +458,15 @@ const hi: Dict = {
   "pro.txIdPlaceholderOther": "जैसे JazzCash TID 12345678",
   "pro.copyAddress": "पता कॉपी करें",
   "pro.usdtSectionTitle": "USDT TRC20 · Binance · Tron Network",
+  "pro.guideTitle": "सिग्नल का उपयोग कैसे करें — प्रो गाइड",
+  "pro.guideStep1": "दी गई ENTRY कीमत पर ऑर्डर लगाएं साथ में सही STOP LOSS।",
+  "pro.guideStep1Label": "1. एंट्री:",
+  "pro.guideStep2": "जब TP1 हिट हो जाए, तुरंत अपना SL ENTRY PRICE (Breakeven) पर ले जाएं। आपका ट्रेड अब Risk-Free है।",
+  "pro.guideStep2Label": "2. TP1 हिट ✅ = रिस्क फ्री:",
+  "pro.guideStep3": "TP1 पर 50% लॉट्स बंद करें, बाकी 50% TP2 / TP3 के लिए Breakeven SL के साथ रखें।",
+  "pro.guideStep3Label": "3. लाभ सुरक्षित करें:",
+  "pro.guideGoldenRule": "गोल्डन रूल: हमेशा 1-2% Risk Management का उपयोग करें। बिना SL के ट्रेड न करें।",
+  "pro.guideFooter": "ट्रेडसीखो PK · केवल शैक्षिक उद्देश्य",
 }
 
 const ar: Dict = {
@@ -580,6 +607,15 @@ const ar: Dict = {
   "pro.txIdPlaceholderOther": "مثلاً JazzCash TID 12345678",
   "pro.copyAddress": "نسخ العنوان",
   "pro.usdtSectionTitle": "USDT TRC20 · Binance · Tron Network",
+  "pro.guideTitle": "كيفية استخدام الإشارة — دليل المحترفين",
+  "pro.guideStep1": "ضع الأمر عند سعر ENTRY المحدد مع STOP LOSS مناسب.",
+  "pro.guideStep1Label": "1. الدخول:",
+  "pro.guideStep2": "عند الوصول إلى TP1، انقل فوراً SL إلى سعر ENTRY (نقطة التعادل). أصبحت صفقتك الآن خالية من المخاطر.",
+  "pro.guideStep2Label": "2. TP1 ✅ = خالٍ من المخاطر:",
+  "pro.guideStep3": "أغلق 50% من اللوتس عند TP1، احتفظ بـ 50% لـ TP2 / TP3 مع SL عند نقطة التعادل.",
+  "pro.guideStep3Label": "3. تأمين الربح:",
+  "pro.guideGoldenRule": "القاعدة الذهبية: استخدم دائماً 1-2% إدارة المخاطر. لا تتداول بدون SL.",
+  "pro.guideFooter": "تريدسيكو PK · لأغراض تعليمية فقط",
 }
 
 export const DICTS: Record<Lang, Dict> = { en, ur, hi, ar }
