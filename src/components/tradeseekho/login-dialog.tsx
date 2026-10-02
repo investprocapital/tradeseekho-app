@@ -97,8 +97,11 @@ export function LoginDialog() {
             </svg>
           </div>
 
-          {/* Content — single column, centered, scrollable */}
-          <div className="relative z-10 mx-auto flex w-full max-w-sm flex-col items-center px-6" style={{ paddingTop: "calc(env(safe-area-inset-top, 0px) + 3rem)", paddingBottom: "2rem" }}>
+          {/* Content — single column, centered, scrollable.
+              paddingBottom includes safe-area-inset-bottom so the girl image
+              doesn't touch the phone's navigation bar on devices with home
+              indicators (iPhone) or gesture bars (Android). */}
+          <div className="relative z-10 mx-auto flex w-full max-w-sm flex-col items-center px-6" style={{ paddingTop: "calc(env(safe-area-inset-top, 0px) + 3rem)", paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 2.5rem)" }}>
             <AnimatePresence mode="wait">
               {view === "landing" ? (
                 <motion.div key="landing" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0, x: -20 }} className="flex w-full flex-col items-center">
@@ -131,9 +134,11 @@ export function LoginDialog() {
                   {/* Girl illustration — transparent PNG, blends with dark bg.
                       RESPONSIVE FIX: use max-width + auto height so the portrait
                       image (768×1152, ~2:3) scales down without side cropping.
-                      On mobile it caps at 240px wide, tablet 260px, PC 280px.
-                      No fixed height → image keeps aspect ratio, no white gap. */}
-                  <div className="relative mt-6 flex w-full flex-col items-center">
+                      maxHeight reduced to 32vh + marginBottom 20px so the image
+                      is fully visible (no bottom crop) and doesn't touch the
+                      navigation bar on any device. Safe-area padding on the
+                      container handles iPhone home indicator + Android gesture bar. */}
+                  <div className="relative mt-4 flex w-full flex-col items-center" style={{ marginBottom: "20px" }}>
                     {/* Waves BEHIND girl's feet (bottom) */}
                     <div className="pointer-events-none absolute bottom-0 left-0 right-0 z-0">
                       <svg viewBox="0 0 300 80" className="w-full" preserveAspectRatio="none" style={{ height: "60px" }}>
@@ -150,8 +155,8 @@ export function LoginDialog() {
                     <div className="pointer-events-none absolute bottom-4 left-1/2 h-32 w-44 -translate-x-1/2 rounded-full bg-[#00D09C] opacity-20 blur-[50px]" />
                     <div className="relative z-10">
                       <img src="/login-girl-transparent.png" alt="TradeSeekho PK trader girl"
-                        className="h-auto w-auto object-contain sm:max-w-[240px] md:max-w-[280px]"
-                        style={{ maxWidth: "70vw", maxHeight: "38vh", filter: "brightness(1.2) contrast(1.05) drop-shadow(0 0 10px rgba(0,208,156,0.12))" }} />
+                        className="h-auto w-auto object-contain sm:max-w-[220px] md:max-w-[260px]"
+                        style={{ maxWidth: "65vw", maxHeight: "32vh", filter: "brightness(1.2) contrast(1.05) drop-shadow(0 0 10px rgba(0,208,156,0.12))" }} />
                       {/* Floating green forex candlestick in girl's raised hand area */}
                       <motion.div
                         className="absolute"
