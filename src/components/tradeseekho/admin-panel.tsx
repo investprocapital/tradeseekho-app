@@ -105,15 +105,14 @@ export function AdminPanel() {
             variant="ghost"
             size="sm"
             className="gap-1.5 text-destructive hover:text-destructive"
-            onClick={async () => {
+            onClick={() => {
               // Clear admin cookie + adminAuthed + showAdmin (goes to client view)
-              await logout.mutateAsync()
+              logout.mutateAsync()
               setAdminAuthed(false)
               setShowAdmin(false)
               // Also sign out of NextAuth so the session is fully cleared
-              try { await signOut({ redirect: false }) } catch { /* ignore */ }
-              // Reload to reset all client state cleanly
-              window.location.reload()
+              // Use redirect:true so NextAuth handles cookie clear + redirect
+              signOut({ callbackUrl: "/", redirect: true })
             }}
           >
             <LogOut className="h-4 w-4" /> <span className="hidden sm:inline">{t("action.logout")}</span>
