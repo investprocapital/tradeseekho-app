@@ -1,6 +1,7 @@
 "use client"
 
-import { Home, BookOpen, BarChart3, User } from "lucide-react"
+import { Home, BookOpen, BarChart3, User, LogOut } from "lucide-react"
+import { useSession, signOut } from "next-auth/react"
 import { useStore } from "@/lib/store"
 import type { BottomTab } from "@/lib/store"
 import { useLessonsBundle } from "./use-data"
@@ -13,6 +14,7 @@ const TABS: { id: BottomTab; label: string; icon: any }[] = [
 ]
 
 export function BottomNav() {
+  const { data: session } = useSession()
   const bottomTab = useStore((s) => s.bottomTab)
   const setBottomTab = useStore((s) => s.setBottomTab)
   const setBookmarksOpen = useStore((s) => s.setBookmarksOpen)
@@ -21,14 +23,12 @@ export function BottomNav() {
   const setSettingsOpen = useStore((s) => s.setSettingsOpen)
   const setLoginOpen = useStore((s) => s.setLoginOpen)
   const setProOpen = useStore((s) => s.setProOpen)
+  const setShowAdmin = useStore((s) => s.setShowAdmin)
   const activeCategory = useStore((s) => s.activeCategorySlug)
   const setActiveCategory = useStore((s) => s.setActiveCategory)
   const { data } = useLessonsBundle("all")
 
   const onTab = (tab: BottomTab) => {
-    // NOTE: do NOT call setShowAdmin(false) here — that was the old bug that
-    // caused admin to exit when clicking bottom nav. The bottom nav is now
-    // hidden in admin mode (see page.tsx), so this only runs in client mode.
     if (tab === "lessons") setActiveCategory("all")
     setBottomTab(tab)
   }
@@ -37,6 +37,12 @@ export function BottomNav() {
   const onProfile = () => {
     setBottomTab("profile")
     setSettingsOpen(true)
+  }
+
+  // Quick logout — clears admin mode + signs out via NextAuth
+  const onLogout = () => {
+    setShowAdmin(false)
+    signOut({ callbackUrl: "/", redirect: true })
   }
 
   return (
@@ -63,6 +69,19 @@ export function BottomNav() {
             </button>
           )
         })}
+        {/* Quick Logout button — only shows when user is logged in */}
+        {session?.user && (
+          <button
+            onClick={onLogout}
+            className="flex flex-1 flex-col items-center justify-center gap-0.5 py-1 transition-colors text-destructive hover:text-destructive/80"
+            aria-label="Logout"
+          >
+            <span className="relative inline-flex h-7 w-7 items-center justify-center rounded-lg transition-all">
+              <LogOut className="h-[18px] w-[18px]" />
+            </span>
+            <span className="text-[10px] font-bold">Logout</span>
+          </button>
+        )}
       </div>
     </nav>
   )
