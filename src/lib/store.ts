@@ -55,6 +55,10 @@ interface AppState {
   signalsOpen: boolean
   setSignalsOpen: (v: boolean) => void
 
+  // Price Alerts sheet (opened from the home-screen Price Alerts card)
+  priceAlertsOpen: boolean
+  setPriceAlertsOpen: (v: boolean) => void
+
   certOpen: boolean
   setCertOpen: (v: boolean) => void
 
@@ -139,6 +143,9 @@ export const useStore = create<AppState>()(
 
       signalsOpen: false,
       setSignalsOpen: (v) => set({ signalsOpen: v }),
+
+      priceAlertsOpen: false,
+      setPriceAlertsOpen: (v) => set({ priceAlertsOpen: v }),
 
       certOpen: false,
       setCertOpen: (v) => set({ certOpen: v }),

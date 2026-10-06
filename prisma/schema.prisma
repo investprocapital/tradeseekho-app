@@ -329,6 +329,23 @@ model Comment {
   @@index([hidden])
 }
 
+// Price alerts — users set a target price for a symbol. When the live market
+// price crosses the target, a notification is sent. Phase 1: manual check via
+// API (no background cron). Phase 2: FCM push notifications.
+model PriceAlert {
+  id           String   @id @default(cuid())
+  userId       String
+  symbol       String   // OANDA:XAUUSD | BINANCE:BTCUSDT | etc.
+  targetPrice  Float    // the price the user wants to be alerted at
+  direction    String   @default("above") // above | below
+  triggered    Boolean  @default(false) // true once the alert fires
+  createdAt    DateTime @default(now())
+  triggeredAt  DateTime?
+
+  @@index([userId])
+  @@index([symbol])
+}
+
 model AppStats {
   id             String  @id @default("singleton")
   totalDownloads Int     @default(0)

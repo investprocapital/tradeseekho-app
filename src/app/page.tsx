@@ -3,13 +3,14 @@
 import { useEffect } from "react"
 import { useSession } from "next-auth/react"
 import { motion } from "framer-motion"
-import { Sprout, LineChart, Trophy, CheckCircle2, Award, BookOpen, Crown, ArrowRight, Lock, BarChart3, ChevronRight } from "lucide-react"
+import { Sprout, LineChart, Trophy, CheckCircle2, Award, BookOpen, Crown, ArrowRight, Lock, BarChart3, ChevronRight, Bell } from "lucide-react"
 import { useStore } from "@/lib/store"
 import { useLessonsBundle, useProMe, useCurrentUser } from "@/components/tradeseekho/use-data"
 import { Header } from "@/components/tradeseekho/header"
 import { Footer } from "@/components/tradeseekho/footer"
 import { BrokerAdBanner } from "@/components/tradeseekho/broker-ad-banner"
 import { SignalList } from "@/components/tradeseekho/signal-list"
+import { PriceAlertSheet } from "@/components/tradeseekho/price-alert-sheet"
 import { BottomNav } from "@/components/tradeseekho/bottom-nav"
 import { LessonReader } from "@/components/tradeseekho/lesson-reader"
 import { BookmarksSheet } from "@/components/tradeseekho/bookmarks-sheet"
@@ -102,6 +103,9 @@ export default function Home() {
 
             {/* Live Signals */}
             <SignalList />
+
+            {/* Price Alerts — card below Live Signals */}
+            <PriceAlertCard />
 
             {/* Choose Your Level */}
             <section className="mb-4">
@@ -214,6 +218,7 @@ export default function Home() {
       <LessonReader />
       <BookmarksSheet />
       <CertificateSheet />
+      <PriceAlertSheet />
       <LoginDialog />
       <LeaderboardSheet />
       <SettingsSheet />
@@ -222,6 +227,36 @@ export default function Home() {
       <EditProfileDialog />
       <ProDialog />
     </div>
+  )
+}
+
+// Price Alert card — shown on home dashboard below Live Signals.
+// Shows a summary of active alerts + opens the Price Alert sheet on click.
+function PriceAlertCard() {
+  const setPriceAlertsOpen = useStore((s) => s.setPriceAlertsOpen)
+  return (
+    <motion.button
+      initial={{ opacity: 0, y: 8 }}
+      animate={{ opacity: 1, y: 0 }}
+      onClick={() => setPriceAlertsOpen(true)}
+      className="mt-2 flex w-full items-center gap-3 rounded-xl border-2 border-gold/30 bg-gradient-to-r from-gold/5 to-transparent p-3 text-start transition hover:border-gold/60 hover:from-gold/10 active:scale-[0.99]"
+    >
+      <span className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-gold text-white">
+        <Bell className="h-5 w-5" />
+      </span>
+      <div className="min-w-0 flex-1">
+        <div className="flex items-center gap-1.5">
+          <span className="text-sm font-black text-foreground">Price Alerts</span>
+          <span className="rounded-full bg-gold/15 px-1.5 py-0.5 text-[9px] font-bold text-gold">
+            🔔 Live
+          </span>
+        </div>
+        <div className="mt-0.5 truncate text-[11px] font-bold text-muted-foreground">
+          GOLD · BTC · EURUSD · OIL — tap to set alerts
+        </div>
+      </div>
+      <ChevronRight className="h-5 w-5 shrink-0 text-gold" />
+    </motion.button>
   )
 }
 
