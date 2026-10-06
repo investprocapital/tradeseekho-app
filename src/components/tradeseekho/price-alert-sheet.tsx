@@ -9,7 +9,7 @@ import { ScrollArea } from "@/components/ui/scroll-area"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Bell, BellRing, X, Trash2, Loader2, TrendingUp, TrendingDown } from "lucide-react"
+import { Bell, BellRing, X, Trash2, Loader2, TrendingUp, TrendingDown, CheckCircle2 } from "lucide-react"
 import { useStore } from "@/lib/store"
 import { pairLabel, formatPrice } from "@/lib/signals"
 import { toast } from "sonner"
@@ -268,34 +268,67 @@ export function PriceAlertSheet() {
               </Button>
             </div>
 
-            {/* Active Alerts */}
-            {alerts.length > 0 && (
-              <div className="space-y-2">
-                <h3 className="text-sm font-extrabold text-foreground">Your Alerts ({alerts.length})</h3>
-                {alerts.map((a) => (
+            {/* My Active Alerts — always shown (even when empty, shows a hint) */}
+            <div className="space-y-2">
+              <div className="flex items-center gap-1.5">
+                <BellRing className="h-4 w-4 text-gold" />
+                <h3 className="text-sm font-extrabold text-foreground">
+                  My Active Alerts ({alerts.filter(a => !a.triggered).length})
+                </h3>
+              </div>
+              {alerts.length === 0 ? (
+                <p className="rounded-xl border border-dashed border-border bg-muted/20 p-4 text-center text-xs text-muted-foreground">
+                  No alerts yet. Set a target price above to get started.
+                </p>
+              ) : (
+                alerts.map((a) => (
                   <div key={a.id} className={`flex items-center justify-between rounded-xl border p-3 ${
-                    a.triggered ? "border-emerald-500/40 bg-emerald-500/5" : "border-border bg-card"
+                    a.triggered
+                      ? "border-emerald-500/40 bg-emerald-500/5"
+                      : a.direction === "above"
+                        ? "border-emerald-500/30 bg-emerald-500/5"
+                        : "border-red-500/30 bg-red-500/5"
                   }`}>
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2.5">
                       <span className="text-xl">{PAIR_ICONS[a.symbol] || "📊"}</span>
                       <div>
-                        <div className="text-sm font-bold">{pairLabel(a.symbol)}</div>
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-sm font-bold">{pairLabel(a.symbol)}</span>
+                          <span className={`rounded-full px-1.5 py-0.5 text-[8px] font-bold ${
+                            a.direction === "above"
+                              ? "bg-emerald-500/20 text-emerald-500"
+                              : "bg-red-500/20 text-red-500"
+                          }`}>
+                            {a.direction === "above" ? "▲ ABOVE" : "▼ BELOW"}
+                          </span>
+                        </div>
                         <div className="text-[11px] text-muted-foreground">
-                          {a.direction === "above" ? "▲ Above" : "▼ Below"} {a.targetPrice}
-                          {a.triggered && <span className="ml-1 text-emerald-500">✅ Triggered</span>}
+                          Target: <span className="font-bold text-foreground">{a.targetPrice}</span> USD
                         </div>
                       </div>
                     </div>
-                    <button
-                      onClick={() => deleteMutation.mutate(a.id)}
-                      className="rounded-lg p-1.5 text-muted-foreground transition hover:bg-destructive/10 hover:text-destructive"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </button>
+                    <div className="flex items-center gap-2">
+                      {a.triggered ? (
+                        <span className="flex items-center gap-1 rounded-full bg-emerald-500/15 px-2 py-0.5 text-[9px] font-bold text-emerald-500">
+                          <CheckCircle2 className="h-3 w-3" /> Triggered
+                        </span>
+                      ) : (
+                        <span className="flex items-center gap-1 rounded-full bg-gold/15 px-2 py-0.5 text-[9px] font-bold text-gold">
+                          <span className="h-1.5 w-1.5 rounded-full bg-gold animate-pulse" /> Active
+                        </span>
+                      )}
+                      <button
+                        onClick={() => deleteMutation.mutate(a.id)}
+                        className="rounded-lg p-1.5 text-muted-foreground transition hover:bg-destructive/10 hover:text-destructive"
+                        aria-label="Delete alert"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </button>
+                    </div>
                   </div>
-                ))}
-              </div>
-            )}
+                ))
+              )}
+            </div>
 
             {/* Watchlist */}
             <div className="space-y-2">
