@@ -5,7 +5,6 @@ import { motion } from "framer-motion"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { useSession } from "next-auth/react"
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet"
-import { ScrollArea } from "@/components/ui/scroll-area"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -154,7 +153,11 @@ export function PriceAlertSheet() {
           </SheetDescription>
         </SheetHeader>
 
-        <ScrollArea className="ts-scroll flex-1">
+        {/* Scrollable content — uses native overflow-y-auto for reliable
+            touch scrolling on mobile. Radix ScrollArea can sometimes fail
+            to scroll on mobile WebViews, so we use a plain div with
+            overflow-y-auto + -webkit-overflow-scrolling for smooth touch. */}
+        <div className="flex-1 overflow-y-auto overscroll-contain" style={{ WebkitOverflowScrolling: "touch", minHeight: 0 }}>
           <div className="p-4 space-y-3">
             {/* Live Price Section (selected pair) — COMPACT */}
             {selectedPair && (
@@ -364,7 +367,7 @@ export function PriceAlertSheet() {
               )}
             </div>
           </div>
-        </ScrollArea>
+        </div>
       </SheetContent>
     </Sheet>
   )
