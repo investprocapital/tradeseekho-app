@@ -143,8 +143,8 @@ export function PriceAlertSheet() {
 
   return (
     <Sheet open={open} onOpenChange={setOpen}>
-      <SheetContent side="right" className="flex h-full w-full flex-col gap-0 p-0 sm:max-w-md">
-        <SheetHeader className="border-b border-border p-5">
+      <SheetContent side="right" className="flex h-full w-full flex-col gap-0 p-0 sm:max-w-md" style={{ overflow: "hidden" }}>
+        <SheetHeader className="shrink-0 border-b border-border p-5">
           <SheetTitle className="flex items-center gap-2 text-xl font-extrabold">
             <BellRing className="h-5 w-5 text-gold" /> Price Alerts
           </SheetTitle>
@@ -153,11 +153,20 @@ export function PriceAlertSheet() {
           </SheetDescription>
         </SheetHeader>
 
-        {/* Scrollable content — uses native overflow-y-auto for reliable
-            touch scrolling on mobile. Radix ScrollArea can sometimes fail
-            to scroll on mobile WebViews, so we use a plain div with
-            overflow-y-auto + -webkit-overflow-scrolling for smooth touch. */}
-        <div className="flex-1 overflow-y-auto overscroll-contain" style={{ WebkitOverflowScrolling: "touch", minHeight: 0 }}>
+        {/* Scrollable content — native overflow-y-auto for reliable touch scrolling.
+            The key fixes for mobile scroll:
+            1. Parent SheetContent has overflow:hidden (prevents page-level scroll)
+            2. SheetHeader has shrink-0 (won't compress)
+            3. This div has flex-1 + minHeight:0 (allows it to shrink + scroll)
+            4. overflow-y-auto + touch-action:pan-y (enables touch scroll on mobile) */}
+        <div
+          className="flex-1 overflow-y-auto overscroll-contain"
+          style={{
+            WebkitOverflowScrolling: "touch",
+            minHeight: 0,
+            touchAction: "pan-y",
+          }}
+        >
           <div className="p-4 space-y-3">
             {/* Live Price Section (selected pair) — COMPACT */}
             {selectedPair && (
