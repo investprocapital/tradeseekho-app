@@ -1,7 +1,7 @@
 "use client"
 
-import { useEffect, useRef, useQueryClient } from "react"
-import { useQuery } from "@tanstack/react-query"
+import { useEffect, useRef } from "react"
+import { useQuery, useQueryClient } from "@tanstack/react-query"
 import { toast } from "sonner"
 import { pairLabel, formatPrice } from "@/lib/signals"
 
