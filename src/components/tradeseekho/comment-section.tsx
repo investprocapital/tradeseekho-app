@@ -102,7 +102,7 @@ export function CommentSection({ signalId }: CommentSectionProps) {
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["comments", signalId] })
-      toast.success("Comment submitted! It will appear after admin approval.")
+      toast.success("Comment posted!")
       setText("")
       setImage(null)
     },

@@ -77,7 +77,7 @@ export async function POST(
       userName,
       text: text.trim(),
       image: image || null,
-      hidden: true, // new comments start hidden — admin approves
+      hidden: false, // comments visible immediately (no admin approval needed)
     },
   })
 
@@ -86,7 +86,7 @@ export async function POST(
     comment: {
       id: comment.id,
       hidden: comment.hidden,
-      message: "Comment submitted! It will appear after admin approval.",
+      message: "Comment posted successfully!",
     },
   })
 }
