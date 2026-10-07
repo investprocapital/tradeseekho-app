@@ -6,6 +6,7 @@ import { motion } from "framer-motion"
 import { Sprout, LineChart, Trophy, CheckCircle2, Award, BookOpen, Crown, ArrowRight, Lock, BarChart3, ChevronRight, Bell } from "lucide-react"
 import { useStore } from "@/lib/store"
 import { useLessonsBundle, useProMe, useCurrentUser } from "@/components/tradeseekho/use-data"
+import { useAlertChecker } from "@/components/tradeseekho/use-alert-checker"
 import { Header } from "@/components/tradeseekho/header"
 import { Footer } from "@/components/tradeseekho/footer"
 import { BrokerAdBanner } from "@/components/tradeseekho/broker-ad-banner"
@@ -47,6 +48,10 @@ export default function Home() {
   const isPro = proMe?.proStatus === "active"
   const { data: userData } = useCurrentUser()
   const { data, isLoading } = useLessonsBundle("all")
+
+  // Global price alert checker — polls every 20s, shows toast when target hit.
+  // Also creates a DB notification (shows in the bell) + browser notification.
+  useAlertChecker()
 
   // Auth gate: if user is not logged in, show Login dialog automatically
   useEffect(() => {
