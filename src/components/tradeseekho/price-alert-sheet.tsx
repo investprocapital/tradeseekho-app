@@ -134,10 +134,6 @@ export function PriceAlertSheet() {
       toast.error("Please enter a valid target price")
       return
     }
-    if (!session?.user) {
-      toast.error("Please sign in to set alerts")
-      return
-    }
     createMutation.mutate({ symbol: selectedSymbol, targetPrice: price, direction })
   }
 
@@ -159,49 +155,49 @@ export function PriceAlertSheet() {
         </SheetHeader>
 
         <ScrollArea className="ts-scroll flex-1">
-          <div className="p-4 space-y-4">
-            {/* Live Price Section (selected pair) */}
+          <div className="p-4 space-y-3">
+            {/* Live Price Section (selected pair) — COMPACT */}
             {selectedPair && (
-              <div className="rounded-xl border border-gold/30 bg-gradient-to-br from-gold/5 to-transparent p-4">
+              <div className="rounded-xl border border-gold/30 bg-gradient-to-br from-gold/5 to-transparent p-3">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    <span className="text-2xl">{PAIR_ICONS[selectedPair.symbol] || "📊"}</span>
+                    <span className="text-xl">{PAIR_ICONS[selectedPair.symbol] || "📊"}</span>
                     <div>
-                      <div className="text-lg font-extrabold">{selectedPair.label}</div>
-                      <div className="text-[10px] text-muted-foreground">{selectedPair.category}</div>
+                      <div className="text-sm font-extrabold">{selectedPair.label}</div>
+                      <div className="text-[9px] text-muted-foreground">{selectedPair.category}</div>
                     </div>
                   </div>
-                  <span className="flex items-center gap-1 rounded-full bg-emerald-500/15 px-2 py-0.5 text-[9px] font-bold text-emerald-500">
-                    <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" /> LIVE
+                  <span className="flex items-center gap-1 rounded-full bg-emerald-500/15 px-1.5 py-0.5 text-[8px] font-bold text-emerald-500">
+                    <span className="h-1 w-1 rounded-full bg-emerald-500 animate-pulse" /> LIVE
                   </span>
                 </div>
-                <div className="mt-3 text-center">
-                  <div className="text-3xl font-extrabold text-foreground">
+                <div className="mt-2 flex items-center justify-center gap-3">
+                  <div className="text-2xl font-extrabold text-foreground">
                     {formatPrice(selectedPair.symbol, selectedPair.price)}
                   </div>
-                  <div className={`mt-1 text-sm font-bold ${selectedPair.change >= 0 ? "text-emerald-500" : "text-destructive"}`}>
+                  <div className={`text-xs font-bold ${selectedPair.change >= 0 ? "text-emerald-500" : "text-destructive"}`}>
                     {selectedPair.change >= 0 ? "▲" : "▼"} {Math.abs(selectedPair.change).toFixed(2)}%
                   </div>
                 </div>
-                <div className="mt-3 grid grid-cols-3 gap-2 text-center">
-                  <div className="rounded-lg bg-destructive/10 p-2">
-                    <div className="text-[9px] uppercase text-muted-foreground">Sell</div>
-                    <div className="text-sm font-bold text-destructive">{formatPrice(selectedPair.symbol, selectedPair.sell)}</div>
+                <div className="mt-2 grid grid-cols-3 gap-1.5 text-center">
+                  <div className="rounded-lg bg-destructive/10 p-1.5">
+                    <div className="text-[8px] uppercase text-muted-foreground">Sell</div>
+                    <div className="text-xs font-bold text-destructive">{formatPrice(selectedPair.symbol, selectedPair.sell)}</div>
                   </div>
-                  <div className="rounded-lg bg-muted/40 p-2">
-                    <div className="text-[9px] uppercase text-muted-foreground">Spread</div>
-                    <div className="text-sm font-bold text-foreground">{selectedPair.spread.toFixed(2)}</div>
+                  <div className="rounded-lg bg-muted/40 p-1.5">
+                    <div className="text-[8px] uppercase text-muted-foreground">Spread</div>
+                    <div className="text-xs font-bold text-foreground">{selectedPair.spread.toFixed(2)}</div>
                   </div>
-                  <div className="rounded-lg bg-emerald-500/10 p-2">
-                    <div className="text-[9px] uppercase text-muted-foreground">Buy</div>
-                    <div className="text-sm font-bold text-emerald-500">{formatPrice(selectedPair.symbol, selectedPair.buy)}</div>
+                  <div className="rounded-lg bg-emerald-500/10 p-1.5">
+                    <div className="text-[8px] uppercase text-muted-foreground">Buy</div>
+                    <div className="text-xs font-bold text-emerald-500">{formatPrice(selectedPair.symbol, selectedPair.buy)}</div>
                   </div>
                 </div>
               </div>
             )}
 
-            {/* Set Alert Section */}
-            <div className="rounded-xl border border-border bg-card p-4 space-y-3">
+            {/* Set Alert Section — COMPACT */}
+            <div className="rounded-xl border border-border bg-card p-3 space-y-2">
               <Label className="text-xs font-bold uppercase tracking-wide text-muted-foreground">Set Price Alert</Label>
 
               {/* Symbol selector */}
@@ -249,7 +245,7 @@ export function PriceAlertSheet() {
                     value={targetPrice}
                     onChange={(e) => setTargetPrice(e.target.value)}
                     placeholder="e.g. 4120.50"
-                    className="h-10 pr-12"
+                    className="h-9 pr-12"
                   />
                   <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-bold text-gold">USD</span>
                 </div>
@@ -259,7 +255,7 @@ export function PriceAlertSheet() {
               </div>
 
               <Button
-                className="h-11 w-full gap-2 bg-gold font-bold text-white hover:bg-gold/90"
+                className="h-10 w-full gap-2 bg-gold font-bold text-white hover:bg-gold/90"
                 onClick={onSetAlert}
                 disabled={createMutation.isPending || !targetPrice}
               >

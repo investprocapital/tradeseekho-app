@@ -1,21 +1,14 @@
 import { NextResponse } from "next/server"
 import { db } from "@/lib/db"
 import { getCurrentUserId } from "@/lib/auth"
-import { getServerSession } from "next-auth"
-import { authOptions } from "@/lib/auth"
 
 export const dynamic = "force-dynamic"
 
-// GET /api/price-alerts — list the signed-in user's price alerts
+// GET /api/price-alerts — list the user's price alerts
+// Uses getCurrentUserId which falls back to "local-learner" for anonymous users.
+// This ensures alerts work even without sign-in (stored per device).
 export async function GET() {
-  const session = await getServerSession(authOptions)
-  if (!session?.user) {
-    return NextResponse.json({ alerts: [] })
-  }
-  const userId = (session.user as { id?: string }).id
-  if (!userId) {
-    return NextResponse.json({ alerts: [] })
-  }
+  const userId = await getCurrentUserId()
 
   const alerts = await db.priceAlert.findMany({
     where: { userId },
@@ -39,14 +32,7 @@ export async function GET() {
 // POST /api/price-alerts — create a new price alert
 // Body: { symbol: string, targetPrice: number, direction?: "above" | "below" }
 export async function POST(req: Request) {
-  const session = await getServerSession(authOptions)
-  if (!session?.user) {
-    return NextResponse.json({ error: "Please sign in to set alerts" }, { status: 401 })
-  }
-  const userId = (session.user as { id?: string }).id
-  if (!userId) {
-    return NextResponse.json({ error: "User ID not found" }, { status: 401 })
-  }
+  const userId = await getCurrentUserId()
 
   const body = await req.json()
   const { symbol, targetPrice, direction } = body
@@ -83,14 +69,7 @@ export async function POST(req: Request) {
 
 // DELETE /api/price-alerts?id=X — delete a price alert
 export async function DELETE(req: Request) {
-  const session = await getServerSession(authOptions)
-  if (!session?.user) {
-    return NextResponse.json({ error: "unauthorized" }, { status: 401 })
-  }
-  const userId = (session.user as { id?: string }).id
-  if (!userId) {
-    return NextResponse.json({ error: "unauthorized" }, { status: 401 })
-  }
+  const userId = await getCurrentUserId()
 
   const { searchParams } = new URL(req.url)
   const id = searchParams.get("id")
