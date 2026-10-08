@@ -38,7 +38,7 @@ export async function POST(req: Request) {
     })
 
     // Build reset link
-    const baseUrl = process.env.NEXTAUTH_URL || "https://tradeseekho-app.vercel.app"
+    const baseUrl = process.env.NEXTAUTH_URL || "https://tradeseekhopk.vercel.app"
     const resetLink = `${baseUrl}/reset-password?token=${token}`
 
     // Try to send email via Google Identity Toolkit if API key is set

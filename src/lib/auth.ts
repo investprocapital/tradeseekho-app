@@ -11,7 +11,7 @@ import { db } from "./db"
  * Env vars required on Vercel:
  *   NEXTAUTH_SECRET        — `openssl rand -base64 32` (REQUIRED in production,
  *                            otherwise NextAuth throws "Server error" on signin)
- *   NEXTAUTH_URL           — https://tradeseekho-app.vercel.app
+ *   NEXTAUTH_URL           — https://tradeseekhopk.vercel.app
  *   GOOGLE_CLIENT_ID       — Google Cloud Console → OAuth client (Web) [optional]
  *   GOOGLE_CLIENT_SECRET   — the matching secret [optional]
  *

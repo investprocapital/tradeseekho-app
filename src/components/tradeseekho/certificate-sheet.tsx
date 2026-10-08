@@ -193,7 +193,7 @@ h1{font-size:24px;margin:10px 0} h2{font-size:20px;color:#00D09C}
 }
 
 function shareOnWhatsApp(cert: any, pct: number, date: string) {
-  const text = `🎓 I earned a certificate from TradeSeekho PK!\n\n🏆 ${cert.categorySlug.toUpperCase()} Level Complete\n✅ Score: ${pct}% (${cert.scoreSum}/${cert.scoreTotal} correct)\n📅 Date: ${date}\n🆔 Verification ID: ${cert.verificationId}\n\nJoin TradeSeekho PK to learn Forex & Crypto trading!\n🌐 https://tradeseekho-app.vercel.app`
+  const text = `🎓 I earned a certificate from TradeSeekho PK!\n\n🏆 ${cert.categorySlug.toUpperCase()} Level Complete\n✅ Score: ${pct}% (${cert.scoreSum}/${cert.scoreTotal} correct)\n📅 Date: ${date}\n🆔 Verification ID: ${cert.verificationId}\n\nJoin TradeSeekho PK to learn Forex & Crypto trading!\n🌐 https://tradeseekhopk.vercel.app`
   const url = `https://wa.me/?text=${encodeURIComponent(text)}`
   window.open(url, "_blank")
 }

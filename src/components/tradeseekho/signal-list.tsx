@@ -84,7 +84,7 @@ export function SignalList() {
 
   const shareSignal = (s: Signal) => {
     const entryText = s.entry2 ? `Entry Zone: ${s.entry} - ${s.entry2}` : `Entry: ${s.entry}`
-    const text = `${s.signalType} ${pairLabel(s.symbol)}\n${entryText}\nSL: ${s.stopLoss}${s.tp1 ? `\nTP1: ${s.tp1}` : ""}${s.tp2 ? `\nTP2: ${s.tp2}` : ""}${s.tp3 ? `\nTP3: ${s.tp3}` : ""}\n\n— TradeSeekho PK\nhttps://tradeseekho-app.vercel.app`
+    const text = `${s.signalType} ${pairLabel(s.symbol)}\n${entryText}\nSL: ${s.stopLoss}${s.tp1 ? `\nTP1: ${s.tp1}` : ""}${s.tp2 ? `\nTP2: ${s.tp2}` : ""}${s.tp3 ? `\nTP3: ${s.tp3}` : ""}\n\n— TradeSeekho PK\nhttps://tradeseekhopk.vercel.app`
     window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, "_blank")
   }
 
