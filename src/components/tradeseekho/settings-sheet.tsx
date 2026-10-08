@@ -2,24 +2,34 @@
 
 import { useTheme } from "next-themes"
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet"
-import { ScrollArea } from "@/components/ui/scroll-area"
 import { Switch } from "@/components/ui/switch"
 import { Separator } from "@/components/ui/separator"
-import { Bell, Shield, Moon, Sun, User as UserIcon, Award } from "lucide-react"
+import { Bell, Shield, Moon, Sun, User as UserIcon, Award, Bookmark, Languages, Trophy, ChevronRight, BookOpen, Mail, FileText, Info, Check } from "lucide-react"
 import { useStore } from "@/lib/store"
 import { useCertificates } from "./use-data"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Copy, Download } from "lucide-react"
 import { toast } from "sonner"
+import { LANG_ORDER, LANGS } from "@/lib/i18n"
+import {
+  DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuLabel, DropdownMenuSeparator,
+} from "@/components/ui/dropdown-menu"
 
 export function SettingsSheet() {
   const open = useStore((s) => s.settingsOpen)
   const setOpen = useStore((s) => s.setSettingsOpen)
   const setEditProfileOpen = useStore((s) => s.setEditProfileOpen)
+  const setBookmarksOpen = useStore((s) => s.setBookmarksOpen)
+  const setLeaderboardOpen = useStore((s) => s.setLeaderboardOpen)
+  const setCertOpen = useStore((s) => s.setCertOpen)
+  const setPriceAlertsOpen = useStore((s) => s.setPriceAlertsOpen)
   const { theme, setTheme } = useTheme()
   const { data: certData } = useCertificates()
   const certs = certData?.certificates ?? []
+  const lang = useStore((s) => s.lang)
+  const setLang = useStore((s) => s.setLang)
+  const bookmarksCount = useStore((s) => s.bookmarks.length)
 
   return (
     <Sheet open={open} onOpenChange={setOpen}>
@@ -28,11 +38,82 @@ export function SettingsSheet() {
           <SheetTitle className="flex items-center gap-2 text-xl font-extrabold">
             <Shield className="h-5 w-5 text-brand" /> Settings
           </SheetTitle>
-          <SheetDescription>Theme, notifications, certificates & account.</SheetDescription>
+          <SheetDescription>Account, preferences, trading tools & support.</SheetDescription>
         </SheetHeader>
 
-        <ScrollArea className="ts-scroll flex-1">
+        <div className="flex-1 overflow-y-auto overscroll-contain" style={{ WebkitOverflowScrolling: "touch", minHeight: 0, touchAction: "pan-y" }}>
           <div className="space-y-1 p-4">
+
+            {/* ACCOUNT */}
+            <Section title="Account">
+              <Row icon={UserIcon} label="Edit profile" hint="Change name & password"
+                onClick={() => { setOpen(false); setEditProfileOpen(true) }} />
+              <Row icon={Bookmark} label="My Bookmarks" hint={bookmarksCount > 0 ? `${bookmarksCount} saved` : "No bookmarks yet"}
+                onClick={() => { setOpen(false); setBookmarksOpen(true) }} />
+              <Row icon={Trophy} label="Leaderboard" hint="View rankings"
+                onClick={() => { setOpen(false); setLeaderboardOpen(true) }} />
+              <Row icon={Award} label="Certificates" hint={certs.length > 0 ? `${certs.length} earned` : "No certificates yet"}
+                onClick={() => { setOpen(false); setCertOpen(true) }} />
+            </Section>
+
+            <Separator className="my-3" />
+
+            {/* APP PREFERENCES */}
+            <Section title="App Preferences">
+              {/* Language */}
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <button className="flex w-full items-center gap-2 rounded-lg px-3 py-2.5 text-sm font-bold transition hover:bg-muted/40">
+                    <Languages className="h-4 w-4 text-brand" />
+                    <span className="flex-1 text-start">App Language</span>
+                    <span className="text-[11px] text-muted-foreground">{LANGS[lang].label}</span>
+                    <ChevronRight className="h-3.5 w-3.5 text-muted-foreground" />
+                  </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-48">
+                  <DropdownMenuLabel className="text-xs uppercase tracking-wide text-muted-foreground">
+                    Language / زبان / भाषा / لغة
+                  </DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  {LANG_ORDER.map((code) => (
+                    <DropdownMenuItem key={code} onSelect={(e) => { e.preventDefault(); setLang(code) }} className="gap-2">
+                      <span className={LANGS[code].dir === "rtl" ? "font-urdu text-base" : ""}>
+                        {LANGS[code].native}
+                      </span>
+                      {lang === code && <Check className="ms-auto h-4 w-4 text-brand" />}
+                    </DropdownMenuItem>
+                  ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
+              {/* Theme */}
+              <div className="flex items-center justify-between rounded-lg px-3 py-2.5">
+                <div className="flex items-center gap-2 text-sm font-bold">
+                  {theme === "dark" ? <Moon className="h-4 w-4 text-brand" /> : <Sun className="h-4 w-4 text-brand" />}
+                  Dark theme
+                </div>
+                <Switch checked={theme === "dark"} onCheckedChange={(v) => setTheme(v ? "dark" : "light")} />
+              </div>
+            </Section>
+
+            <Separator className="my-3" />
+
+            {/* TRADING TOOLS */}
+            <Section title="Trading Tools">
+              <Row icon={Bell} label="Price Alerts" hint="Set price notifications"
+                onClick={() => { setOpen(false); setPriceAlertsOpen(true) }} />
+            </Section>
+
+            <Separator className="my-3" />
+
+            {/* SUPPORT */}
+            <Section title="Support">
+              <Row icon={Info} label="About Us" onClick={() => { setOpen(false); window.open("/about-us", "_self") }} />
+              <Row icon={FileText} label="Privacy Policy" onClick={() => { setOpen(false); window.open("/privacy-policy", "_self") }} />
+              <Row icon={Mail} label="Contact Us" onClick={() => { setOpen(false); window.open("/contact-us", "_self") }} />
+            </Section>
+
+            <Separator className="my-3" />
+
             {/* My Certificates */}
             <Section title="My Certificates / میری اسناد">
               {certs.length === 0 ? (
@@ -121,7 +202,7 @@ export function SettingsSheet() {
               TradeSeekho PK v1.0 · Made for learners
             </div>
           </div>
-        </ScrollArea>
+        </div>
       </SheetContent>
     </Sheet>
   )
