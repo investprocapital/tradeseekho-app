@@ -205,7 +205,8 @@ export default function Home() {
             </section>
           </>
         ) : null}
-        {!showAdmin && <Footer />}
+        {/* Footer removed from dashboard — About Us / Privacy Policy / Contact Us
+            are now in Settings > Support section. Keeps the dashboard clean. */}
 
         {/* Broker Ad Banner — only in client mode (not admin) */}
         {!showAdmin && (

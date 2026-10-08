@@ -162,14 +162,6 @@ export function SettingsSheet() {
 
             <Separator className="my-3" />
 
-            {/* Account */}
-            <Section title="Account">
-              <Row icon={UserIcon} label="Edit profile" hint="Change name & password"
-                onClick={() => { setOpen(false); setEditProfileOpen(true) }} />
-            </Section>
-
-            <Separator className="my-3" />
-
             {/* Theme */}
             <Section title="Appearance">
               <div className="flex items-center justify-between rounded-lg px-3 py-2.5">
