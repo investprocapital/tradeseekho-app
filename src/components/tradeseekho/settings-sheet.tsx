@@ -4,13 +4,14 @@ import { useTheme } from "next-themes"
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet"
 import { Switch } from "@/components/ui/switch"
 import { Separator } from "@/components/ui/separator"
-import { Bell, Shield, Moon, Sun, User as UserIcon, Award, Bookmark, Languages, Trophy, ChevronRight, BookOpen, Mail, FileText, Info, Check } from "lucide-react"
+import { Bell, Shield, Moon, Sun, User as UserIcon, Award, Bookmark, Languages, Trophy, ChevronRight, BookOpen, Mail, FileText, Info, Check, LogOut } from "lucide-react"
 import { useStore } from "@/lib/store"
 import { useCertificates } from "./use-data"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Copy, Download } from "lucide-react"
 import { toast } from "sonner"
+import { useSession, signOut } from "next-auth/react"
 import { LANG_ORDER, LANGS } from "@/lib/i18n"
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuLabel, DropdownMenuSeparator,
@@ -24,6 +25,8 @@ export function SettingsSheet() {
   const setLeaderboardOpen = useStore((s) => s.setLeaderboardOpen)
   const setCertOpen = useStore((s) => s.setCertOpen)
   const setPriceAlertsOpen = useStore((s) => s.setPriceAlertsOpen)
+  const setShowAdmin = useStore((s) => s.setShowAdmin)
+  const { data: session } = useSession()
   const { theme, setTheme } = useTheme()
   const { data: certData } = useCertificates()
   const certs = certData?.certificates ?? []
@@ -189,6 +192,23 @@ export function SettingsSheet() {
               <Row icon={Shield} label="Progress sharing" hint="Show me on the leaderboard" />
               <Row icon={Shield} label="Analytics" hint="Anonymous usage helps improve the app" />
             </Section>
+
+            {/* LOGOUT — prominent red button at the bottom */}
+            {session?.user && (
+              <>
+                <Separator className="my-3" />
+                <Button
+                  className="h-11 w-full gap-2 bg-destructive font-bold text-white hover:bg-destructive/90"
+                  onClick={() => {
+                    setShowAdmin(false)
+                    setOpen(false)
+                    signOut({ callbackUrl: "/", redirect: true })
+                  }}
+                >
+                  <LogOut className="h-4 w-4" /> Logout
+                </Button>
+              </>
+            )}
 
             <div className="px-3 py-4 text-center text-[11px] text-muted-foreground">
               TradeSeekho PK v1.0 · Made for learners
