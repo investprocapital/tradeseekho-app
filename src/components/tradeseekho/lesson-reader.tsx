@@ -16,6 +16,7 @@ import { usePick } from "./localize"
 import { QuizContent } from "./quiz-modal"
 import { AdBanner } from "./ad-banner"
 import { TradingViewChart } from "./tradingview-chart"
+import { MarketGauge } from "./market-gauge"
 import { toast } from "sonner"
 import { LANG_ORDER, LANGS } from "@/lib/i18n"
 
@@ -210,6 +211,9 @@ export function LessonReader() {
 
                 {/* TradingView EUR/USD live chart (300px, interactive) */}
                 <TradingViewChart height={300} lessonId={lesson.id} />
+
+                {/* Market Gauge — technical analysis for the lesson's symbol */}
+                <MarketGauge symbol="FX:EURUSD" height={400} />
 
                 {/* AdMob banner inside the reader (web + mobile + iOS) */}
                 <div className="mt-4">
