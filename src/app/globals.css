@@ -236,6 +236,19 @@ html[lang="ur"] .no-select {
   height: 8px;
 }
 
+/* Disable image download menu / long-press / right-click on ALL images.
+   Prevents Copy image / Download image / Share image context menu on mobile
+   and desktop. Applied globally to protect branding assets (login girl, logo, etc). */
+img {
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+  -webkit-user-drag: none;
+  user-drag: none;
+}
+
 /* Fix: Sheet overlay should be fully opaque on mobile so background list doesn't show through */
 [data-slot="sheet-overlay"] {
   background: rgb(0, 0, 0) !important;

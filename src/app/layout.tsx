@@ -96,6 +96,13 @@ export default function RootLayout({
           <Toaster />
           <SonnerToaster richColors position="top-center" />
         </Providers>
+        {/* Disable right-click / long-press context menu on ALL images.
+            Prevents Copy image / Download image / Share image on mobile + desktop. */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `document.addEventListener('contextmenu',function(e){if(e.target.nodeName==='IMG'){e.preventDefault();}});`,
+          }}
+        />
       </body>
     </html>
   );
