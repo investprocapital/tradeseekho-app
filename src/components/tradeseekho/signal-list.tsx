@@ -14,6 +14,7 @@ import { pairLabel } from "@/lib/signals"
 import { CommentSection } from "./comment-section"
 import { SignalBottomAd } from "./signal-bottom-ad"
 import { MarketGauge } from "./market-gauge"
+import { MarketGaugeScreen } from "./market-gauge-screen"
 
 interface Signal {
   id: string
@@ -378,14 +379,19 @@ export function SignalList() {
                   </div>
                 )}
 
+                {/* Market Gauge — RIGHT AFTER signal details (Entry/SL/TP).
+                    Shows the signal's symbol by default, but user can search
+                    any pair. Positioned ABOVE ProGuide (not at bottom).
+                    Flow: Signal Details → Gauge → ProGuide → Chart → Buttons */}
+                <MarketGaugeScreen
+                  defaultSymbol={selected.symbol}
+                  title={`Market Gauge — ${pairLabel(selected.symbol)}`}
+                  height={400}
+                />
+
                 {/* PRO GUIDE — auto-shown on every signal detail.
                     Default message saved in admin panel (not per-signal). */}
                 <ProGuideCard />
-
-                {/* Market Gauge — TradingView technical analysis widget.
-                    Shows Strong Sell → Strong Buy gauge for the signal's symbol.
-                    Auto-adapts: GOLD signal → XAUUSD gauge, BTC signal → BTCUSDT gauge. */}
-                <MarketGauge symbol={selected.symbol} height={400} />
 
                 {/* Live Chart */}
                 {showChart && (

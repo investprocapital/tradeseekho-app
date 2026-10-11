@@ -59,6 +59,10 @@ interface AppState {
   priceAlertsOpen: boolean
   setPriceAlertsOpen: (v: boolean) => void
 
+  // Market Gauge sheet (opened from the home-screen Market Gauge card)
+  marketGaugeOpen: boolean
+  setMarketGaugeOpen: (v: boolean) => void
+
   certOpen: boolean
   setCertOpen: (v: boolean) => void
 
@@ -146,6 +150,9 @@ export const useStore = create<AppState>()(
 
       priceAlertsOpen: false,
       setPriceAlertsOpen: (v) => set({ priceAlertsOpen: v }),
+
+      marketGaugeOpen: false,
+      setMarketGaugeOpen: (v) => set({ marketGaugeOpen: v }),
 
       certOpen: false,
       setCertOpen: (v) => set({ certOpen: v }),
