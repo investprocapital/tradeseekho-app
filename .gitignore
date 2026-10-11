@@ -69,3 +69,19 @@ public/tradeseekho-source.tar.gz
 /Caddyfile
 /prompt
 .vercel
+
+# Verification screenshots (not for production)
+bep20-*.png
+verify-*.png
+*-verify.png
+*-final.png
+admin-*.png
+urdu-*.png
+live-*.png
+quiz-*.png
+reader-*.png
+layout-*.png
+zoom-*.png
+settings-*.png
+auth-gate-*.png
+intermediate-*.png
