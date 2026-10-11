@@ -252,6 +252,14 @@ export interface ProSettingsData {
   easypaisaNumber: string
   cardEnabled: boolean
   cardInstructions: string
+  sadapayEnabled?: boolean
+  sadapayName?: string
+  sadapayNumber?: string
+  sadapayIban?: string
+  usdtEnabled?: boolean
+  usdtAddress?: string
+  bep20Enabled?: boolean
+  bep20Address?: string
 }
 
 export function useProSettings() {

@@ -1,6 +1,6 @@
 "use client"
 
-import { useRef, useState } from "react"
+import { useRef, useState, useCallback } from "react"
 import { useQuery } from "@tanstack/react-query"
 import { useSession } from "next-auth/react"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog"
@@ -10,10 +10,12 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
-import { Crown, Copy, Upload, Loader2, AlertCircle, CheckCircle2, Clock, Smartphone, Image as ImageIcon, CreditCard, Globe, Coins } from "lucide-react"
+import { Crown, Copy, Upload, Loader2, AlertCircle, CheckCircle2, Clock, Smartphone, Image as ImageIcon, CreditCard, Globe, Coins, Share2, Download } from "lucide-react"
 import { useStore, useT } from "@/lib/store"
 import { useProMe, useSubmitProRequest } from "./use-data"
 import { toast } from "sonner"
+import { QRCodeSVG } from "qrcode.react"
+import QRCode from "qrcode"
 
 interface ProSettings {
   usdPrice: number
@@ -29,6 +31,8 @@ interface ProSettings {
   sadapayIban: string
   usdtEnabled: boolean
   usdtAddress: string
+  bep20Enabled: boolean
+  bep20Address: string
 }
 
 async function fetchProSettings(): Promise<ProSettings> {
@@ -37,7 +41,7 @@ async function fetchProSettings(): Promise<ProSettings> {
   return res.json()
 }
 
-type Method = "JazzCash" | "Easypaisa" | "Card" | "SadaPay" | "USDT"
+type Method = "JazzCash" | "Easypaisa" | "Card" | "SadaPay" | "USDT" | "USDT_BEP20"
 
 export function ProDialog() {
   const open = useStore((s) => s.proOpen)
@@ -61,6 +65,7 @@ export function ProDialog() {
   const [file, setFile] = useState<File | null>(null)
   const [filePreview, setFilePreview] = useState<string | null>(null)
   const [err, setErr] = useState<string | null>(null)
+  const [sharing, setSharing] = useState(false)
   const fileRef = useRef<HTMLInputElement>(null)
 
   const isPro = proMe?.proStatus === "active"
@@ -84,8 +89,18 @@ export function ProDialog() {
   if (settings?.usdtEnabled !== false) {
     methods.push({ id: "USDT", label: "USDT TRC20 (Binance)", color: "#26A17B", accent: "bg-[#26A17B]", icon: Coins, subtitle: "Crypto · Tron Network" })
   }
+  if (settings?.bep20Enabled !== false) {
+    methods.push({ id: "USDT_BEP20", label: "USDT BEP20 (BSC) · NEW", color: "#F3BA2F", accent: "bg-[#F3BA2F]", icon: Coins, subtitle: "Crypto · BNB Smart Chain" })
+  }
 
   const currentNumber = method === "JazzCash" ? settings?.jazzcashNumber : method === "Easypaisa" ? settings?.easypaisaNumber : ""
+
+  // Resolve which crypto address/network to show based on method
+  const cryptoCtx = method === "USDT"
+    ? { address: settings?.usdtAddress || "", network: "TRC20 / Tron", color: "#26A17B", sectionTitle: t("pro.usdtSectionTitle"), warning: t("pro.usdtWarning"), shareLabel: "TradeSeekho PK · USDT TRC20" }
+    : method === "USDT_BEP20"
+    ? { address: settings?.bep20Address || "0xaa889030e6e69ef3eb55a2e94f1226628a8a19c3", network: t("pro.bep20Network"), color: "#F3BA2F", sectionTitle: t("pro.bep20SectionTitle"), warning: t("pro.bep20Warning"), shareLabel: "TradeSeekho PK · USDT BEP20 (BSC)" }
+    : null
 
   const onFile = (e: React.ChangeEvent<HTMLInputElement>) => {
     const f = e.target.files?.[0]
@@ -106,7 +121,7 @@ export function ProDialog() {
       return
     }
     if (method !== "Card" && !file) { setErr("Please upload a payment screenshot."); return }
-    if (method === "USDT" && !note.trim()) { setErr("Please paste your Transaction Hash / TxID for the USDT payment."); return }
+    if ((method === "USDT" || method === "USDT_BEP20") && !note.trim()) { setErr("Please paste your Transaction Hash / TxID for the crypto payment."); return }
     try {
       await submit.mutateAsync({ method, amount: Number(displayAmount) || 0, note, file })
       toast.success("Payment submitted!", { description: "We'll review and activate Pro within 24h." })
@@ -117,7 +132,54 @@ export function ProDialog() {
     }
   }
 
-  const copy = (text: string) => { navigator.clipboard?.writeText(text); toast.success("Copied: " + text) }
+  const copy = (text: string) => {
+    if (!text) return
+    navigator.clipboard?.writeText(text)
+    toast.success("Copied: " + text)
+  }
+
+  // Save & Share: generate QR PNG, then try Web Share API with files; fallback to download.
+  const saveAndShare = useCallback(async () => {
+    if (!cryptoCtx?.address) return
+    setSharing(true)
+    try {
+      const dataUrl = await QRCode.toDataURL(cryptoCtx.address, {
+        errorCorrectionLevel: "M",
+        margin: 2,
+        width: 480,
+        color: { dark: "#0b0f17", light: "#ffffff" },
+      })
+      const shareText = `${cryptoCtx.shareLabel}\nNetwork: ${cryptoCtx.network}\nAddress: ${cryptoCtx.address}\n\nSend only via the ${cryptoCtx.network} network.`
+      // Try Web Share API with file
+      if (typeof navigator !== "undefined" && (navigator as any).canShare) {
+        try {
+          const resp = await fetch(dataUrl)
+          const blob = await resp.blob()
+          const file = new File([blob], "tradeseekho-deposit-qr.png", { type: "image/png" })
+          if ((navigator as any).canShare({ files: [file] })) {
+            await (navigator as any).share({ files: [file], title: cryptoCtx.shareLabel, text: shareText })
+            setSharing(false)
+            return
+          }
+        } catch {
+          // fall through to download
+        }
+      }
+      // Fallback: download the PNG + copy address
+      const a = document.createElement("a")
+      a.href = dataUrl
+      a.download = "tradeseekho-deposit-qr.png"
+      document.body.appendChild(a)
+      a.click()
+      document.body.removeChild(a)
+      navigator.clipboard?.writeText(cryptoCtx.address)
+      toast.success("QR image saved. Address copied to clipboard.")
+    } catch (e) {
+      toast.error("Could not generate QR image.")
+    } finally {
+      setSharing(false)
+    }
+  }, [cryptoCtx])
 
   return (
     <Dialog open={open} onOpenChange={(v) => !submit.isPending && setOpen(v)}>
@@ -138,7 +200,7 @@ export function ProDialog() {
               <span className="inline-flex h-16 w-16 items-center justify-center rounded-full bg-gold/20">
                 <Crown className="h-8 w-8 text-gold" />
               </span>
-              <h3 className="text-lg font-extrabold text-foreground">You're Pro! 🎉</h3>
+              <h3 className="text-lg font-extrabold text-foreground">You&apos;re Pro! 🎉</h3>
               <p className="text-sm text-muted-foreground">Thanks for supporting TradeSeekho PK. Enjoy unlimited access.</p>
             </div>
           ) : isPending ? (
@@ -235,33 +297,73 @@ export function ProDialog() {
                     </div>
                   </div>
                 </div>
-              ) : method === "USDT" ? (
-                <div className="rounded-xl border border-dashed border-[#26A17B]/40 bg-[#26A17B]/5 p-3">
+              ) : cryptoCtx ? (
+                <div className="rounded-xl border border-dashed p-3" style={{ borderColor: `${cryptoCtx.color}66`, backgroundColor: `${cryptoCtx.color}0D` }}>
                   <div className="flex items-start gap-2">
-                    <Coins className="mt-0.5 h-5 w-5 shrink-0 text-[#26A17B]" />
+                    <Coins className="mt-0.5 h-5 w-5 shrink-0" style={{ color: cryptoCtx.color }} />
                     <div className="flex-1">
-                      <div className={`text-[11px] uppercase tracking-wide text-muted-foreground ${rtlFont}`}>{t("pro.usdtSectionTitle")}</div>
-                      <div className="mt-1.5 space-y-1">
-                        <div className="flex items-center justify-between gap-2">
-                          <span className={`text-[10px] text-muted-foreground ${rtlFont}`}>{t("pro.address")}</span>
-                          <span className="break-all text-right font-mono text-[11px] font-bold text-foreground">{settings?.usdtAddress || "Paste your TRC20 wallet address here"}</span>
+                      <div className={`text-[11px] uppercase tracking-wide text-muted-foreground ${rtlFont}`}>{cryptoCtx.sectionTitle}</div>
+
+                      {/* QR + address block */}
+                      <div className="mt-2 flex flex-col items-center gap-3 sm:flex-row sm:items-start">
+                        <div className="rounded-lg border-2 border-border bg-white p-2 shadow-sm">
+                          {cryptoCtx.address ? (
+                            <QRCodeSVG
+                              value={cryptoCtx.address}
+                              size={120}
+                              level="M"
+                              marginSize={1}
+                              fgColor="#0b0f17"
+                              bgColor="#ffffff"
+                            />
+                          ) : (
+                            <div className="flex h-[120px] w-[120px] items-center justify-center text-[10px] text-muted-foreground">No address</div>
+                          )}
                         </div>
-                        <div className="flex items-center justify-between">
-                          <span className={`text-[10px] text-muted-foreground ${rtlFont}`}>{t("pro.network")}</span>
-                          <span className="text-xs font-bold text-[#26A17B]">TRC20 / Tron</span>
-                        </div>
-                        <div className="flex items-center justify-between">
-                          <span className={`text-[10px] text-muted-foreground ${rtlFont}`}>{t("pro.amount")}</span>
-                          <span className="text-xs font-bold text-foreground">${usdPrice} USDT</span>
+                        <div className="flex-1 space-y-1.5 self-stretch">
+                          <div className="space-y-0.5">
+                            <div className={`text-[10px] text-muted-foreground ${rtlFont}`}>{t("pro.address")}</div>
+                            <div className="break-all font-mono text-[11px] font-bold text-foreground">{cryptoCtx.address || "—"}</div>
+                          </div>
+                          <div className="flex items-center justify-between">
+                            <span className={`text-[10px] text-muted-foreground ${rtlFont}`}>{t("pro.network")}</span>
+                            <span className="text-xs font-bold" style={{ color: cryptoCtx.color }}>{cryptoCtx.network}</span>
+                          </div>
+                          <div className="flex items-center justify-between">
+                            <span className={`text-[10px] text-muted-foreground ${rtlFont}`}>{t("pro.amount")}</span>
+                            <span className="text-xs font-bold text-foreground">${usdPrice} USDT</span>
+                          </div>
                         </div>
                       </div>
-                      <div className="mt-2 flex justify-end">
-                        <Button type="button" size="sm" variant="outline" className="gap-1.5" onClick={() => copy(settings?.usdtAddress || "")}>
+
+                      {/* Action buttons: Copy + Save & Share */}
+                      <div className="mt-3 flex flex-wrap gap-2">
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="outline"
+                          className="gap-1.5"
+                          onClick={() => copy(cryptoCtx.address)}
+                          disabled={!cryptoCtx.address}
+                        >
                           <Copy className="h-3.5 w-3.5" /> {t("pro.copyAddress")}
                         </Button>
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="secondary"
+                          className="gap-1.5"
+                          onClick={saveAndShare}
+                          disabled={sharing || !cryptoCtx.address}
+                        >
+                          {sharing ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Share2 className="h-3.5 w-3.5" />}
+                          {t("pro.saveShareAddress")}
+                        </Button>
                       </div>
-                      <div className={`mt-2 rounded-lg bg-red-500/10 p-2 text-[10px] font-bold text-destructive ${rtlFont}`}>
-                        {t("pro.usdtWarning")}
+
+                      {/* Network-specific warning */}
+                      <div className={`mt-2 rounded-lg bg-red-500/10 p-2 text-[10px] font-bold leading-relaxed text-destructive ${rtlFont}`}>
+                        {cryptoCtx.warning}
                       </div>
                     </div>
                   </div>
@@ -305,8 +407,8 @@ export function ProDialog() {
 
               {/* Optional note */}
               <div className="space-y-1.5">
-                <Label htmlFor="note" className={rtlFont}>{t("pro.txIdNote")} {method === "USDT" && <span className="font-bold text-destructive">{t("pro.txIdRequired")}</span>}</Label>
-                <Textarea id="note" value={note} onChange={(e) => setNote(e.target.value)} rows={2} placeholder={method === "USDT" ? t("pro.txIdPlaceholderUsdt") : t("pro.txIdPlaceholderOther")} className="text-sm" />
+                <Label htmlFor="note" className={rtlFont}>{t("pro.txIdNote")} {(method === "USDT" || method === "USDT_BEP20") && <span className="font-bold text-destructive">{t("pro.txIdRequired")}</span>}</Label>
+                <Textarea id="note" value={note} onChange={(e) => setNote(e.target.value)} rows={2} placeholder={(method === "USDT" || method === "USDT_BEP20") ? t("pro.txIdPlaceholderUsdt") : t("pro.txIdPlaceholderOther")} className="text-sm" />
               </div>
 
               {err && (

@@ -1261,6 +1261,8 @@ function PaymentSettingsTab() {
   const [sadapayIban, setSadapayIban] = useState("")
   const [usdtEnabled, setUsdtEnabled] = useState(true)
   const [usdtAddress, setUsdtAddress] = useState("")
+  const [bep20Enabled, setBep20Enabled] = useState(true)
+  const [bep20Address, setBep20Address] = useState("0xaa889030e6e69ef3eb55a2e94f1226628a8a19c3")
   const [loaded, setLoaded] = useState(false)
 
   // Sync local inputs when server data arrives
@@ -1277,6 +1279,8 @@ function PaymentSettingsTab() {
     setSadapayIban(data.sadapayIban || "")
     setUsdtEnabled(data.usdtEnabled ?? true)
     setUsdtAddress(data.usdtAddress || "")
+    setBep20Enabled(data.bep20Enabled ?? true)
+    setBep20Address(data.bep20Address || "0xaa889030e6e69ef3eb55a2e94f1226628a8a19c3")
     setLoaded(true)
   }
 
@@ -1295,6 +1299,8 @@ function PaymentSettingsTab() {
         sadapayIban,
         usdtEnabled,
         usdtAddress,
+        bep20Enabled,
+        bep20Address,
       })
       toast.success("Payment settings saved!")
     } catch {
@@ -1394,6 +1400,24 @@ function PaymentSettingsTab() {
                 <label className="text-xs font-bold uppercase tracking-wide text-muted-foreground">TRC20 Wallet Address</label>
                 <Input value={usdtAddress} onChange={(e) => setUsdtAddress(e.target.value)} className="h-9 font-mono text-xs" placeholder="Paste your TRC20 wallet address here" />
                 <p className="text-[10px] text-muted-foreground">Ye address clients ko dikhaya jayega. USDT sirf TRC20 (Tron) network par receive hoga.</p>
+              </div>
+            </div>
+          )}
+
+          {/* USDT BEP20 (BSC) — Crypto */}
+          <div className="flex items-center justify-between rounded-lg border border-[#F3BA2F]/40 bg-[#F3BA2F]/5 p-3">
+            <div>
+              <div className="text-sm font-bold">USDT BEP20 (BSC) · NEW</div>
+              <div className="text-[11px] text-muted-foreground">Crypto payment via BNB Smart Chain</div>
+            </div>
+            <Switch checked={bep20Enabled} onCheckedChange={setBep20Enabled} />
+          </div>
+          {bep20Enabled && (
+            <div className="space-y-2 rounded-lg border border-[#F3BA2F]/30 p-3">
+              <div className="space-y-1">
+                <label className="text-xs font-bold uppercase tracking-wide text-muted-foreground">BEP20 Wallet Address (BSC)</label>
+                <Input value={bep20Address} onChange={(e) => setBep20Address(e.target.value)} className="h-9 font-mono text-xs" placeholder="0x... BSC wallet address" />
+                <p className="text-[10px] text-muted-foreground">Ye address clients ko dikhaya jayega. Sirf BSC (BEP20) network par receive hoga. Galat network par bhejne se funds lost ho jayenge.</p>
               </div>
             </div>
           )}

@@ -23,21 +23,38 @@ export async function POST(req: Request) {
   const note = String(form.get("note") || "").slice(0, 300)
   const file = form.get("file")
 
-  if (method !== "JazzCash" && method !== "Easypaisa") {
+  // Validate payment method — all methods shown in the Pro dialog are accepted
+  // server-side. Crypto methods (USDT, USDT_BEP20) require a Transaction Hash / TxID
+  // in the note field.
+  const VALID_METHODS = ["JazzCash", "Easypaisa", "Card", "SadaPay", "USDT", "USDT_BEP20"]
+  if (!VALID_METHODS.includes(method)) {
     return NextResponse.json({ error: "bad_method" }, { status: 400 })
   }
-  if (!(file instanceof File)) return NextResponse.json({ error: "no_file" }, { status: 400 })
-  if (!file.type.startsWith("image/")) return NextResponse.json({ error: "not_image" }, { status: 400 })
-  if (file.size > 4 * 1024 * 1024) return NextResponse.json({ error: "too_large" }, { status: 400 })
+  // Crypto methods require a Transaction Hash / TxID
+  if ((method === "USDT" || method === "USDT_BEP20") && note.trim().length < 6) {
+    return NextResponse.json({ error: "txid_required" }, { status: 400 })
+  }
+  // Card method does not require a screenshot — it's handled externally
+  if (method !== "Card" && !(file instanceof File)) {
+    return NextResponse.json({ error: "no_file" }, { status: 400 })
+  }
+  if (file instanceof File) {
+    if (!file.type.startsWith("image/")) return NextResponse.json({ error: "not_image" }, { status: 400 })
+    if (file.size > 4 * 1024 * 1024) return NextResponse.json({ error: "too_large" }, { status: 400 })
+  }
 
   // Already Pro? skip
   const u = await db.user.findUnique({ where: { id: userId } })
   if (u?.proStatus === "active") return NextResponse.json({ error: "already_pro" }, { status: 400 })
 
   // Convert screenshot to base64 data URL (Vercel filesystem is read-only)
-  const buf = Buffer.from(await file.arrayBuffer())
-  if (buf.length > 800 * 1024) return NextResponse.json({ error: "too_large" }, { status: 400 })
-  const screenshotPath = `data:${file.type};base64,${buf.toString("base64")}`
+  // For Card method, screenshot is optional — store a placeholder if missing
+  let screenshotPath = ""
+  if (file instanceof File) {
+    const buf = Buffer.from(await file.arrayBuffer())
+    if (buf.length > 800 * 1024) return NextResponse.json({ error: "too_large" }, { status: 400 })
+    screenshotPath = `data:${file.type};base64,${buf.toString("base64")}`
+  }
 
   const req2 = await db.proRequest.create({
     data: { userId, method, amount, note: note || null, screenshotPath, status: "pending" },

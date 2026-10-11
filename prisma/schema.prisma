@@ -7,7 +7,7 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
+  provider = "sqlite"
   url      = env("DATABASE_URL")
 }
 
@@ -245,6 +245,9 @@ model ProSettings {
   // USDT TRC20 (Binance) — crypto payment via Tron network
   usdtEnabled     Boolean  @default(true)
   usdtAddress     String   @default("Paste your TRC20 wallet address here")
+  // USDT BEP20 (BSC) — crypto payment via BNB Smart Chain
+  bep20Enabled    Boolean  @default(true)
+  bep20Address    String   @default("0xaa889030e6e69ef3eb55a2e94f1226628a8a19c3")
   updatedAt       DateTime @updatedAt
 }
 

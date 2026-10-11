@@ -23,5 +23,7 @@ export async function GET() {
     sadapayIban: s.sadapayIban,
     usdtEnabled: s.usdtEnabled,
     usdtAddress: s.usdtAddress,
+    bep20Enabled: s.bep20Enabled,
+    bep20Address: s.bep20Address,
   })
 }
