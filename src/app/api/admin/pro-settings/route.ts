@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server"
 import { db } from "@/lib/db"
 import { requireAdmin } from "@/lib/admin-auth"
+import { ensureProSettingsSchema } from "@/lib/ensure-schema"
 
 export const dynamic = "force-dynamic"
 
@@ -8,6 +9,7 @@ export const dynamic = "force-dynamic"
 export async function GET() {
   const guard = await requireAdmin()
   if (guard) return guard
+  await ensureProSettingsSchema()
   let s = await db.proSettings.findUnique({ where: { id: "singleton" } })
   if (!s) {
     s = await db.proSettings.create({ data: { id: "singleton" } })
@@ -34,6 +36,7 @@ export async function GET() {
 export async function PUT(req: Request) {
   const guard = await requireAdmin()
   if (guard) return guard
+  await ensureProSettingsSchema()
   const body = await req.json()
   const data: Record<string, unknown> = {}
   if ("usdPrice" in body) data.usdPrice = Number(body.usdPrice) || 5

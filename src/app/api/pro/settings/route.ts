@@ -1,10 +1,13 @@
 import { NextResponse } from "next/server"
 import { db } from "@/lib/db"
+import { ensureProSettingsSchema } from "@/lib/ensure-schema"
 
 export const dynamic = "force-dynamic"
 
 // GET /api/pro/settings — public: get Pro payment settings for display
 export async function GET() {
+  // Ensure BEP20 columns exist in the DB before querying (Vercel auto-migrate)
+  await ensureProSettingsSchema()
   let s = await db.proSettings.findUnique({ where: { id: "singleton" } })
   if (!s) {
     s = await db.proSettings.create({ data: { id: "singleton" } })
