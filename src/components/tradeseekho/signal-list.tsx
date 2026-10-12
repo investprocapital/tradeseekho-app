@@ -13,8 +13,9 @@ import { useStore, useT } from "@/lib/store"
 import { pairLabel } from "@/lib/signals"
 import { CommentSection } from "./comment-section"
 import { SignalBottomAd } from "./signal-bottom-ad"
-import { MarketGauge } from "./market-gauge"
-import { MarketGaugeScreen } from "./market-gauge-screen"
+// NOTE: MarketGauge + MarketGaugeScreen removed from signal-list to reduce
+// DB + TradingView widget calls. Gauge is now only available via the
+// "Market Gauge" button on the home dashboard (MarketGaugeSheet).
 
 interface Signal {
   id: string
@@ -378,16 +379,6 @@ export function SignalList() {
                     {selected.note}
                   </div>
                 )}
-
-                {/* Market Gauge — RIGHT AFTER signal details (Entry/SL/TP).
-                    Shows the signal's symbol by default, but user can search
-                    any pair. Positioned ABOVE ProGuide (not at bottom).
-                    Flow: Signal Details → Gauge → ProGuide → Chart → Buttons */}
-                <MarketGaugeScreen
-                  defaultSymbol={selected.symbol}
-                  title={`Market Gauge — ${pairLabel(selected.symbol)}`}
-                  height={400}
-                />
 
                 {/* PRO GUIDE — auto-shown on every signal detail.
                     Default message saved in admin panel (not per-signal). */}
