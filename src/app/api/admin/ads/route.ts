@@ -1,26 +1,43 @@
 import { NextResponse } from "next/server"
 import { db } from "@/lib/db"
 import { requireAdmin } from "@/lib/admin-auth"
+import { withDbRetry } from "@/lib/db-retry"
 
 export const dynamic = "force-dynamic"
 
 export async function GET() {
-  let s = await db.adSettings.findUnique({ where: { id: "singleton" } })
-  if (!s) {
-    s = await db.adSettings.create({ data: { id: "singleton" } })
+  try {
+    let s = await withDbRetry(() => db.adSettings.findUnique({ where: { id: "singleton" } }))
+    if (!s) {
+      s = await withDbRetry(() => db.adSettings.create({ data: { id: "singleton" } }))
+    }
+    return NextResponse.json({
+      bannerEnabled: s.bannerEnabled,
+      interstitialEnabled: s.interstitialEnabled,
+      bannerUnitId: s.bannerUnitId,
+      interstitialUnitId: s.interstitialUnitId,
+      admobEnabled: s.admobEnabled,
+      adsenseEnabled: s.adsenseEnabled,
+      autoMode: s.autoMode,
+      adFrequency: s.adFrequency,
+      signalBottomAd: s.signalBottomAd,
+      signalBottomAdUnitId: s.signalBottomAdUnitId,
+    })
+  } catch (e: any) {
+    console.error("[admin/ads] DB unreachable:", e?.message)
+    return NextResponse.json({
+      bannerEnabled: true,
+      interstitialEnabled: false,
+      bannerUnitId: "",
+      interstitialUnitId: "",
+      admobEnabled: false,
+      adsenseEnabled: false,
+      autoMode: true,
+      adFrequency: 4,
+      signalBottomAd: true,
+      signalBottomAdUnitId: "",
+    })
   }
-  return NextResponse.json({
-    bannerEnabled: s.bannerEnabled,
-    interstitialEnabled: s.interstitialEnabled,
-    bannerUnitId: s.bannerUnitId,
-    interstitialUnitId: s.interstitialUnitId,
-    admobEnabled: s.admobEnabled,
-    adsenseEnabled: s.adsenseEnabled,
-    autoMode: s.autoMode,
-    adFrequency: s.adFrequency,
-    signalBottomAd: s.signalBottomAd,
-    signalBottomAdUnitId: s.signalBottomAdUnitId,
-  })
 }
 
 export async function PUT(req: Request) {

@@ -2,6 +2,7 @@ import { NextResponse } from "next/server"
 import { db } from "@/lib/db"
 import { getCurrentUserId } from "@/lib/auth"
 import { pairLabel, formatPrice } from "@/lib/signals"
+import { withDbRetry } from "@/lib/db-retry"
 
 export const dynamic = "force-dynamic"
 
@@ -47,76 +48,81 @@ async function fetchPrice(symbol: string): Promise<number | null> {
  * For push notifications when the app is CLOSED, FCM setup is needed (Phase 2).
  */
 export async function GET() {
-  const userId = await getCurrentUserId()
+  try {
+    const userId = await getCurrentUserId()
 
-  // Get all active (non-triggered) alerts
-  const activeAlerts = await db.priceAlert.findMany({
-    where: { userId, triggered: false },
-    take: 50,
-  })
+    // Get all active (non-triggered) alerts
+    const activeAlerts = await withDbRetry(() => db.priceAlert.findMany({
+      where: { userId, triggered: false },
+      take: 50,
+    }))
 
-  if (activeAlerts.length === 0) {
+    if (activeAlerts.length === 0) {
+      return NextResponse.json({ triggered: [], checked: 0 })
+    }
+
+    // Get unique symbols to check
+    const symbols = [...new Set(activeAlerts.map((a) => a.symbol))]
+
+    // Fetch live prices for all unique symbols
+    const prices = new Map<string, number>()
+    await Promise.all(
+      symbols.map(async (sym) => {
+        const price = await fetchPrice(sym)
+        if (price !== null) prices.set(sym, price)
+      }),
+    )
+
+    // Check each alert against the live price
+    const triggeredAlerts: { id: string; symbol: string; targetPrice: number; direction: string; livePrice: number }[] = []
+
+    for (const alert of activeAlerts) {
+      const livePrice = prices.get(alert.symbol)
+      if (livePrice === undefined) continue
+
+      let hit = false
+      if (alert.direction === "above" && livePrice >= alert.targetPrice) {
+        hit = true
+      } else if (alert.direction === "below" && livePrice <= alert.targetPrice) {
+        hit = true
+      }
+
+      if (hit) {
+        // Mark as triggered
+        await withDbRetry(() => db.priceAlert.update({
+          where: { id: alert.id },
+          data: { triggered: true, triggeredAt: new Date() },
+        }))
+
+        // Create a notification (shows in the bell)
+        const pair = pairLabel(alert.symbol)
+        const dir = alert.direction === "above" ? "reached above" : "dropped below"
+        await withDbRetry(() => db.notification.create({
+          data: {
+            type: "signal",
+            title: `🔔 ${pair} Alert Triggered!`,
+            body: `${pair} ${dir} your target ${formatPrice(alert.symbol, alert.targetPrice)} — current price: ${formatPrice(alert.symbol, livePrice)}`,
+            deepLink: `app://price-alert`,
+          },
+        }))
+
+        triggeredAlerts.push({
+          id: alert.id,
+          symbol: alert.symbol,
+          targetPrice: alert.targetPrice,
+          direction: alert.direction,
+          livePrice,
+        })
+      }
+    }
+
+    return NextResponse.json({
+      triggered: triggeredAlerts,
+      checked: activeAlerts.length,
+      prices: Object.fromEntries(prices),
+    })
+  } catch (e: any) {
+    console.error("[price-alerts/check] DB unreachable:", e?.message)
     return NextResponse.json({ triggered: [], checked: 0 })
   }
-
-  // Get unique symbols to check
-  const symbols = [...new Set(activeAlerts.map((a) => a.symbol))]
-
-  // Fetch live prices for all unique symbols
-  const prices = new Map<string, number>()
-  await Promise.all(
-    symbols.map(async (sym) => {
-      const price = await fetchPrice(sym)
-      if (price !== null) prices.set(sym, price)
-    }),
-  )
-
-  // Check each alert against the live price
-  const triggeredAlerts: { id: string; symbol: string; targetPrice: number; direction: string; livePrice: number }[] = []
-
-  for (const alert of activeAlerts) {
-    const livePrice = prices.get(alert.symbol)
-    if (livePrice === undefined) continue
-
-    let hit = false
-    if (alert.direction === "above" && livePrice >= alert.targetPrice) {
-      hit = true
-    } else if (alert.direction === "below" && livePrice <= alert.targetPrice) {
-      hit = true
-    }
-
-    if (hit) {
-      // Mark as triggered
-      await db.priceAlert.update({
-        where: { id: alert.id },
-        data: { triggered: true, triggeredAt: new Date() },
-      })
-
-      // Create a notification (shows in the bell)
-      const pair = pairLabel(alert.symbol)
-      const dir = alert.direction === "above" ? "reached above" : "dropped below"
-      await db.notification.create({
-        data: {
-          type: "signal",
-          title: `🔔 ${pair} Alert Triggered!`,
-          body: `${pair} ${dir} your target ${formatPrice(alert.symbol, alert.targetPrice)} — current price: ${formatPrice(alert.symbol, livePrice)}`,
-          deepLink: `app://price-alert`,
-        },
-      })
-
-      triggeredAlerts.push({
-        id: alert.id,
-        symbol: alert.symbol,
-        targetPrice: alert.targetPrice,
-        direction: alert.direction,
-        livePrice,
-      })
-    }
-  }
-
-  return NextResponse.json({
-    triggered: triggeredAlerts,
-    checked: activeAlerts.length,
-    prices: Object.fromEntries(prices),
-  })
 }
