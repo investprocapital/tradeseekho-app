@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server"
 import { db } from "@/lib/db"
 import { requireAdmin } from "@/lib/admin-auth"
+import { uploadImage } from "@/lib/blob-upload"
 import {
   buildHitNotification,
   actionToStatus,
@@ -18,7 +19,8 @@ export async function GET() {
 }
 
 // POST /api/admin/signals — admin: create (publish) a new signal.
-// New signals start as status "active".
+// New signals start as status "active". The screenshot is uploaded to Vercel
+// Blob (CDN) and only the URL is stored in Neon — keeps the DB row tiny.
 export async function POST(req: Request) {
   const guard = await requireAdmin()
   if (guard) return guard
@@ -30,6 +32,8 @@ export async function POST(req: Request) {
       { status: 400 },
     )
   }
+  // Upload screenshot to Vercel Blob CDN (falls back to base64 if Blob not configured)
+  const { url: screenshotUrl } = await uploadImage(screenshot, "signals", `sig_${Date.now()}`)
   const signal = await db.signal.create({
     data: {
       symbol,
@@ -41,7 +45,7 @@ export async function POST(req: Request) {
       tp2: tp2 || null,
       tp3: tp3 || null,
       note: note || null,
-      screenshot,
+      screenshot: screenshotUrl || screenshot,
       status: "active",
       hideLevels: hideLevels === true,
     },

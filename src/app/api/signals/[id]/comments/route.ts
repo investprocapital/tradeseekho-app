@@ -3,6 +3,7 @@ import { db } from "@/lib/db"
 import { getCurrentUserId } from "@/lib/auth"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
+import { uploadImage } from "@/lib/blob-upload"
 
 export const dynamic = "force-dynamic"
 
@@ -34,6 +35,7 @@ export async function GET(
 
 // POST /api/signals/[id]/comments — auth: create a new comment (hidden by default)
 // Body: { text: string, image?: string (base64 data URL) }
+// Images are uploaded to Vercel Blob (CDN) — only the URL is stored in Neon.
 export async function POST(
   req: Request,
   { params }: { params: Promise<{ id: string }> },
@@ -59,12 +61,14 @@ export async function POST(
 
   // Validate image size (base64 data URL — estimate ~1.37x base64 overhead)
   if (image && typeof image === "string") {
-    // Rough size check: base64 string length / 1.37 ≈ bytes
     const sizeBytes = (image.length * 3) / 4
     if (sizeBytes > 300 * 1024) {
       return NextResponse.json({ error: "Image too large (max 200KB)" }, { status: 400 })
     }
   }
+
+  // Upload image to Vercel Blob CDN (falls back to base64 if Blob not configured)
+  const { url: imageUrl } = await uploadImage(image, "comments", `cmt_${Date.now()}`)
 
   // Get user name from DB
   const user = await db.user.findUnique({ where: { id: userId }, select: { name: true, email: true } })
@@ -76,8 +80,8 @@ export async function POST(
       userId,
       userName,
       text: text.trim(),
-      image: image || null,
-      hidden: false, // comments visible immediately (no admin approval needed)
+      image: imageUrl,
+      hidden: false,
     },
   })
 
