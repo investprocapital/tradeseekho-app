@@ -21,7 +21,12 @@
 import { put } from "@vercel/blob"
 
 export const isBlobConfigured = (): boolean => {
-  return !!process.env.BLOB_READ_WRITE_TOKEN
+  // Static token mode (local dev or manual setup)
+  if (process.env.BLOB_READ_WRITE_TOKEN) return true
+  // OIDC mode (Vercel auto-configured via `vercel storage connect`)
+  // On Vercel deployments, VERCEL_OIDC_TOKEN + BLOB_STORE_ID are auto-injected
+  if (process.env.BLOB_STORE_ID && process.env.VERCEL) return true
+  return false
 }
 
 /**
