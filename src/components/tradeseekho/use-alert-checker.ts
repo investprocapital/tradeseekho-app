@@ -1,97 +1,129 @@
 "use client"
 
 import { useEffect, useRef } from "react"
-import { useQuery, useQueryClient } from "@tanstack/react-query"
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { toast } from "sonner"
 import { pairLabel, formatPrice } from "@/lib/signals"
+import { useLivePrices, fetchSinglePrice } from "@/lib/client-prices"
 
-interface TriggeredAlert {
+interface Alert {
   id: string
   symbol: string
   targetPrice: number
   direction: string
-  livePrice: number
-}
-
-interface CheckResult {
-  triggered: TriggeredAlert[]
-  checked: number
-  prices: Record<string, number>
+  triggered: boolean
 }
 
 /**
- * useAlertChecker — global hook that polls /api/price-alerts/check every 20s.
- * When a price alert target is hit:
- *   1. Shows a toast notification: "🔔 GOLD Alert Triggered!"
- *   2. Invalidates the price-alerts query (so the UI updates — alert shows as Triggered)
- *   3. Invalidates the notifications query (so the bell badge updates)
+ * useAlertChecker — CLIENT-SIDE alert checking (zero server cost).
  *
- * This runs on the home page (always active when the app is open).
- * For push notifications when the app is CLOSED, FCM setup is needed (Phase 2).
+ * ARCHITECTURE:
+ *   - Live prices come from useLivePrices() (Binance WebSocket + TwelveData polling)
+ *   - This hook polls the user's alerts every 30s (cheap DB query)
+ *   - On each poll, checks each untriggered alert against the cached live price
+ *   - If hit → POST /api/price-alerts/mark-triggered → marks in DB + creates notification
+ *   - Shows toast + browser notification
+ *
+ * SERVER-SIDE (for when app is CLOSED):
+ *   - /api/cron/check-alerts runs every 1 min via Vercel Cron
+ *   - Fetches prices server-side, checks all untriggered alerts, sends FCM push
+ *
+ * So: client = instant feedback when open. Server = FCM push when closed.
  */
 export function useAlertChecker() {
   const qc = useQueryClient()
   const seenAlertIds = useRef<Set<string>>(new Set())
+  const prices = useLivePrices()
 
-  const { data } = useQuery<CheckResult>({
-    queryKey: ["alert-check"],
+  // Fetch the user's alerts every 30s (cheap query, no price fetch)
+  const { data: alertsData } = useQuery<{ alerts: Alert[] }>({
+    queryKey: ["price-alerts"],
     queryFn: async () => {
-      const res = await fetch("/api/price-alerts/check", { cache: "no-store" })
-      if (!res.ok) return { triggered: [], checked: 0, prices: {} }
+      const res = await fetch("/api/price-alerts", { cache: "no-store" })
+      if (!res.ok) return { alerts: [] }
       return res.json()
     },
-    // Poll every 20 seconds (when app is open)
-    refetchInterval: 20_000,
-    // Don't refetch on window focus (avoid double-checking)
+    refetchInterval: 30_000,
     refetchOnWindowFocus: false,
-    // Start immediately
     staleTime: 0,
   })
 
-  useEffect(() => {
-    if (!data?.triggered || data.triggered.length === 0) return
-
-    for (const alert of data.triggered) {
-      // Skip if we've already shown a toast for this alert
-      if (seenAlertIds.current.has(alert.id)) continue
-      seenAlertIds.current.add(alert.id)
-
-      const pair = pairLabel(alert.symbol)
-      const dir = alert.direction === "above" ? "▲ reached above" : "▼ dropped below"
-      const target = formatPrice(alert.symbol, alert.targetPrice)
-      const live = formatPrice(alert.symbol, alert.livePrice)
-
-      // Show toast notification (auto-dismisses after 6s)
-      toast.success(`🔔 ${pair} Alert Triggered!`, {
-        description: `${pair} ${dir} your target ${target} — current: ${live}`,
-        duration: 6000,
+  // Mutation: mark alert as triggered (also creates DB notification)
+  const markTriggered = useMutation({
+    mutationFn: async (alertId: string) => {
+      const res = await fetch("/api/price-alerts/mark-triggered", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ id: alertId }),
       })
+      return res.json()
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["price-alerts"] })
+      qc.invalidateQueries({ queryKey: ["notifications"] })
+    },
+  })
 
-      // Also show a more prominent notification using the browser Notification API
-      // (works on desktop + Android Chrome, asks permission first)
-      if (typeof window !== "undefined" && "Notification" in window) {
-        if (Notification.permission === "granted") {
-          new Notification(`🔔 ${pair} Alert Triggered!`, {
-            body: `${pair} ${dir} ${target} — current: ${live}`,
-            icon: "/tradeseekho-logo.png",
-            tag: alert.id,
-          })
-        } else if (Notification.permission !== "denied") {
-          Notification.requestPermission().then((perm) => {
-            if (perm === "granted") {
-              new Notification(`🔔 ${pair} Alert Triggered!`, {
-                body: `${pair} ${dir} ${target} — current: ${live}`,
-                icon: "/tradeseekho-logo.png",
-                tag: alert.id,
-              })
-            }
-          })
+  // Check alerts against live prices whenever prices OR alerts update
+  useEffect(() => {
+    if (!alertsData?.alerts) return
+    const untriggered = alertsData.alerts.filter((a) => !a.triggered)
+    if (untriggered.length === 0) return
+
+    for (const alert of untriggered) {
+      // Skip if already shown toast for this alert
+      if (seenAlertIds.current.has(alert.id)) continue
+
+      const livePrice = prices[alert.symbol]?.price
+      if (livePrice === undefined || livePrice === null) {
+        // Price not in cache yet — try fetching on-demand (rare)
+        continue
+      }
+
+      let hit = false
+      if (alert.direction === "above" && livePrice >= alert.targetPrice) {
+        hit = true
+      } else if (alert.direction === "below" && livePrice <= alert.targetPrice) {
+        hit = true
+      }
+
+      if (hit) {
+        seenAlertIds.current.add(alert.id)
+        const pair = pairLabel(alert.symbol)
+        const dir = alert.direction === "above" ? "▲ reached above" : "▼ dropped below"
+        const target = formatPrice(alert.symbol, alert.targetPrice)
+        const live = formatPrice(alert.symbol, livePrice)
+
+        // Show toast notification
+        toast.success(`🔔 ${pair} Alert Triggered!`, {
+          description: `${pair} ${dir} your target ${target} — current: ${live}`,
+          duration: 6000,
+        })
+
+        // Browser notification (desktop + Android Chrome)
+        if (typeof window !== "undefined" && "Notification" in window) {
+          if (Notification.permission === "granted") {
+            new Notification(`🔔 ${pair} Alert Triggered!`, {
+              body: `${pair} ${dir} ${target} — current: ${live}`,
+              icon: "/tradeseekho-logo.png",
+              tag: alert.id,
+            })
+          } else if (Notification.permission !== "denied") {
+            Notification.requestPermission().then((perm) => {
+              if (perm === "granted") {
+                new Notification(`🔔 ${pair} Alert Triggered!`, {
+                  body: `${pair} ${dir} ${target} — current: ${live}`,
+                  icon: "/tradeseekho-logo.png",
+                  tag: alert.id,
+                })
+              }
+            })
+          }
         }
+
+        // Mark as triggered in DB (also creates a DB notification for the bell)
+        markTriggered.mutate(alert.id)
       }
     }
-
-    // Invalidate queries so UI updates
-    qc.invalidateQueries({ queryKey: ["price-alerts"] })
-    qc.invalidateQueries({ queryKey: ["notifications"] })
-  }, [data, qc])
+  }, [alertsData, prices, markTriggered])
 }

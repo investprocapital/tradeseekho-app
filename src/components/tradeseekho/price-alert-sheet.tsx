@@ -11,6 +11,7 @@ import { Label } from "@/components/ui/label"
 import { Bell, BellRing, X, Trash2, Loader2, TrendingUp, TrendingDown, CheckCircle2 } from "lucide-react"
 import { useStore } from "@/lib/store"
 import { pairLabel, formatPrice } from "@/lib/signals"
+import { useLivePrices } from "@/lib/client-prices"
 import { toast } from "sonner"
 
 interface WatchlistPair {
@@ -18,12 +19,6 @@ interface WatchlistPair {
   label: string
   pair: string
   category: string
-  price: number
-  change: number
-  sell: number
-  buy: number
-  spread: number
-  status: string
 }
 
 interface PriceAlert {
@@ -66,13 +61,15 @@ export function PriceAlertSheet() {
   const [targetPrice, setTargetPrice] = useState("")
   const [direction, setDirection] = useState<"above" | "below">("above")
 
-  // Fetch watchlist (auto-refresh every 15s)
+  // Fetch watchlist metadata (static — no prices, zero server cost)
   const { data: watchData, isLoading: watchLoading } = useQuery({
     queryKey: ["watchlist"],
     queryFn: fetchWatchlist,
-    staleTime: 10_000,
-    refetchInterval: 15_000,
+    staleTime: Infinity, // metadata never changes
   })
+
+  // Live prices come from client-side (Binance WebSocket + TwelveData polling)
+  const livePrices = useLivePrices()
 
   // Fetch user's alerts
   const { data: alertsData } = useQuery({
@@ -114,7 +111,15 @@ export function PriceAlertSheet() {
 
   const pairs = watchData?.pairs ?? []
   const alerts = alertsData?.alerts ?? []
+  // Merge metadata with live prices (client-side)
   const selectedPair = pairs.find((p) => p.symbol === selectedSymbol)
+  const livePrice = selectedPair ? livePrices[selectedPair.symbol] : null
+  const currentPrice = livePrice?.price ?? 0
+  const currentChange = livePrice?.change ?? 0
+  const currentSell = livePrice?.sell ?? 0
+  const currentBuy = livePrice?.buy ?? 0
+  const currentSpread = livePrice?.spread ?? 0
+  const currentStatus = livePrice?.status ?? "offline"
 
   // Auto-fill target price with current price when symbol changes.
   // We use the "adjust-during-render" pattern (same as admin-panel) to avoid
@@ -122,8 +127,8 @@ export function PriceAlertSheet() {
   const [prevSymbol, setPrevSymbol] = useState(selectedSymbol)
   if (prevSymbol !== selectedSymbol) {
     setPrevSymbol(selectedSymbol)
-    if (selectedPair) {
-      setTargetPrice(String(selectedPair.price))
+    if (currentPrice > 0) {
+      setTargetPrice(String(currentPrice))
     }
   }
 
@@ -185,24 +190,24 @@ export function PriceAlertSheet() {
                 </div>
                 <div className="mt-2 flex items-center justify-center gap-3">
                   <div className="text-2xl font-extrabold text-foreground">
-                    {formatPrice(selectedPair.symbol, selectedPair.price)}
+                    {currentPrice > 0 ? formatPrice(selectedPair.symbol, currentPrice) : "..."}
                   </div>
-                  <div className={`text-xs font-bold ${selectedPair.change >= 0 ? "text-emerald-500" : "text-destructive"}`}>
-                    {selectedPair.change >= 0 ? "▲" : "▼"} {Math.abs(selectedPair.change).toFixed(2)}%
+                  <div className={`text-xs font-bold ${currentChange >= 0 ? "text-emerald-500" : "text-destructive"}`}>
+                    {currentChange >= 0 ? "▲" : "▼"} {Math.abs(currentChange).toFixed(2)}%
                   </div>
                 </div>
                 <div className="mt-2 grid grid-cols-3 gap-1.5 text-center">
                   <div className="rounded-lg bg-destructive/10 p-1.5">
                     <div className="text-[8px] uppercase text-muted-foreground">Sell</div>
-                    <div className="text-xs font-bold text-destructive">{formatPrice(selectedPair.symbol, selectedPair.sell)}</div>
+                    <div className="text-xs font-bold text-destructive">{currentSell > 0 ? formatPrice(selectedPair.symbol, currentSell) : "—"}</div>
                   </div>
                   <div className="rounded-lg bg-muted/40 p-1.5">
                     <div className="text-[8px] uppercase text-muted-foreground">Spread</div>
-                    <div className="text-xs font-bold text-foreground">{selectedPair.spread.toFixed(2)}</div>
+                    <div className="text-xs font-bold text-foreground">{currentSpread > 0 ? currentSpread.toFixed(2) : "—"}</div>
                   </div>
                   <div className="rounded-lg bg-emerald-500/10 p-1.5">
                     <div className="text-[8px] uppercase text-muted-foreground">Buy</div>
-                    <div className="text-xs font-bold text-emerald-500">{formatPrice(selectedPair.symbol, selectedPair.buy)}</div>
+                    <div className="text-xs font-bold text-emerald-500">{currentBuy > 0 ? formatPrice(selectedPair.symbol, currentBuy) : "—"}</div>
                   </div>
                 </div>
               </div>
@@ -363,10 +368,25 @@ export function PriceAlertSheet() {
                       </div>
                       <div className="flex items-center gap-3">
                         <div className="text-end">
-                          <div className="text-sm font-bold">{formatPrice(p.symbol, p.price)}</div>
-                          <div className={`text-[10px] font-bold ${p.change >= 0 ? "text-emerald-500" : "text-destructive"}`}>
-                            {p.change >= 0 ? "▲" : "▼"} {Math.abs(p.change).toFixed(2)}%
-                          </div>
+                          {(() => {
+                            const lp = livePrices[p.symbol]
+                            if (lp && lp.price > 0) {
+                              return (
+                                <>
+                                  <div className="text-sm font-bold">{formatPrice(p.symbol, lp.price)}</div>
+                                  <div className={`text-[10px] font-bold ${lp.change >= 0 ? "text-emerald-500" : "text-destructive"}`}>
+                                    {lp.change >= 0 ? "▲" : "▼"} {Math.abs(lp.change).toFixed(2)}%
+                                  </div>
+                                </>
+                              )
+                            }
+                            return (
+                              <>
+                                <div className="text-sm font-bold text-muted-foreground">—</div>
+                                <div className="text-[10px] text-muted-foreground">offline</div>
+                              </>
+                            )
+                          })()}
                         </div>
                         {hasAlert && <BellRing className="h-4 w-4 text-gold" />}
                       </div>
