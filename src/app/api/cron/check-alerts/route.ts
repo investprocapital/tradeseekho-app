@@ -113,9 +113,12 @@ async function sendFcmPush(fcmToken: string, title: string, body: string): Promi
 }
 
 export async function GET(req: Request) {
-  // Auth: CRON_SECRET sent via ?secret= or x-api-key header
+  // Auth: Vercel Cron sends Authorization: Bearer <CRON_SECRET> header automatically.
+  // Also accept ?secret= or x-api-key for manual testing.
   const url = new URL(req.url)
-  const secret = url.searchParams.get("secret") || req.headers.get("x-api-key")
+  const authHeader = req.headers.get("authorization") || ""
+  const bearerToken = authHeader.startsWith("Bearer ") ? authHeader.slice(7) : ""
+  const secret = url.searchParams.get("secret") || req.headers.get("x-api-key") || bearerToken
   if (secret !== process.env.CRON_SECRET) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 })
   }
