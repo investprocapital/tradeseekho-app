@@ -25,6 +25,6 @@ export async function GET() {
     return NextResponse.json({ categories: dto })
   } catch (e: any) {
     console.error("[categories] DB unreachable:", e?.message)
-    return NextResponse.json({ categories: [] })
+    return NextResponse.json({ categories: [], error: e?.message?.slice(0, 200), code: e?.code })
   }
 }
