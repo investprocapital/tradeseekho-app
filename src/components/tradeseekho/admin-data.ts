@@ -206,6 +206,7 @@ export interface AdminProRequest {
   method: string
   amount: number
   screenshotPath: string
+  txHash: string | null
   note: string | null
   status: string
   reviewerNote: string | null

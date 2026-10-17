@@ -6,7 +6,7 @@ import { motion } from "framer-motion"
 import {
   Download, Users, BookOpen, BarChart3, Shield, Lock, LogOut, Eye,
   Plus, Pencil, Trash2, Save, Send, Megaphone, Check, ChevronRight, ArrowLeft,
-  Crown, X, Upload, CreditCard, Search, TrendingUp, MessageSquare,
+  Crown, X, Upload, CreditCard, Search, TrendingUp, MessageSquare, Copy, ExternalLink,
 } from "lucide-react"
 import {
   Card, CardContent, CardHeader, CardTitle, CardDescription,
@@ -1198,9 +1198,18 @@ function ProRequestsTab() {
         <div className="grid gap-3 sm:grid-cols-2">
           {list.map((r) => {
             const initial = (r.user.name || r.user.email || "U").charAt(0).toUpperCase()
+            const isCrypto = r.method === "USDT" || r.method === "USDT_BEP20"
+            const explorerUrl = r.txHash
+              ? (r.method === "USDT_BEP20"
+                ? `https://bscscan.com/tx/${r.txHash}`
+                : r.method === "USDT"
+                ? `https://tronscan.org/#/transaction/${r.txHash}`
+                : null)
+              : null
             return (
               <Card key={r.id}>
-                <CardContent className="p-4">
+                <CardContent className="p-4 space-y-3">
+                  {/* ─── User Info: Name + Email + Status ─── */}
                   <div className="flex items-start gap-3">
                     <Avatar className="h-10 w-10">
                       <AvatarImage src={r.user.image ?? undefined} alt="" />
@@ -1217,24 +1226,82 @@ function ProRequestsTab() {
                     }>{r.status}</Badge>
                   </div>
 
-                  <div className="mt-3 grid grid-cols-2 gap-2 text-xs">
+                  {/* ─── Payment Method + Amount ─── */}
+                  <div className="grid grid-cols-2 gap-2 text-xs">
                     <div><span className="text-muted-foreground">Method:</span> <span className="font-bold">{r.method}</span></div>
-                    <div><span className="text-muted-foreground">Amount:</span> <span className="font-bold">Rs {r.amount}</span></div>
-                    <div className="col-span-2"><span className="text-muted-foreground">Submitted:</span> <span className="font-bold">{new Date(r.createdAt).toLocaleString()}</span></div>
-                    {r.note && <div className="col-span-2 rounded bg-muted/50 p-2"><span className="font-semibold">Note:</span> {r.note}</div>}
-                    {r.reviewerNote && <div className="col-span-2 rounded bg-muted/50 p-2"><span className="font-semibold">Admin:</span> {r.reviewerNote}</div>}
+                    <div><span className="text-muted-foreground">Amount:</span> <span className="font-bold">Rs {r.amount} (${Math.round(r.amount / 280)})*</span></div>
                   </div>
 
-                  <button
-                    onClick={() => setPreview(r.screenshotPath)}
-                    className="mt-3 block w-full overflow-hidden rounded-lg border border-border"
-                    aria-label="View screenshot"
-                  >
-                    <img src={r.screenshotPath} alt="payment screenshot" className="h-32 w-full object-cover" />
-                  </button>
+                  {/* ─── Tx Hash / TxID (crypto only) — with Copy + Explorer link ─── */}
+                  {r.txHash && (
+                    <div className="rounded-lg border border-amber-500/30 bg-amber-500/5 p-2 space-y-1.5">
+                      <div className="text-[10px] font-bold uppercase tracking-wide text-amber-600">Tx Hash / TxID</div>
+                      <div className="flex items-center gap-1.5">
+                        <code className="flex-1 truncate font-mono text-[11px] font-bold text-foreground" title={r.txHash}>
+                          {r.txHash}
+                        </code>
+                        <button
+                          onClick={() => { navigator.clipboard?.writeText(r.txHash!); toast.success("Tx Hash copied") }}
+                          className="shrink-0 rounded-md border border-border bg-card p-1.5 transition hover:bg-muted"
+                          title="Copy Tx Hash"
+                          aria-label="Copy Tx Hash"
+                        >
+                          <Copy className="h-3.5 w-3.5" />
+                        </button>
+                        {explorerUrl && (
+                          <a
+                            href={explorerUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="shrink-0 rounded-md border border-border bg-card p-1.5 transition hover:bg-muted"
+                            title={`View on ${r.method === "USDT_BEP20" ? "BSCScan" : "Tronscan"}`}
+                            aria-label="View on blockchain explorer"
+                          >
+                            <ExternalLink className="h-3.5 w-3.5" />
+                          </a>
+                        )}
+                      </div>
+                    </div>
+                  )}
 
+                  {/* ─── Screenshot — image preview, tap to zoom ─── */}
+                  {r.screenshotPath && (
+                    <div>
+                      <div className="mb-1 text-[10px] font-bold uppercase tracking-wide text-muted-foreground">Screenshot</div>
+                      <button
+                        onClick={() => setPreview(r.screenshotPath)}
+                        className="block w-full overflow-hidden rounded-lg border border-border"
+                        aria-label="View screenshot full size"
+                      >
+                        <img src={r.screenshotPath} alt="payment screenshot" className="h-36 w-full object-cover" />
+                      </button>
+                    </div>
+                  )}
+
+                  {/* ─── User Note (optional, separate from Tx Hash) ─── */}
+                  {r.note && (
+                    <div className="rounded-lg bg-muted/50 p-2">
+                      <div className="text-[10px] font-bold uppercase tracking-wide text-muted-foreground">User Note</div>
+                      <div className="mt-0.5 text-xs">{r.note}</div>
+                    </div>
+                  )}
+
+                  {/* ─── Date ─── */}
+                  <div className="text-[10px] text-muted-foreground">
+                    Submitted: <span className="font-bold">{new Date(r.createdAt).toLocaleString()}</span>
+                  </div>
+
+                  {/* ─── Admin reviewer note (if reviewed) ─── */}
+                  {r.reviewerNote && (
+                    <div className="rounded-lg bg-muted/50 p-2">
+                      <div className="text-[10px] font-bold uppercase tracking-wide text-muted-foreground">Admin Note</div>
+                      <div className="mt-0.5 text-xs">{r.reviewerNote}</div>
+                    </div>
+                  )}
+
+                  {/* ─── Actions: Approve / Reject ─── */}
                   {r.status === "pending" && (
-                    <div className="mt-3 flex gap-2">
+                    <div className="flex gap-2">
                       <Button size="sm" className="flex-1 gap-1.5 bg-brand font-bold text-brand-foreground hover:bg-brand/90" onClick={() => onApprove(r.id)} disabled={approve.isPending}>
                         <Check className="h-4 w-4" /> Approve
                       </Button>

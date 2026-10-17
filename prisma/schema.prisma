@@ -139,10 +139,11 @@ model ProRequest {
   id             String   @id @default(cuid())
   userId         String
   user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  method         String   // "JazzCash" | "Easypaisa"
+  method         String   // "JazzCash" | "Easypaisa" | "Card" | "SadaPay" | "USDT" | "USDT_BEP20"
   amount         Int      @default(0) // PKR; optional info from user
-  screenshotPath String   // /uploads/pro/xxx.jpg
-  note           String?  // optional user note (txn id, etc.)
+  screenshotPath String   // CDN URL (Vercel Blob) or base64 data URL
+  txHash         String?  // Transaction Hash / TxID (crypto payments) — separate from note
+  note           String?  // optional user note (NOT the tx hash — that's in txHash)
   status         String   @default("pending") // pending | approved | rejected
   reviewedAt     DateTime?
   reviewerNote   String?
