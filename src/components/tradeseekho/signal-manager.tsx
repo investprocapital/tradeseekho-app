@@ -319,59 +319,122 @@ function renderSignalCard(a: RenderArgs): string {
       ctx.fillText(labelText, chartRight + 8, y + 4)
     }
 
-    // ─── Auto Support/Resistance lines (subtle, from recent candle data) ───
-    // Detects local highs (resistance) and local lows (support) from the
-    // last ~20 candles. Draws thin dotted lines so the chart looks clean
-    // and professional — NOT cluttered like TP/SL lines.
+    // ─── Auto Support/Resistance lines (prominent, professional) ───
+    // PER USER REQUIREMENT: Exactly 1 Support (green, below entry) + 1 Resistance
+    // (red, above entry). Auto-generated from recent candle data using pivot
+    // detection. These do NOT clutter the chart like TP/SL lines — they look
+    // like TradingView's auto S/R tool.
     if (a.candles.length >= 10) {
-      const recentCandles = a.candles.slice(-20)
-      const resistances: number[] = []
-      const supports: number[] = []
-      for (let i = 2; i < recentCandles.length - 2; i++) {
+      const recentCandles = a.candles.slice(-30)
+      const currentPrice = a.livePrice ?? recentCandles[recentCandles.length - 1].c
+      const entryPrice = parseFloat(a.entry)
+      const refPrice = Number.isFinite(entryPrice) ? entryPrice : currentPrice
+
+      // Detect pivot highs (resistance) and pivot lows (support)
+      // Using 3-candle pivot: a candle is a pivot if its high/low is
+      // higher/lower than 3 neighbors on each side (stronger detection)
+      const allResistances: { price: number; touches: number }[] = []
+      const allSupports: { price: number; touches: number }[] = []
+      const pivot = 3
+      for (let i = pivot; i < recentCandles.length - pivot; i++) {
         const c = recentCandles[i]
-        // Resistance: local high (higher than 2 neighbors on each side)
-        if (c.h > recentCandles[i - 1].h && c.h > recentCandles[i - 2].h &&
-            c.h > recentCandles[i + 1].h && c.h > recentCandles[i + 2].h) {
-          resistances.push(c.h)
+        // Resistance: local high
+        let isHigh = true
+        for (let j = 1; j <= pivot; j++) {
+          if (recentCandles[i - j].h >= c.h || recentCandles[i + j].h >= c.h) {
+            isHigh = false; break
+          }
         }
-        // Support: local low (lower than 2 neighbors on each side)
-        if (c.l < recentCandles[i - 1].l && c.l < recentCandles[i - 2].l &&
-            c.l < recentCandles[i + 1].l && c.l < recentCandles[i + 2].l) {
-          supports.push(c.l)
+        if (isHigh) allResistances.push({ price: c.h, touches: 1 })
+        // Support: local low
+        let isLow = true
+        for (let j = 1; j <= pivot; j++) {
+          if (recentCandles[i - j].l <= c.l || recentCandles[i + j].l <= c.l) {
+            isLow = false; break
+          }
         }
+        if (isLow) allSupports.push({ price: c.l, touches: 1 })
       }
-      // Draw resistance lines (subtle orange/red, thin dotted)
-      for (const r of resistances.slice(-2)) { // max 2 resistance lines
-        const y = yFor(r)
-        ctx.strokeStyle = "rgba(255, 165, 0, 0.35)"
-        ctx.lineWidth = 1
-        ctx.setLineDash([3, 3])
+
+      // Cluster nearby levels (within 0.3% of each other) to find strong S/R
+      const clusterThreshold = (maxP - minP) * 0.003
+      const cluster = (levels: { price: number; touches: number }[]) => {
+        const clustered: { price: number; touches: number }[] = []
+        for (const lv of levels) {
+          const existing = clustered.find((c) => Math.abs(c.price - lv.price) < clusterThreshold)
+          if (existing) {
+            existing.price = (existing.price * existing.touches + lv.price) / (existing.touches + 1)
+            existing.touches++
+          } else {
+            clustered.push({ ...lv })
+          }
+        }
+        return clustered.sort((a, b) => b.touches - a.touches)
+      }
+      const strongResistances = cluster(allResistances)
+      const strongSupports = cluster(allSupports)
+
+      // Pick 1 resistance ABOVE current price (closest to entry)
+      const resistanceAbove = strongResistances
+        .filter((r) => r.price > refPrice)
+        .sort((a, b) => a.price - b.price)[0]
+      // Pick 1 support BELOW current price (closest to entry)
+      const supportBelow = strongSupports
+        .filter((s) => s.price < refPrice)
+        .sort((a, b) => b.price - a.price)[0]
+
+      // ─── Draw Resistance line (RED, above entry) ───
+      if (resistanceAbove) {
+        const y = yFor(resistanceAbove.price)
+        // Dashed line — more prominent (65% opacity)
+        ctx.strokeStyle = "rgba(255, 77, 109, 0.65)"
+        ctx.lineWidth = 1.5
+        ctx.setLineDash([7, 4])
         ctx.beginPath()
         ctx.moveTo(chartLeft, y)
         ctx.lineTo(chartRight, y)
         ctx.stroke()
         ctx.setLineDash([])
-        // Small label
-        ctx.fillStyle = "rgba(255, 165, 0, 0.6)"
-        ctx.font = "9px Arial"
-        ctx.fillText("R", chartLeft + 4, y - 3)
+        // Label box on the right edge
+        const rLabel = `R: ${formatPrice(a.symbol, resistanceAbove.price)}`
+        ctx.font = "bold 10px Arial"
+        const rBoxW = ctx.measureText(rLabel).width + 10
+        ctx.fillStyle = "rgba(255, 77, 109, 0.9)"
+        roundRect(ctx, chartRight + 2, y - 8, rBoxW, 16, 3)
+        ctx.fill()
+        ctx.fillStyle = "#FFFFFF"
+        ctx.fillText(rLabel, chartRight + 7, y + 3)
       }
-      // Draw support lines (subtle green, thin dotted)
-      for (const s of supports.slice(-2)) { // max 2 support lines
-        const y = yFor(s)
-        ctx.strokeStyle = "rgba(0, 208, 156, 0.35)"
-        ctx.lineWidth = 1
-        ctx.setLineDash([3, 3])
+
+      // ─── Draw Support line (GREEN, below entry) ───
+      if (supportBelow) {
+        const y = yFor(supportBelow.price)
+        // Dashed line — more prominent (65% opacity)
+        ctx.strokeStyle = "rgba(0, 208, 156, 0.65)"
+        ctx.lineWidth = 1.5
+        ctx.setLineDash([7, 4])
         ctx.beginPath()
         ctx.moveTo(chartLeft, y)
         ctx.lineTo(chartRight, y)
         ctx.stroke()
         ctx.setLineDash([])
-        // Small label
-        ctx.fillStyle = "rgba(0, 208, 156, 0.6)"
-        ctx.font = "9px Arial"
-        ctx.fillText("S", chartLeft + 4, y - 3)
+        // Label box on the right edge
+        const sLabel = `S: ${formatPrice(a.symbol, supportBelow.price)}`
+        ctx.font = "bold 10px Arial"
+        const sBoxW = ctx.measureText(sLabel).width + 10
+        ctx.fillStyle = "rgba(0, 208, 156, 0.9)"
+        roundRect(ctx, chartRight + 2, y - 8, sBoxW, 16, 3)
+        ctx.fill()
+        ctx.fillStyle = "#FFFFFF"
+        ctx.fillText(sLabel, chartRight + 7, y + 3)
       }
+
+      // Legend (top-left of chart area) — small, clean
+      ctx.fillStyle = "rgba(255, 77, 109, 0.9)"
+      ctx.font = "9px Arial"
+      ctx.fillText("━ R", chartLeft + 4, chartTop + 24)
+      ctx.fillStyle = "rgba(0, 208, 156, 0.9)"
+      ctx.fillText("━ S", chartLeft + 34, chartTop + 24)
     }
 
     // ---- Draw ENTRY ZONE (range box) if entry2 is set, else single Entry line ----
