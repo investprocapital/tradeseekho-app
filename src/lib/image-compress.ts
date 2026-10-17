@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-require-imports */
 /**
  * Image compression helper — auto-resize + convert to WebP + compress.
  *
