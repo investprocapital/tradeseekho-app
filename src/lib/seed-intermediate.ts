@@ -1884,7 +1884,7 @@ export async function seedIntermediateLessons(db: PrismaClient) {
         titleEn: ls.title.en, titleUr: ls.title.ur, titleHi: ls.title.hi, titleAr: ls.title.ar,
         summaryEn: ls.summary.en, summaryUr: ls.summary.ur, summaryHi: ls.summary.hi, summaryAr: ls.summary.ar,
         contentEn: ls.content.en, contentUr: ls.content.ur, contentHi: ls.content.hi, contentAr: ls.content.ar,
-        imageUrl: `/lessons/lesson-${ls.order + 12}.png`,
+        imageUrl: `/lessons/lesson-${ls.order + 12}.webp`,
         durationMin: ls.durationMin,
         isPublished: true,
         isFree: ls.isFree,

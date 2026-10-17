@@ -1,6 +1,7 @@
 "use client"
 
 import { motion } from "framer-motion"
+import Image from "next/image"
 import { Lock, CheckCircle2, Clock, Bookmark, ChevronRight, CircleDot, BarChart3 } from "lucide-react"
 import { useStore, useT } from "@/lib/store"
 import { usePick } from "./localize"
@@ -76,10 +77,19 @@ function LessonCard({ lesson, index, totalInCategory }: { lesson: LessonListItem
         className="absolute inset-0 z-10 h-full w-full cursor-pointer"
         aria-label={`${t("action.readLesson")}: ${pick(lesson.title)}`}
       />
-      {/* Thumbnail */}
+      {/* Thumbnail — Next.js Image with quality=75 + lazy loading + WebP */}
       <div className="relative h-32 overflow-hidden">
         {lesson.imageUrl ? (
-          <img src={lesson.imageUrl} alt="" className="h-full w-full object-cover no-select" draggable={false} />
+          <Image
+            src={lesson.imageUrl}
+            alt=""
+            fill
+            sizes="(max-width: 768px) 50vw, (max-width: 1200px) 33vw, 25vw"
+            className="h-full w-full object-cover no-select"
+            draggable={false}
+            quality={75}
+            loading="lazy"
+          />
         ) : (
           <div
             className="flex h-full w-full items-center justify-center"
