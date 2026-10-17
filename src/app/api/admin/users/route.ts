@@ -77,8 +77,19 @@ export async function GET(req: Request) {
     deviceInfo: "Web Browser", // Placeholder — device tracking not implemented
   }))
 
+  // Count ALL users (ignoring search/filter) for the prominent "Total Clients" box
+  const totalAll = await db.user.count({
+    where: { id: { not: "local-learner" }, email: { not: null } },
+  })
+  const totalProAll = await db.user.count({
+    where: { id: { not: "local-learner" }, email: { not: null }, proStatus: "active" },
+  })
+
   return NextResponse.json({
     users: dto,
     total: dto.length,
+    totalAll,
+    totalProAll,
+    totalFreeAll: totalAll - totalProAll,
   })
 }

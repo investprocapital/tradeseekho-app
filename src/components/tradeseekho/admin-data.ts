@@ -352,7 +352,7 @@ export function useAdminUsers(search?: string, filter?: string) {
   const qs = params.toString()
   if (qs) url += "?" + qs
 
-  return useQuery<{ users: AdminUser[]; total: number }>({
+  return useQuery<{ users: AdminUser[]; total: number; totalAll: number; totalProAll: number; totalFreeAll: number }>({
     queryKey,
     queryFn: () => j(fetch(url).then((r) => r)),
   })

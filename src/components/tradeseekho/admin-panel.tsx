@@ -1603,22 +1603,55 @@ function UsersTab() {
 
   const users = data?.users ?? []
   const proCount = users.filter((u) => u.proStatus === "active").length
+  // totalAll = ALL registered clients (ignoring search/filter) — always shows
+  // the real total. Updates automatically when new accounts are created.
+  const totalClients = data?.totalAll ?? 0
+  const totalPro = data?.totalProAll ?? 0
+  const totalFree = data?.totalFreeAll ?? 0
 
   return (
     <div className="space-y-4">
-      {/* Stats */}
+      {/* ─── PROMINENT TOTAL CLIENTS BOX (top) ─── */}
+      {/* Big number showing total registered clients. Updates when new accounts are created. */}
+      <Card className="border-brand/30 bg-gradient-to-br from-brand/5 to-transparent">
+        <CardContent className="flex items-center gap-4 p-5">
+          <span className="inline-flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-brand/15 text-brand">
+            <Users className="h-7 w-7" />
+          </span>
+          <div className="flex-1">
+            <div className="text-[11px] font-bold uppercase tracking-wide text-muted-foreground">Total Clients</div>
+            <div className="text-4xl font-extrabold text-foreground leading-tight">{totalClients}</div>
+            <div className="text-[11px] text-muted-foreground">
+              {totalPro} Pro · {totalFree} Free · {isLoading ? "Loading..." : "Live count"}
+            </div>
+          </div>
+          {/* Mini stats on the right */}
+          <div className="hidden sm:flex flex-col gap-2 text-right">
+            <div className="rounded-lg bg-gold/10 px-3 py-1.5">
+              <div className="text-lg font-extrabold text-gold-foreground">{totalPro}</div>
+              <div className="text-[9px] uppercase tracking-wide text-muted-foreground">Pro</div>
+            </div>
+            <div className="rounded-lg bg-muted/50 px-3 py-1.5">
+              <div className="text-lg font-extrabold text-foreground">{totalFree}</div>
+              <div className="text-[9px] uppercase tracking-wide text-muted-foreground">Free</div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Filtered stats (changes with search/filter) */}
       <div className="grid grid-cols-3 gap-2">
         <div className="rounded-xl border border-border bg-card p-3 text-center">
           <div className="text-2xl font-extrabold text-foreground">{data?.total ?? 0}</div>
-          <div className="text-[10px] uppercase tracking-wide text-muted-foreground">Total Users</div>
+          <div className="text-[10px] uppercase tracking-wide text-muted-foreground">Showing</div>
         </div>
         <div className="rounded-xl border border-gold/30 bg-gold/5 p-3 text-center">
           <div className="text-2xl font-extrabold text-gold-foreground">{proCount}</div>
-          <div className="text-[10px] uppercase tracking-wide text-muted-foreground">Pro Users</div>
+          <div className="text-[10px] uppercase tracking-wide text-muted-foreground">Pro (filtered)</div>
         </div>
         <div className="rounded-xl border border-border bg-card p-3 text-center">
           <div className="text-2xl font-extrabold text-foreground">{(data?.total ?? 0) - proCount}</div>
-          <div className="text-[10px] uppercase tracking-wide text-muted-foreground">Free Users</div>
+          <div className="text-[10px] uppercase tracking-wide text-muted-foreground">Free (filtered)</div>
         </div>
       </div>
 
