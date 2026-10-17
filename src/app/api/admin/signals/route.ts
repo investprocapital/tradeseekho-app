@@ -2,6 +2,7 @@ import { NextResponse } from "next/server"
 import { db } from "@/lib/db"
 import { requireAdmin } from "@/lib/admin-auth"
 import { uploadImage } from "@/lib/blob-upload"
+import { compressImage } from "@/lib/image-compress"
 import {
   buildHitNotification,
   actionToStatus,
@@ -19,8 +20,8 @@ export async function GET() {
 }
 
 // POST /api/admin/signals — admin: create (publish) a new signal.
-// New signals start as status "active". The screenshot is uploaded to Vercel
-// Blob (CDN) and only the URL is stored in Neon — keeps the DB row tiny.
+// The screenshot is AUTO-COMPRESSED (resize 800px + WebP + quality 75) then
+// uploaded to Vercel Blob CDN. Only the URL is stored in Neon.
 export async function POST(req: Request) {
   const guard = await requireAdmin()
   if (guard) return guard
@@ -32,8 +33,24 @@ export async function POST(req: Request) {
       { status: 400 },
     )
   }
-  // Upload screenshot to Vercel Blob CDN (falls back to base64 if Blob not configured)
-  const { url: screenshotUrl } = await uploadImage(screenshot, "signals", `sig_${Date.now()}`)
+
+  // ─── AUTO-COMPRESS screenshot if it's a base64 data URL ───
+  // The canvas-generated screenshot is JPEG (already compressed at 0.85),
+  // but we convert to WebP + resize 800px for even smaller size + CDN delivery.
+  let finalScreenshot = screenshot
+  if (screenshot.startsWith("data:")) {
+    try {
+      const compressed = await compressImage(Buffer.from(screenshot.split(",")[1], "base64"))
+      // Convert compressed buffer back to data URL for uploadImage (which handles Blob upload)
+      finalScreenshot = `data:${compressed.mimeType};base64,${compressed.buffer.toString("base64")}`
+    } catch (e) {
+      // Compression failed — use original (uploadImage will handle it)
+      console.error("[admin/signals] screenshot compression failed:", e?.message)
+    }
+  }
+
+  // Upload to Vercel Blob CDN (falls back to base64 if Blob not configured)
+  const { url: screenshotUrl } = await uploadImage(finalScreenshot, "signals", `sig_${Date.now()}`)
   const signal = await db.signal.create({
     data: {
       symbol,
@@ -45,7 +62,7 @@ export async function POST(req: Request) {
       tp2: tp2 || null,
       tp3: tp3 || null,
       note: note || null,
-      screenshot: screenshotUrl || screenshot,
+      screenshot: screenshotUrl || finalScreenshot,
       status: "active",
       hideLevels: hideLevels === true,
     },

@@ -88,15 +88,31 @@ export async function POST(
   }
 
   // Validate image size (base64 data URL — estimate ~1.37x base64 overhead)
+  // Allow up to 2MB raw (will be auto-compressed to ~150KB)
   if (image && typeof image === "string") {
     const sizeBytes = (image.length * 3) / 4
-    if (sizeBytes > 300 * 1024) {
-      return NextResponse.json({ error: "Image too large (max 200KB)" }, { status: 400 })
+    if (sizeBytes > 2 * 1024 * 1024) {
+      return NextResponse.json({ error: "Image too large (max 2MB)" }, { status: 400 })
+    }
+  }
+
+  // ─── AUTO-COMPRESS comment image (resize 800px + WebP + quality 75) ───
+  // Then upload to Vercel Blob CDN. This keeps comment images small (80-150KB)
+  // so the DB + CDN stay lean.
+  let finalImage = image
+  if (image && typeof image === "string" && image.startsWith("data:")) {
+    try {
+      const { compressImage } = await import("@/lib/image-compress")
+      const compressed = await compressImage(Buffer.from(image.split(",")[1], "base64"))
+      finalImage = `data:${compressed.mimeType};base64,${compressed.buffer.toString("base64")}`
+    } catch (e) {
+      // Compression failed — use original (uploadImage will handle it)
+      console.error("[comments] image compression failed:", e?.message)
     }
   }
 
   // Upload image to Vercel Blob CDN (falls back to base64 if Blob not configured)
-  const { url: imageUrl } = await uploadImage(image, "comments", `cmt_${Date.now()}`)
+  const { url: imageUrl } = await uploadImage(finalImage, "comments", `cmt_${Date.now()}`)
 
   // Get user name from DB
   const user = await db.user.findUnique({ where: { id: userId }, select: { name: true, email: true } })
