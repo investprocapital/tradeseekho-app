@@ -283,6 +283,9 @@ function renderSignalCard(a: RenderArgs): string {
     }
 
     // ---- Draw Entry/SL/TP horizontal level lines (overlay on the chart) ----
+    // PER USER REQUIREMENT: Only draw ENTRY line on the chart.
+    // TP1, TP2, TP3, SL lines are HIDDEN (they clutter the chart).
+    // Auto Support/Resistance lines are drawn from recent candle highs/lows.
     const drawLevel = (
       val: number, color: string, label: string, price: string,
     ) => {
@@ -308,9 +311,63 @@ function renderSignalCard(a: RenderArgs): string {
       ctx.fillText(labelText, chartRight + 8, y + 4)
     }
 
-    drawLevel(slNum, "#FF4D6D", "SL", a.stopLoss)
+    // ─── Auto Support/Resistance lines (subtle, from recent candle data) ───
+    // Detects local highs (resistance) and local lows (support) from the
+    // last ~20 candles. Draws thin dotted lines so the chart looks clean
+    // and professional — NOT cluttered like TP/SL lines.
+    if (a.candles.length >= 10) {
+      const recentCandles = a.candles.slice(-20)
+      const resistances: number[] = []
+      const supports: number[] = []
+      for (let i = 2; i < recentCandles.length - 2; i++) {
+        const c = recentCandles[i]
+        // Resistance: local high (higher than 2 neighbors on each side)
+        if (c.h > recentCandles[i - 1].h && c.h > recentCandles[i - 2].h &&
+            c.h > recentCandles[i + 1].h && c.h > recentCandles[i + 2].h) {
+          resistances.push(c.h)
+        }
+        // Support: local low (lower than 2 neighbors on each side)
+        if (c.l < recentCandles[i - 1].l && c.l < recentCandles[i - 2].l &&
+            c.l < recentCandles[i + 1].l && c.l < recentCandles[i + 2].l) {
+          supports.push(c.l)
+        }
+      }
+      // Draw resistance lines (subtle orange/red, thin dotted)
+      for (const r of resistances.slice(-2)) { // max 2 resistance lines
+        const y = yFor(r)
+        ctx.strokeStyle = "rgba(255, 165, 0, 0.35)"
+        ctx.lineWidth = 1
+        ctx.setLineDash([3, 3])
+        ctx.beginPath()
+        ctx.moveTo(chartLeft, y)
+        ctx.lineTo(chartRight, y)
+        ctx.stroke()
+        ctx.setLineDash([])
+        // Small label
+        ctx.fillStyle = "rgba(255, 165, 0, 0.6)"
+        ctx.font = "9px Arial"
+        ctx.fillText("R", chartLeft + 4, y - 3)
+      }
+      // Draw support lines (subtle green, thin dotted)
+      for (const s of supports.slice(-2)) { // max 2 support lines
+        const y = yFor(s)
+        ctx.strokeStyle = "rgba(0, 208, 156, 0.35)"
+        ctx.lineWidth = 1
+        ctx.setLineDash([3, 3])
+        ctx.beginPath()
+        ctx.moveTo(chartLeft, y)
+        ctx.lineTo(chartRight, y)
+        ctx.stroke()
+        ctx.setLineDash([])
+        // Small label
+        ctx.fillStyle = "rgba(0, 208, 156, 0.6)"
+        ctx.font = "9px Arial"
+        ctx.fillText("S", chartLeft + 4, y - 3)
+      }
+    }
 
     // ---- Draw ENTRY ZONE (range box) if entry2 is set, else single Entry line ----
+    // ENTRY is the ONLY level line shown (TP/SL hidden per user requirement)
     if (Number.isFinite(entryNum) && Number.isFinite(entry2Num) && entry2Num !== 0) {
       // Entry Zone: filled rectangle between entry1 and entry2
       const y1 = yFor(entryNum)
@@ -344,9 +401,9 @@ function renderSignalCard(a: RenderArgs): string {
       drawLevel(entryNum, "#FFFFFF", "ENTRY", a.entry)
     }
 
-    drawLevel(tp1Num, "#00D09C", "TP1", a.tp1)
-    drawLevel(tp2Num, "#22D3EE", "TP2", a.tp2)
-    drawLevel(tp3Num, "#3B82F6", "TP3", a.tp3)
+    // TP1, TP2, TP3, SL lines are HIDDEN per user requirement.
+    // Only ENTRY shows on the chart. TP/SL values are still visible in the
+    // signal details section below the chart (when hideLevels is false).
 
     // Note
     if (a.note) {
