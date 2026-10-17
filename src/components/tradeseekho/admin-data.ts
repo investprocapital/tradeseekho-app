@@ -15,6 +15,13 @@ export interface AdminAds {
   interstitialEnabled: boolean
   bannerUnitId: string
   interstitialUnitId: string
+  admobEnabled?: boolean
+  adsenseEnabled?: boolean
+  autoMode?: boolean
+  adFrequency?: number
+  signalBottomAd?: boolean
+  signalBottomAdUnitId?: string
+  commentsEnabled?: boolean
 }
 
 async function j<T>(res: Response | Promise<Response>): Promise<T> {

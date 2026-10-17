@@ -22,6 +22,7 @@ export async function GET() {
       adFrequency: s.adFrequency,
       signalBottomAd: s.signalBottomAd,
       signalBottomAdUnitId: s.signalBottomAdUnitId,
+      commentsEnabled: s.commentsEnabled,
     })
   } catch (e: any) {
     console.error("[admin/ads] DB unreachable:", e?.message)
@@ -36,6 +37,7 @@ export async function GET() {
       adFrequency: 4,
       signalBottomAd: true,
       signalBottomAdUnitId: "",
+      commentsEnabled: true,
     })
   }
 }
@@ -83,6 +85,9 @@ export async function PUT(req: Request) {
   if ("signalBottomAd" in body) data.signalBottomAd = !!body.signalBottomAd
   if ("signalBottomAdUnitId" in body) data.signalBottomAdUnitId = String(body.signalBottomAdUnitId)
 
+  // Comments section ON/OFF toggle (signal detail page)
+  if ("commentsEnabled" in body) data.commentsEnabled = !!body.commentsEnabled
+
   const updated = await db.adSettings.upsert({
     where: { id: "singleton" },
     update: data,
@@ -99,5 +104,6 @@ export async function PUT(req: Request) {
     adFrequency: updated.adFrequency,
     signalBottomAd: updated.signalBottomAd,
     signalBottomAdUnitId: updated.signalBottomAdUnitId,
+    commentsEnabled: updated.commentsEnabled,
   })
 }

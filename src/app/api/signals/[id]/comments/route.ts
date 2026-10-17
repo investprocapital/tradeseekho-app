@@ -4,8 +4,26 @@ import { getCurrentUserId } from "@/lib/auth"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import { uploadImage } from "@/lib/blob-upload"
+import { withDbRetry } from "@/lib/db-retry"
 
 export const dynamic = "force-dynamic"
+
+/**
+ * Checks if comments are enabled globally (Admin Panel toggle).
+ * Returns true if enabled, false if disabled.
+ */
+async function isCommentsEnabled(): Promise<boolean> {
+  try {
+    let s = await withDbRetry(() => db.adSettings.findUnique({ where: { id: "singleton" } }))
+    if (!s) {
+      s = await withDbRetry(() => db.adSettings.create({ data: { id: "singleton" } }))
+    }
+    return s.commentsEnabled
+  } catch {
+    // DB unreachable → default to enabled (don't break app)
+    return true
+  }
+}
 
 // GET /api/signals/[id]/comments — public: list VISIBLE comments for a signal
 // (hidden comments are only shown to admin)
@@ -36,6 +54,7 @@ export async function GET(
 // POST /api/signals/[id]/comments — auth: create a new comment (hidden by default)
 // Body: { text: string, image?: string (base64 data URL) }
 // Images are uploaded to Vercel Blob (CDN) — only the URL is stored in Neon.
+// BLOCKED if admin has disabled comments globally (commentsEnabled = false).
 export async function POST(
   req: Request,
   { params }: { params: Promise<{ id: string }> },
@@ -48,6 +67,15 @@ export async function POST(
   const userId = (session.user as { id?: string }).id
   if (!userId) {
     return NextResponse.json({ error: "User ID not found" }, { status: 401 })
+  }
+
+  // Block comment writes if admin has disabled comments globally
+  const enabled = await isCommentsEnabled()
+  if (!enabled) {
+    return NextResponse.json(
+      { error: "Comments are disabled by admin" },
+      { status: 403 },
+    )
   }
 
   const body = await req.json()

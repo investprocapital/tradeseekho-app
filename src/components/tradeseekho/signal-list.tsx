@@ -76,6 +76,19 @@ export function SignalList() {
   const lang = useStore((s) => s.lang)
   const rtlFont = lang === "ur" ? "font-urdu" : lang === "ar" ? "font-arabic" : ""
 
+  // Fetch ad settings (includes commentsEnabled toggle). When comments are OFF,
+  // the entire comments section is hidden from the signal detail page.
+  const { data: adSettings } = useQuery<{ commentsEnabled?: boolean }>({
+    queryKey: ["ad-settings"],
+    queryFn: async () => {
+      const res = await fetch("/api/admin/ads", { cache: "no-store" })
+      if (!res.ok) return { commentsEnabled: true }
+      return res.json()
+    },
+    staleTime: 60_000,
+  })
+  const commentsEnabled = adSettings?.commentsEnabled ?? true
+
   const signals = data?.signals ?? []
 
   const copyTrade = (s: Signal) => {
@@ -416,8 +429,9 @@ export function SignalList() {
                 </p>
 
                 {/* Comments section — text + image upload, like/report.
+                    HIDDEN entirely when admin has disabled comments globally.
                     New comments are hidden by default (admin approves). */}
-                <CommentSection signalId={selected.id} />
+                {commentsEnabled && <CommentSection signalId={selected.id} />}
               </div>
             </motion.div>
           </motion.div>

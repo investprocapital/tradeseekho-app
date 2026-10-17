@@ -1108,6 +1108,22 @@ function AdsTab() {
               <p className="text-[10px] text-muted-foreground">AdMob (ca-app-pub-) for mobile app · AdSense (ca-) for web</p>
             </div>
           )}
+
+          {/* Comments Section ON/OFF — global toggle for signal detail page.
+              When OFF: hides the entire comments section (comment box + list)
+              AND blocks DB writes to the Comment table (saves Supabase space). */}
+          <div className="flex items-center justify-between rounded-lg border border-purple-500/30 bg-purple-500/5 p-3">
+            <div>
+              <div className="text-sm font-bold">Signal Comments Section</div>
+              <div className="text-[11px] text-muted-foreground">
+                Show/hide the entire comments area on signal detail page. When OFF, new comments are also blocked (saves DB space).
+              </div>
+            </div>
+            <Switch
+              checked={form.commentsEnabled ?? true}
+              onCheckedChange={(v) => setForm((f) => f && ({ ...f, commentsEnabled: v }))}
+            />
+          </div>
         </CardContent>
       </Card>
 
@@ -1131,6 +1147,7 @@ type AdminAdsForm = {
   adFrequency?: number
   signalBottomAd?: boolean
   signalBottomAdUnitId?: string
+  commentsEnabled?: boolean
 }
 
 /* ---------------- Pro Requests ---------------- */
