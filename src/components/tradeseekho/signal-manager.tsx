@@ -74,6 +74,7 @@ interface RenderArgs {
   note: string
   livePrice: number | null
   candles: Candle[] // real OHLC data from /api/candles
+  interval: string // timeframe label (15m | 30m | 1h | 4h | 1d) shown on chart
 }
 
 // Renders a REAL candlestick chart on canvas using live market OHLC data +
@@ -122,6 +123,13 @@ function renderSignalCard(a: RenderArgs): string {
       ctx.fillStyle = "#8AA2B8"
       ctx.font = "12px Arial"
       ctx.fillText(`LIVE: ${formatPrice(a.symbol, a.livePrice)}`, W - 160, 76)
+    }
+
+    // Timeframe label (top-left under pair name) — shows selected interval
+    if (a.interval) {
+      ctx.fillStyle = "#8AA2B8"
+      ctx.font = "bold 14px Arial"
+      ctx.fillText(`⏱ ${a.interval}`, 26, 76)
     }
 
     // Chart area geometry — candlesticks on left 2/3, price labels on right 1/3
@@ -469,6 +477,10 @@ export function SignalManager() {
   const [tp3, setTp3] = useState("")
   const [note, setNote] = useState("")
   const [screenshot, setScreenshot] = useState("")
+  // Timeframe selector — controls both candle API fetch + TradingView widget.
+  // Yahoo Finance intervals: 15m, 30m, 60m (1h), 4h, 1d. Yahoo doesn't support
+  // "4h" directly but we use 1h with 4x range as a fallback (or 240m if supported).
+  const [timeframe, setTimeframe] = useState<string>("15m")
   const [busy, setBusy] = useState(false)
 
   // When true, the published signal hides Entry/SL/TP values — only the chart
@@ -602,28 +614,48 @@ export function SignalManager() {
   }, [])
 
   // Fetch real OHLC candle data for the chart screenshot. Called on mount +
-  // whenever the symbol changes. Data is cached server-side (60s) so repeated
-  // captures are instant.
-  const fetchCandles = useCallback(async (sym: string) => {
+  // whenever the symbol OR timeframe changes. Data is cached server-side (60s).
+  // Yahoo Finance interval mapping:
+  //   15m → interval=15m, range=1d   (96 candles)
+  //   30m → interval=30m, range=2d   (96 candles)
+  //   1h  → interval=60m, range=5d   (120 candles)
+  //   4h  → interval=60m, range=10d  (then merge every 4 → ~60 candles)
+  //   1d  → interval=1d,  range=3mo  (90 candles)
+  const fetchCandles = useCallback(async (sym: string, tf: string) => {
     try {
-      const res = await fetch(
-        `/api/candles?symbol=${encodeURIComponent(sym)}&interval=15m&range=1d`,
-        { cache: "no-store" },
-      )
+      const params = new URLSearchParams({ symbol: sym })
+      if (tf === "15m") { params.set("interval", "15m"); params.set("range", "1d") }
+      else if (tf === "30m") { params.set("interval", "30m"); params.set("range", "2d") }
+      else if (tf === "1h") { params.set("interval", "60m"); params.set("range", "5d") }
+      else if (tf === "4h") { params.set("interval", "60m"); params.set("range", "10d") }
+      else if (tf === "1d") { params.set("interval", "1d"); params.set("range", "3mo") }
+      else { params.set("interval", "15m"); params.set("range", "1d") }
+      const res = await fetch(`/api/candles?${params.toString()}`, { cache: "no-store" })
       if (!res.ok) throw new Error("candle fetch failed")
       const d = (await res.json()) as { candles: Candle[] }
-      setCandles(d.candles ?? [])
+      let c = d.candles ?? []
+      // For 4h: merge every 4 hourly candles into one 4h candle
+      if (tf === "4h" && c.length >= 4) {
+        const merged: Candle[] = []
+        for (let i = 0; i + 4 <= c.length; i += 4) {
+          const group = c.slice(i, i + 4)
+          merged.push({
+            t: group[0].t,
+            o: group[0].o,
+            h: Math.max(...group.map((x) => x.h)),
+            l: Math.min(...group.map((x) => x.l)),
+            c: group[group.length - 1].c,
+          })
+        }
+        c = merged
+      }
+      setCandles(c)
     } catch {
-      // Non-fatal — screenshot will just show levels without candles.
       setCandles([])
     }
   }, [])
 
-  // Auto-fetch live price + candles on mount + whenever the symbol changes.
-  // IMPORTANT: when the symbol changes we also CLEAR Entry/SL/TP fields +
-  // uploaded screenshot. Otherwise stale values from the previous pair
-  // (e.g. Gold entry 4211) would be published against a new pair (e.g. BTC)
-  // — which is a critical bug (wrong price on the client).
+  // Auto-fetch live price + candles on mount + whenever symbol OR timeframe changes.
   useEffect(() => {
     setAutoFilled(false)
     setEntry("")
@@ -636,8 +668,8 @@ export function SignalManager() {
     setScreenshot("")
     setUploadedScreenshot("")
     void fetchPrice(symbol)
-    void fetchCandles(symbol)
-  }, [symbol, fetchPrice, fetchCandles])
+    void fetchCandles(symbol, timeframe)
+  }, [symbol, timeframe, fetchPrice, fetchCandles])
 
   // Helper: inject the TradingView advanced-chart widget into a given container.
   // Used by both the inline chart + the fullscreen overlay.
@@ -657,7 +689,7 @@ export function SignalManager() {
     script.innerHTML = JSON.stringify({
       autosize: true,
       symbol,
-      interval: "15",
+      interval: timeframe === "15m" ? "15" : timeframe === "30m" ? "30" : timeframe === "1h" ? "60" : timeframe === "4h" ? "240" : timeframe === "1d" ? "D" : "15",
       timezone: "Asia/Karachi",
       theme: "dark",
       style: "1",
@@ -676,7 +708,7 @@ export function SignalManager() {
 
     widgetContainer.appendChild(script)
     container.appendChild(widgetContainer)
-  }, [symbol])
+  }, [symbol, timeframe])
 
   // Mount/reload the inline chart whenever the symbol changes OR fullscreen
   // closes (the container ref re-attaches). When fullscreen is open we don't
@@ -750,12 +782,12 @@ export function SignalManager() {
       // Render screenshot synchronously with the NEW values (not stale state).
       const shot = renderSignalCard({
         symbol, signalType, entry: newEntry, entry2: newEntry2, stopLoss: newSL,
-        tp1: newTp1, tp2: newTp2, tp3: newTp3, note, livePrice: p, candles,
+        tp1: newTp1, tp2: newTp2, tp3: newTp3, note, livePrice: p, candles, interval: timeframe,
       })
       setScreenshot(shot)
       return shot
     },
-    [livePrice, symbol, signalType, fetchPrice, stopLoss, tp1, tp2, tp3, note, candles, entry2],
+    [livePrice, symbol, signalType, fetchPrice, stopLoss, tp1, tp2, tp3, note, candles, entry2, timeframe],
   )
 
   // BUG 3 FIX: Auto-fill Entry/SL/TP the moment the live price arrives — so
@@ -771,21 +803,21 @@ export function SignalManager() {
   // ---------- BUG 2: screenshot capture (thin wrapper around renderSignalCard) ----------
   const captureScreenshot = useCallback((): string => {
     const shot = renderSignalCard({
-      symbol, signalType, entry, entry2, stopLoss, tp1, tp2, tp3, note, livePrice, candles,
+      symbol, signalType, entry, entry2, stopLoss, tp1, tp2, tp3, note, livePrice, candles, interval: timeframe,
     })
     setScreenshot(shot)
     return shot
-  }, [symbol, signalType, entry, entry2, stopLoss, tp1, tp2, tp3, note, livePrice, candles])
+  }, [symbol, signalType, entry, entry2, stopLoss, tp1, tp2, tp3, note, livePrice, candles, timeframe])
 
   // Auto-capture whenever form values change (so screenshot is always fresh).
   useEffect(() => {
     if (entry || stopLoss || tp1) {
       const shot = renderSignalCard({
-        symbol, signalType, entry, entry2, stopLoss, tp1, tp2, tp3, note, livePrice, candles,
+        symbol, signalType, entry, entry2, stopLoss, tp1, tp2, tp3, note, livePrice, candles, interval: timeframe,
       })
       setScreenshot(shot)
     }
-  }, [entry, entry2, stopLoss, tp1, tp2, tp3, note, signalType, symbol, livePrice, candles])
+  }, [entry, entry2, stopLoss, tp1, tp2, tp3, note, signalType, symbol, livePrice, candles, timeframe])
 
   const publish = () => {
     if (!entry || !stopLoss) { toast.error("Entry and SL required"); return }
@@ -874,7 +906,7 @@ export function SignalManager() {
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="space-y-2">
-            {/* Symbol + Live Price chip + Get Live Price button */}
+            {/* Symbol + Timeframe + Live Price chip + Get Live Price button */}
             <div className="flex flex-wrap items-center gap-2">
               <select
                 value={symbol}
@@ -885,6 +917,25 @@ export function SignalManager() {
                   <option key={s.value} value={s.value}>{s.label}</option>
                 ))}
               </select>
+
+              {/* Timeframe selector — controls candle API + TradingView widget + chart screenshot.
+                  Changes here re-fetch candles + re-render the screenshot with the new TF. */}
+              <div className="flex items-center gap-1 rounded-lg border border-border bg-card p-0.5">
+                {["15m", "30m", "1h", "4h", "1d"].map((tf) => (
+                  <button
+                    key={tf}
+                    type="button"
+                    onClick={() => setTimeframe(tf)}
+                    className={`rounded-md px-2.5 py-1 text-xs font-bold transition ${
+                      timeframe === tf
+                        ? "bg-brand text-brand-foreground"
+                        : "text-muted-foreground hover:bg-muted"
+                    }`}
+                  >
+                    {tf}
+                  </button>
+                ))}
+              </div>
 
               {/* BUG 3 FIX: Live price chip is CLICKABLE — tapping it auto-fills
                   Entry/SL/TP. Also auto-fills on first price load (useEffect). */}
