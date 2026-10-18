@@ -1347,6 +1347,9 @@ function PaymentSettingsTab() {
   const [usdtAddress, setUsdtAddress] = useState("")
   const [bep20Enabled, setBep20Enabled] = useState(true)
   const [bep20Address, setBep20Address] = useState("0xaa889030e6e69ef3eb55a2e94f1226628a8a19c3")
+  const [payoneerEnabled, setPayoneerEnabled] = useState(false)
+  const [payoneerEmail, setPayoneerEmail] = useState("")
+  const [payoneerInstructions, setPayoneerInstructions] = useState("")
   const [loaded, setLoaded] = useState(false)
 
   // Sync local inputs when server data arrives
@@ -1365,6 +1368,9 @@ function PaymentSettingsTab() {
     setUsdtAddress(data.usdtAddress || "")
     setBep20Enabled(data.bep20Enabled ?? true)
     setBep20Address(data.bep20Address || "0xaa889030e6e69ef3eb55a2e94f1226628a8a19c3")
+    setPayoneerEnabled(data.payoneerEnabled ?? false)
+    setPayoneerEmail(data.payoneerEmail || "")
+    setPayoneerInstructions(data.payoneerInstructions || "")
     setLoaded(true)
   }
 
@@ -1385,6 +1391,9 @@ function PaymentSettingsTab() {
         usdtAddress,
         bep20Enabled,
         bep20Address,
+        payoneerEnabled,
+        payoneerEmail,
+        payoneerInstructions,
       })
       toast.success("Payment settings saved!")
     } catch {
@@ -1502,6 +1511,28 @@ function PaymentSettingsTab() {
                 <label className="text-xs font-bold uppercase tracking-wide text-muted-foreground">BEP20 Wallet Address (BSC)</label>
                 <Input value={bep20Address} onChange={(e) => setBep20Address(e.target.value)} className="h-9 font-mono text-xs" placeholder="0x... BSC wallet address" />
                 <p className="text-[10px] text-muted-foreground">Ye address clients ko dikhaya jayega. Sirf BSC (BEP20) network par receive hoga. Galat network par bhejne se funds lost ho jayenge.</p>
+              </div>
+            </div>
+          )}
+
+          {/* Payoneer — Email Transfer */}
+          <div className="flex items-center justify-between rounded-lg border border-orange-500/40 bg-orange-500/5 p-3">
+            <div>
+              <div className="text-sm font-bold">Payoneer · NEW</div>
+              <div className="text-[11px] text-muted-foreground">Payment via Payoneer Email Transfer</div>
+            </div>
+            <Switch checked={payoneerEnabled} onCheckedChange={setPayoneerEnabled} />
+          </div>
+          {payoneerEnabled && (
+            <div className="space-y-2 rounded-lg border border-orange-500/30 p-3">
+              <div className="space-y-1">
+                <label className="text-xs font-bold uppercase tracking-wide text-muted-foreground">Payoneer Email</label>
+                <Input value={payoneerEmail} onChange={(e) => setPayoneerEmail(e.target.value)} className="h-9" placeholder="yourpayoneer@email.com" />
+                <p className="text-[10px] text-muted-foreground">Ye email clients ko dikhaya jayega. User is email par payment bhejega + Transaction ID enter karega.</p>
+              </div>
+              <div className="space-y-1">
+                <label className="text-xs font-bold uppercase tracking-wide text-muted-foreground">Instructions (Optional)</label>
+                <Textarea value={payoneerInstructions} onChange={(e) => setPayoneerInstructions(e.target.value)} rows={2} placeholder="e.g. Send $5 USD to this Payoneer email and enter the Transaction ID." className="text-sm" />
               </div>
             </div>
           )}

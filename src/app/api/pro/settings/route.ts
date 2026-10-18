@@ -21,6 +21,9 @@ const DEFAULT_SETTINGS = {
   usdtAddress: "Paste your TRC20 wallet address here",
   bep20Enabled: true,
   bep20Address: "0xaa889030e6e69ef3eb55a2e94f1226628a8a19c3",
+  payoneerEnabled: false,
+  payoneerEmail: "",
+  payoneerInstructions: "",
 }
 
 // Retry wrapper — Neon free tier sleeps after inactivity. First connection
@@ -72,6 +75,9 @@ export async function GET() {
       usdtAddress: s.usdtAddress,
       bep20Enabled: s.bep20Enabled,
       bep20Address: s.bep20Address,
+      payoneerEnabled: s.payoneerEnabled,
+      payoneerEmail: s.payoneerEmail,
+      payoneerInstructions: s.payoneerInstructions,
     })
   } catch (e: any) {
     // DB unreachable (Neon sleeping/suspended) — return defaults so the app

@@ -29,6 +29,9 @@ export async function GET() {
     usdtAddress: s.usdtAddress,
     bep20Enabled: s.bep20Enabled,
     bep20Address: s.bep20Address,
+    payoneerEnabled: s.payoneerEnabled,
+    payoneerEmail: s.payoneerEmail,
+    payoneerInstructions: s.payoneerInstructions,
   })
 }
 
@@ -56,6 +59,10 @@ export async function PUT(req: Request) {
   // USDT BEP20 (BSC)
   if ("bep20Enabled" in body) data.bep20Enabled = !!body.bep20Enabled
   if ("bep20Address" in body) data.bep20Address = String(body.bep20Address)
+  // Payoneer
+  if ("payoneerEnabled" in body) data.payoneerEnabled = !!body.payoneerEnabled
+  if ("payoneerEmail" in body) data.payoneerEmail = String(body.payoneerEmail)
+  if ("payoneerInstructions" in body) data.payoneerInstructions = String(body.payoneerInstructions)
 
   const updated = await db.proSettings.upsert({
     where: { id: "singleton" },
@@ -77,5 +84,8 @@ export async function PUT(req: Request) {
     usdtAddress: updated.usdtAddress,
     bep20Enabled: updated.bep20Enabled,
     bep20Address: updated.bep20Address,
+    payoneerEnabled: updated.payoneerEnabled,
+    payoneerEmail: updated.payoneerEmail,
+    payoneerInstructions: updated.payoneerInstructions,
   })
 }

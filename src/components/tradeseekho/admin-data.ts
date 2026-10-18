@@ -268,6 +268,9 @@ export interface ProSettingsData {
   usdtAddress?: string
   bep20Enabled?: boolean
   bep20Address?: string
+  payoneerEnabled?: boolean
+  payoneerEmail?: string
+  payoneerInstructions?: string
 }
 
 export function useProSettings() {

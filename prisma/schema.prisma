@@ -7,7 +7,7 @@ generator client {
 }
 
 datasource db {
-  provider  = "sqlite"
+  provider  = "postgresql"
   url       = env("DATABASE_URL")
   directUrl = env("DIRECT_URL")
 }
@@ -254,6 +254,10 @@ model ProSettings {
   // USDT BEP20 (BSC) — crypto payment via BNB Smart Chain
   bep20Enabled    Boolean  @default(true)
   bep20Address    String   @default("0xaa889030e6e69ef3eb55a2e94f1226628a8a19c3")
+  // Payoneer — email transfer payment (like USDT but via Payoneer email)
+  payoneerEnabled   Boolean  @default(false)
+  payoneerEmail     String   @default("")
+  payoneerInstructions String @default("")
   updatedAt       DateTime @updatedAt
 }
 

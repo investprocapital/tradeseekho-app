@@ -28,7 +28,7 @@ export async function POST(req: Request) {
   const note = String(form.get("note") || "").trim().slice(0, 300)
   const file = form.get("file")
 
-  const VALID_METHODS = ["JazzCash", "Easypaisa", "Card", "SadaPay", "USDT", "USDT_BEP20"]
+  const VALID_METHODS = ["JazzCash", "Easypaisa", "Card", "SadaPay", "USDT", "USDT_BEP20", "Payoneer"]
   if (!VALID_METHODS.includes(method)) {
     return NextResponse.json({ error: "bad_method" }, { status: 400 })
   }
@@ -36,9 +36,13 @@ export async function POST(req: Request) {
   // For crypto methods: txHash is mandatory + must be valid
   // BSC/Ethereum tx hashes: start with 0x, 66 chars total (0x + 64 hex)
   // Tron tx hashes: 64 chars (no 0x prefix)
-  // We accept a RANGE of lengths (min 40, max 70) to handle edge cases +
+  // We accept a RANGE of lengths (min 40, max 80) to handle edge cases +
   // future chains. The admin verifies on BSCScan/Tronscan anyway.
+  //
+  // For Payoneer: txHash is mandatory but validation is LENIENT (alphanumeric,
+  // 6-30 chars) — Payoneer Transaction IDs are 16-20 digits, no 0x prefix.
   const isCrypto = method === "USDT" || method === "USDT_BEP20"
+  const isPayoneer = method === "Payoneer"
   let finalTxHash: string | null = null
   if (isCrypto) {
     if (txHash.length < 6) {
@@ -52,6 +56,18 @@ export async function POST(req: Request) {
       return NextResponse.json({
         error: "txid_invalid",
         message: "Tx Hash format looks invalid. Please paste the full Transaction Hash.",
+      }, { status: 400 })
+    }
+    finalTxHash = txHash
+  } else if (isPayoneer) {
+    // Payoneer Transaction ID: alphanumeric, 6-30 chars (lenient)
+    if (txHash.length < 6) {
+      return NextResponse.json({ error: "txid_required" }, { status: 400 })
+    }
+    if (!/^[a-zA-Z0-9_-]{6,30}$/.test(txHash)) {
+      return NextResponse.json({
+        error: "txid_invalid",
+        message: "Payoneer Transaction ID looks invalid. Please enter the full ID.",
       }, { status: 400 })
     }
     finalTxHash = txHash

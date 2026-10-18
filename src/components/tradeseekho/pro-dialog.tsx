@@ -33,6 +33,9 @@ interface ProSettings {
   usdtAddress: string
   bep20Enabled: boolean
   bep20Address: string
+  payoneerEnabled: boolean
+  payoneerEmail: string
+  payoneerInstructions: string
 }
 
 async function fetchProSettings(): Promise<ProSettings> {
@@ -41,7 +44,7 @@ async function fetchProSettings(): Promise<ProSettings> {
   return res.json()
 }
 
-type Method = "JazzCash" | "Easypaisa" | "Card" | "SadaPay" | "USDT" | "USDT_BEP20"
+type Method = "JazzCash" | "Easypaisa" | "Card" | "SadaPay" | "USDT" | "USDT_BEP20" | "Payoneer"
 
 export function ProDialog() {
   const open = useStore((s) => s.proOpen)
@@ -92,6 +95,9 @@ export function ProDialog() {
   if (settings?.bep20Enabled !== false) {
     methods.push({ id: "USDT_BEP20", label: "USDT BEP20 (BSC) · NEW", color: "#F3BA2F", accent: "bg-[#F3BA2F]", icon: Coins, subtitle: "Crypto · BNB Smart Chain" })
   }
+  if (settings?.payoneerEnabled !== false && settings?.payoneerEmail) {
+    methods.push({ id: "Payoneer", label: "Payoneer · NEW", color: "#FF4800", accent: "bg-[#FF4800]", icon: Coins, subtitle: "Email Transfer" })
+  }
 
   const currentNumber = method === "JazzCash" ? settings?.jazzcashNumber : method === "Easypaisa" ? settings?.easypaisaNumber : ""
 
@@ -100,6 +106,8 @@ export function ProDialog() {
     ? { address: settings?.usdtAddress || "", network: "TRC20 / Tron", color: "#26A17B", sectionTitle: t("pro.usdtSectionTitle"), warning: t("pro.usdtWarning"), shareLabel: "TradeSeekho PK · USDT TRC20" }
     : method === "USDT_BEP20"
     ? { address: settings?.bep20Address || "0xaa889030e6e69ef3eb55a2e94f1226628a8a19c3", network: t("pro.bep20Network"), color: "#F3BA2F", sectionTitle: t("pro.bep20SectionTitle"), warning: t("pro.bep20Warning"), shareLabel: "TradeSeekho PK · USDT BEP20 (BSC)" }
+    : method === "Payoneer"
+    ? { address: settings?.payoneerEmail || "", network: "Payoneer Email Transfer", color: "#FF4800", sectionTitle: "Payoneer · Email Transfer", warning: "⚠ Only send to this Payoneer Email. After sending, upload screenshot and Payoneer Transaction ID is mandatory.", shareLabel: "TradeSeekho PK · Payoneer" }
     : null
 
   const onFile = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -122,13 +130,18 @@ export function ProDialog() {
     }
     if (method !== "Card" && !file) { setErr("Please upload a payment screenshot."); return }
     const isCrypto = method === "USDT" || method === "USDT_BEP20"
-    if (isCrypto && !note.trim()) { setErr("Please paste your Transaction Hash / TxID for the crypto payment."); return }
+    const isPayoneer = method === "Payoneer"
+    const needsTxId = isCrypto || isPayoneer
+    if (needsTxId && !note.trim()) {
+      setErr(isPayoneer
+        ? "Please enter your Payoneer Transaction ID."
+        : "Please paste your Transaction Hash / TxID for the crypto payment.")
+      return
+    }
     try {
-      // For crypto: send txHash SEPARATELY from note (so admin can verify on BSCScan)
-      // The note field doubles as the tx hash input in the UI — backend reads txHash first,
-      // falls back to note. For crypto, we send BOTH so txHash goes to its own column.
-      const txHash = isCrypto ? note.trim() : undefined
-      await submit.mutateAsync({ method, amount: Number(displayAmount) || 0, note: isCrypto ? "" : note, txHash, file })
+      // For crypto/Payoneer: send txHash SEPARATELY from note (so admin can verify)
+      const txHash = needsTxId ? note.trim() : undefined
+      await submit.mutateAsync({ method, amount: Number(displayAmount) || 0, note: needsTxId ? "" : note, txHash, file })
       toast.success("Payment submitted!", { description: "We'll review and activate Pro within 24h." })
       setFile(null); setFilePreview(null); setNote("")
     } catch (e2: any) {
@@ -420,8 +433,13 @@ export function ProDialog() {
 
               {/* Optional note */}
               <div className="space-y-1.5">
-                <Label htmlFor="note" className={rtlFont}>{t("pro.txIdNote")} {(method === "USDT" || method === "USDT_BEP20") && <span className="font-bold text-destructive">{t("pro.txIdRequired")}</span>}</Label>
-                <Textarea id="note" value={note} onChange={(e) => setNote(e.target.value)} rows={2} placeholder={(method === "USDT" || method === "USDT_BEP20") ? t("pro.txIdPlaceholderUsdt") : t("pro.txIdPlaceholderOther")} className="text-sm" />
+                <Label htmlFor="note" className={rtlFont}>
+                  {method === "Payoneer" ? "Payoneer Transaction ID" : t("pro.txIdNote")}
+                  {(method === "USDT" || method === "USDT_BEP20" || method === "Payoneer") && <span className="font-bold text-destructive">{t("pro.txIdRequired")}</span>}
+                </Label>
+                <Textarea id="note" value={note} onChange={(e) => setNote(e.target.value)} rows={2}
+                  placeholder={method === "Payoneer" ? "Enter your Payoneer Transaction ID here (required)" : (method === "USDT" || method === "USDT_BEP20") ? t("pro.txIdPlaceholderUsdt") : t("pro.txIdPlaceholderOther")}
+                  className="text-sm" />
               </div>
 
               {err && (
