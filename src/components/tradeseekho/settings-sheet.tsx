@@ -4,7 +4,7 @@ import { useTheme } from "next-themes"
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet"
 import { Switch } from "@/components/ui/switch"
 import { Separator } from "@/components/ui/separator"
-import { Bell, Shield, Moon, Sun, User as UserIcon, Award, Bookmark, Languages, Trophy, ChevronRight, BookOpen, Mail, FileText, Info, Check, LogOut } from "lucide-react"
+import { Bell, Shield, Moon, Sun, User as UserIcon, Award, Bookmark, Languages, Trophy, ChevronRight, BookOpen, Mail, FileText, Info, Check, LogOut, Lock } from "lucide-react"
 import { useStore } from "@/lib/store"
 import { useCertificates } from "./use-data"
 import { Button } from "@/components/ui/button"
@@ -51,6 +51,10 @@ export function SettingsSheet() {
             <Section title="Account">
               <Row icon={UserIcon} label="Edit profile" hint="Change name & password"
                 onClick={() => { setOpen(false); setEditProfileOpen(true) }} />
+              {/* Set Password — for Google users who don't have a password yet.
+                  Lets them set a password so browser can save it for auto-fill. */}
+              <Row icon={Lock} label="Set Password" hint="Enable email + password login"
+                onClick={() => { setOpen(false); useStore.setState({ loginOpen: true }); /* Will need to navigate to set-password view */ }} />
               <Row icon={Bookmark} label="My Bookmarks" hint={bookmarksCount > 0 ? `${bookmarksCount} saved` : "No bookmarks yet"}
                 onClick={() => { setOpen(false); setBookmarksOpen(true) }} />
               <Row icon={Trophy} label="Leaderboard" hint="View rankings"

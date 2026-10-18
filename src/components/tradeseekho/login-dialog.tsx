@@ -8,7 +8,7 @@ import { useStore } from "@/lib/store"
 import { Mail, Lock, User, Loader2, AlertCircle, ArrowLeft, ArrowRight, Eye, EyeOff, GraduationCap, BarChart3, TrendingUp, Moon, Sun } from "lucide-react"
 import { useTheme } from "next-themes"
 
-type View = "landing" | "signin" | "signup" | "forgot" | "forgot-sent"
+type View = "landing" | "signin" | "signup" | "forgot" | "forgot-sent" | "set-password"
 
 export function LoginDialog() {
   const loginOpen = useStore((s) => s.loginOpen)
@@ -107,6 +107,23 @@ export function LoginDialog() {
       }
       // Save email to localStorage for auto-fill next time
       if (email && typeof window !== "undefined") localStorage.setItem("last_email", email)
+
+      // ─── Credential Management API: tell browser to save password ───
+      // This triggers the "Save password?" popup in Chrome/Edge/Firefox.
+      // After saving, next login the browser auto-fills email + password.
+      if (typeof window !== "undefined" && "credentials" in navigator && password) {
+        try {
+          const cred = new PasswordCredential({
+            id: email,
+            password: password,
+            name: name || email,
+          })
+          await navigator.credentials.store(cred)
+        } catch {
+          // Some browsers don't support PasswordCredential — silently ignore
+        }
+      }
+
       setBusy(false); setLoginOpen(false); reset()
       try {
         const sres = await fetch("/api/auth/session").then((x) => x.json())
@@ -377,6 +394,83 @@ export function LoginDialog() {
                   </p>
                   <button onClick={() => { setView("landing"); setEmail(""); setResetLink(""); }} className="mt-4 text-sm font-semibold text-white/60 hover:text-white">
                     Back to Login
+                  </button>
+                </motion.div>
+              )}
+
+              {/* ─── SET PASSWORD view — for Google users to set a password ─── */}
+              {/* Lets Google users set a password so they can use email/password
+                  login (which triggers browser "Save password?" popup). */}
+              {view === "set-password" && (
+                <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="flex flex-col items-center text-center">
+                  <span className="mt-2 text-xl font-extrabold"><span className="text-white">TradeSeekho</span> <span className="text-[#00D09C]">PK</span></span>
+                  <div className="mt-8 flex h-16 w-16 items-center justify-center rounded-full bg-[#00D09C]/20">
+                    <Lock className="h-8 w-8 text-[#00D09C]" />
+                  </div>
+                  <h2 className="mt-4 text-2xl font-extrabold text-white">Set a Password</h2>
+                  <p className="mt-2 px-6 text-sm text-white/50">
+                    Set a password for your account so you can login with email + password
+                    (browser will save it for auto-fill next time).
+                  </p>
+                  <div className="mt-6 w-full max-w-xs space-y-3">
+                    <div className="relative">
+                      <Lock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#06b6d4]" />
+                      <input
+                        type={showPw ? "text" : "password"}
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        placeholder="New Password (min 6 chars)"
+                        required
+                        minLength={6}
+                        autoComplete="new-password"
+                        className="h-12 w-full rounded-xl border border-[#1E3A5F] bg-[#0f172a]/80 ps-10 pe-10 text-sm text-white placeholder:text-white/30 focus:border-[#00D09C] focus:outline-none"
+                      />
+                      <button type="button" onClick={() => setShowPw(!showPw)} className="absolute right-3 top-1/2 -translate-y-1/2 text-white/30 hover:text-white/60">
+                        {showPw ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                      </button>
+                    </div>
+                    {err && <p className="flex items-center gap-1.5 text-xs font-semibold text-red-400"><AlertCircle className="h-3.5 w-3.5" /> {err}</p>}
+                    <button
+                      onClick={async () => {
+                        if (!password || password.length < 6) { setErr("Password must be at least 6 characters"); return }
+                        setBusy(true); setErr(null)
+                        try {
+                          const res = await fetch("/api/auth/set-password", {
+                            method: "POST",
+                            headers: { "content-type": "application/json" },
+                            body: JSON.stringify({ password }),
+                          })
+                          const j = await res.json().catch(() => ({}))
+                          if (!res.ok) {
+                            setErr(j.error === "already_set" ? "Password already set." : j.message || "Failed to set password")
+                            setBusy(false); return
+                          }
+                          // Save email to localStorage
+                          if (j.email && typeof window !== "undefined") localStorage.setItem("last_email", j.email)
+                          // Credential Management API — tell browser to save the new password
+                          if (typeof window !== "undefined" && "credentials" in navigator) {
+                            try {
+                              const cred = new PasswordCredential({ id: j.email, password: password, name: j.email })
+                              await navigator.credentials.store(cred)
+                            } catch { /* ignore */ }
+                          }
+                          toast.success("Password set! You can now login with email + password.")
+                          setBusy(false); setLoginOpen(false); reset()
+                          window.location.reload()
+                        } catch {
+                          setErr("Something went wrong."); setBusy(false)
+                        }
+                      }}
+                      disabled={busy}
+                      className="flex h-12 w-full items-center justify-center gap-2 rounded-xl text-sm font-bold text-white disabled:opacity-50"
+                      style={{ background: "linear-gradient(135deg, #00D09C 0%, #0072FF 100%)" }}
+                    >
+                      {busy ? <Loader2 className="h-5 w-5 animate-spin" /> : <Lock className="h-5 w-5" />}
+                      Set Password
+                    </button>
+                  </div>
+                  <button onClick={() => { setView("landing"); setPassword(""); setErr(null) }} className="mt-4 text-sm font-semibold text-white/60 hover:text-white">
+                    Back
                   </button>
                 </motion.div>
               )}
