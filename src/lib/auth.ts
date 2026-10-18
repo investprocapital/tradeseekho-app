@@ -79,6 +79,38 @@ export const authOptions: NextAuthOptions = {
   secret: process.env.NEXTAUTH_SECRET || "tradeseekho-dev-secret-not-for-production",
   // We use a login DIALOG on "/" (no separate sign-in page route).
   pages: { signIn: "/" },
+  // Explicit cookie config — ensures session cookie persists after Google OAuth redirect.
+  // sameSite: "lax" allows the cookie to be sent on top-level redirects (Google callback).
+  // secure: true on production (HTTPS) — required for Vercel.
+  cookies: {
+    sessionToken: {
+      name: process.env.NODE_ENV === "production" ? "__Secure-next-auth.session-token" : "next-auth.session-token",
+      options: {
+        httpOnly: true,
+        sameSite: "lax",
+        path: "/",
+        secure: process.env.NODE_ENV === "production",
+        maxAge: 30 * 24 * 60 * 60, // 30 days
+      },
+    },
+    callbackUrl: {
+      name: process.env.NODE_ENV === "production" ? "__Secure-next-auth.callback-url" : "next-auth.callback-url",
+      options: {
+        sameSite: "lax",
+        path: "/",
+        secure: process.env.NODE_ENV === "production",
+      },
+    },
+    csrfToken: {
+      name: process.env.NODE_ENV === "production" ? "__Secure-next-auth.csrf-token" : "next-auth.csrf-token",
+      options: {
+        httpOnly: true,
+        sameSite: "lax",
+        path: "/",
+        secure: process.env.NODE_ENV === "production",
+      },
+    },
+  },
   providers,
   callbacks: {
     async signIn({ user, account }) {
@@ -89,41 +121,46 @@ export const authOptions: NextAuthOptions = {
         const email = user.email.trim().toLowerCase()
         const adminEmail = (process.env.ADMIN_EMAIL || "").trim().toLowerCase()
 
-        const exists = await db.user.findUnique({ where: { email } })
-        if (!exists) {
-          // LOCK ADMIN ROLE: if this email matches ADMIN_EMAIL env var, create
-          // as role=admin. Otherwise create as role=student (default).
-          const isAdmin = adminEmail && email === adminEmail
-          await db.user.create({
-            data: {
-              email,
-              name: user.name ?? null,
-              image: (user as { image?: string }).image ?? null,
-              ...(isAdmin ? { role: "admin" } : {}),
-            },
-          })
-        } else {
-          // LOCK ADMIN ROLE: if the existing user's email matches ADMIN_EMAIL,
-          // ensure role is ALWAYS "admin" (never allow downgrade to student).
-          // This prevents the admin account from becoming a normal client.
-          const isAdmin = adminEmail && email === adminEmail
-          if (isAdmin && exists.role !== "admin") {
-            await db.user.update({
-              where: { id: exists.id },
-              data: { role: "admin" },
-            })
-          }
-          // If exists but has no image, update with Google image
-          if (!exists.image && (user as { image?: string }).image) {
-            await db.user.update({
-              where: { id: exists.id },
+        try {
+          const exists = await db.user.findUnique({ where: { email } })
+          if (!exists) {
+            // LOCK ADMIN ROLE: if this email matches ADMIN_EMAIL env var, create
+            // as role=admin. Otherwise create as role=student (default).
+            const isAdmin = adminEmail && email === adminEmail
+            await db.user.create({
               data: {
+                email,
+                name: user.name ?? null,
                 image: (user as { image?: string }).image ?? null,
-                name: exists.name || user.name,
                 ...(isAdmin ? { role: "admin" } : {}),
               },
             })
+          } else {
+            // LOCK ADMIN ROLE: if the existing user's email matches ADMIN_EMAIL,
+            // ensure role is ALWAYS "admin" (never allow downgrade to student).
+            const isAdmin = adminEmail && email === adminEmail
+            if (isAdmin && exists.role !== "admin") {
+              await db.user.update({
+                where: { id: exists.id },
+                data: { role: "admin" },
+              })
+            }
+            // If exists but has no image, update with Google image
+            if (!exists.image && (user as { image?: string }).image) {
+              await db.user.update({
+                where: { id: exists.id },
+                data: {
+                  image: (user as { image?: string }).image ?? null,
+                  name: exists.name || user.name,
+                  ...(isAdmin ? { role: "admin" } : {}),
+                },
+              })
+            }
           }
+        } catch (dbError) {
+          // DB unreachable (Supabase cold start) — don't block Google login.
+          // The user will be created/updated on next sign-in attempt.
+          console.error("[auth] signIn DB error (non-fatal):", dbError)
         }
       }
       return true
