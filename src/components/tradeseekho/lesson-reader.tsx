@@ -222,13 +222,18 @@ export function LessonReader() {
                   </div>
                 )}
 
-                {/* TradingView EUR/USD live chart (300px, interactive) */}
-                <TradingViewChart height={300} lessonId={lesson.id} />
+                {/* TradingView EUR/USD live chart (250px — smaller so quiz button fits without scroll) */}
+                <TradingViewChart height={250} lessonId={lesson.id} />
 
                 {/* AdMob banner inside the reader (web + mobile + iOS) */}
                 <div className="mt-4">
                   <AdBanner compact />
                 </div>
+
+                {/* Bottom spacer so content doesn't hide behind fixed footer.
+                    Matches footer height (80px) + safe area so the last content
+                    is always scrollable above the quiz button. */}
+                <div style={{ height: "calc(100px + env(safe-area-inset-bottom))" }} />
               </div>
             </div>
 
