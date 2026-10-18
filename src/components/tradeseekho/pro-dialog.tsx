@@ -121,14 +121,27 @@ export function ProDialog() {
       return
     }
     if (method !== "Card" && !file) { setErr("Please upload a payment screenshot."); return }
-    if ((method === "USDT" || method === "USDT_BEP20") && !note.trim()) { setErr("Please paste your Transaction Hash / TxID for the crypto payment."); return }
+    const isCrypto = method === "USDT" || method === "USDT_BEP20"
+    if (isCrypto && !note.trim()) { setErr("Please paste your Transaction Hash / TxID for the crypto payment."); return }
     try {
-      await submit.mutateAsync({ method, amount: Number(displayAmount) || 0, note, file })
+      // For crypto: send txHash SEPARATELY from note (so admin can verify on BSCScan)
+      // The note field doubles as the tx hash input in the UI — backend reads txHash first,
+      // falls back to note. For crypto, we send BOTH so txHash goes to its own column.
+      const txHash = isCrypto ? note.trim() : undefined
+      await submit.mutateAsync({ method, amount: Number(displayAmount) || 0, note: isCrypto ? "" : note, txHash, file })
       toast.success("Payment submitted!", { description: "We'll review and activate Pro within 24h." })
       setFile(null); setFilePreview(null); setNote("")
     } catch (e2: any) {
-      const msg = e2?.message
-      setErr(msg?.includes("already_pro") ? "You're already Pro." : msg?.includes("unauthorized") ? "Please sign in first." : "Submission failed. Try again.")
+      const msg = e2?.message || ""
+      if (msg.includes("already_pro")) setErr("You're already Pro.")
+      else if (msg.includes("unauthorized")) setErr("Please sign in first.")
+      else if (msg.includes("txid_required")) setErr("Transaction Hash / TxID is required for crypto payments.")
+      else if (msg.includes("txid_invalid")) setErr("Invalid Tx Hash format. BSC/ETH: 0x + 64 hex chars (66 total). Tron: 64 hex chars.")
+      else if (msg.includes("bad_method")) setErr("Invalid payment method. Please refresh and try again.")
+      else if (msg.includes("no_file")) setErr("Please upload a payment screenshot.")
+      else if (msg.includes("not_image")) setErr("Please select an image file (JPG/PNG).")
+      else if (msg.includes("too_large")) setErr("Image too large. Max 5MB.")
+      else setErr("Submission failed. Try again.")
     }
   }
 

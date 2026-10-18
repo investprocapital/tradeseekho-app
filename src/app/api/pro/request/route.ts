@@ -34,21 +34,24 @@ export async function POST(req: Request) {
   }
 
   // For crypto methods: txHash is mandatory + must be valid
-  // BSC/Ethereum tx hashes: start with 0x, 66 chars total
+  // BSC/Ethereum tx hashes: start with 0x, 66 chars total (0x + 64 hex)
   // Tron tx hashes: 64 chars (no 0x prefix)
+  // We accept a RANGE of lengths (min 40, max 70) to handle edge cases +
+  // future chains. The admin verifies on BSCScan/Tronscan anyway.
   const isCrypto = method === "USDT" || method === "USDT_BEP20"
   let finalTxHash: string | null = null
   if (isCrypto) {
     if (txHash.length < 6) {
       return NextResponse.json({ error: "txid_required" }, { status: 400 })
     }
-    // Validate format: 0x + 64 hex chars (BSC/ETH) OR 64 hex chars (Tron)
-    const isBscEth = /^0x[a-fA-F0-9]{64}$/.test(txHash)
-    const isTron = /^[a-fA-F0-9]{64}$/.test(txHash)
+    // Basic validation: alphanumeric + starts with 0x (BSC/ETH) OR all hex (Tron)
+    // Lenient check — admin will verify on blockchain explorer
+    const isBscEth = /^0x[a-fA-F0-9]{40,80}$/.test(txHash)
+    const isTron = /^[a-fA-F0-9]{40,80}$/.test(txHash)
     if (!isBscEth && !isTron) {
       return NextResponse.json({
         error: "txid_invalid",
-        message: "Tx Hash must be 66 chars (0x + 64 hex) for BSC/ETH or 64 hex chars for Tron",
+        message: "Tx Hash format looks invalid. Please paste the full Transaction Hash.",
       }, { status: 400 })
     }
     finalTxHash = txHash
