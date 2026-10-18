@@ -78,7 +78,7 @@ export function LessonReader() {
     <Sheet open={open} onOpenChange={(v) => !v && closeLesson()}>
       <SheetContent
         side="right"
-        className="flex w-full flex-col gap-0 p-0 sm:max-w-2xl lg:max-w-3xl"
+        className="flex w-full flex-col gap-0 p-0 z-[100] sm:max-w-2xl lg:max-w-3xl"
         style={{ width: "100%", maxWidth: "100%", height: "100dvh" }}
         onContextMenu={(e) => e.preventDefault()}
         onInteractOutside={(e) => { if (zoomImage) e.preventDefault() }}
