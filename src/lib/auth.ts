@@ -68,7 +68,12 @@ if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) {
 }
 
 export const authOptions: NextAuthOptions = {
-  session: { strategy: "jwt" },
+  // JWT session: stored in a cookie, persists for 30 days.
+  // User stays logged in across app restarts + browser refreshes.
+  session: {
+    strategy: "jwt",
+    maxAge: 30 * 24 * 60 * 60, // 30 days (in seconds)
+  },
   // Fall back to a dev secret so local dev never throws "no secret". In
   // production ALWAYS set NEXTAUTH_SECRET on Vercel.
   secret: process.env.NEXTAUTH_SECRET || "tradeseekho-dev-secret-not-for-production",

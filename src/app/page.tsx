@@ -33,7 +33,7 @@ import type { LucideIcon } from "lucide-react"
 const LEVEL_ICONS: Record<string, LucideIcon> = { Sprout, LineChart, Trophy }
 
 export default function Home() {
-  const { status } = useSession()
+  const { data: session, status } = useSession()
   const setLoginOpen = useStore((s) => s.setLoginOpen)
   const loginOpen = useStore((s) => s.loginOpen)
   const activeCategory = useStore((s) => s.activeCategorySlug)
@@ -47,6 +47,13 @@ export default function Home() {
   const setProOpen = useStore((s) => s.setProOpen)
   const { data: proMe } = useProMe()
   const isPro = proMe?.proStatus === "active"
+
+  // Save email to localStorage when user is authenticated (for auto-fill next login)
+  useEffect(() => {
+    if (status === "authenticated" && session?.user?.email) {
+      try { localStorage.setItem("last_email", session.user.email) } catch {}
+    }
+  }, [status, session])
   const { data: userData } = useCurrentUser()
   const { data, isLoading } = useLessonsBundle("all")
 
