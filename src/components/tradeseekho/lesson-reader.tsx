@@ -78,8 +78,8 @@ export function LessonReader() {
     <Sheet open={open} onOpenChange={(v) => !v && closeLesson()}>
       <SheetContent
         side="right"
-        className="flex h-full h-dvh w-full flex-col gap-0 p-0 sm:max-w-2xl lg:max-w-3xl"
-        style={{ width: "100%", maxWidth: "100%" }}
+        className="flex w-full flex-col gap-0 p-0 sm:max-w-2xl lg:max-w-3xl"
+        style={{ width: "100%", maxWidth: "100%", height: "100dvh" }}
         onContextMenu={(e) => e.preventDefault()}
         onInteractOutside={(e) => { if (zoomImage) e.preventDefault() }}
         onPointerDownOutside={(e) => { if (zoomImage) e.preventDefault() }}
@@ -233,8 +233,12 @@ export function LessonReader() {
             </div>
 
             {/* Footer CTA — fixed at bottom (flex sibling of scrollable area).
-                shrink-0 prevents compression so quiz button is always visible. */}
-            <div className="shrink-0 border-t border-border bg-background p-4 shadow-[0_-4px_12px_rgba(0,0,0,0.08)]">
+                shrink-0 prevents compression so quiz button is always visible.
+                Safe area padding ensures it's not cut off by gesture navigation. */}
+            <div
+              className="shrink-0 border-t border-border bg-background p-4 shadow-[0_-4px_12px_rgba(0,0,0,0.08)]"
+              style={{ paddingBottom: "max(16px, env(safe-area-inset-bottom))" }}
+            >
               {quiz ? (
                 lesson.locked ? (
                   <Button className="h-12 w-full gap-2 text-base font-bold" variant="secondary" disabled>
