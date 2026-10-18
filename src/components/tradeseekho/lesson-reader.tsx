@@ -366,6 +366,12 @@ function ZoomLightbox({ src, onClose }: { src: string; onClose: () => void }) {
     }
 
     const onTouchMove = (e: TouchEvent) => {
+      // CRITICAL: Don't preventDefault for touches on control buttons.
+      // preventDefault() on touchmove blocks the browser's click event,
+      // making the X (close) button unresponsive on mobile.
+      const target = e.target as HTMLElement
+      if (target.closest("[data-zoom-control]")) return
+
       if (e.cancelable) e.preventDefault()
       if (e.touches.length === 2 && pinchRef.current.startDist > 10) {
         const dx = e.touches[0].clientX - e.touches[1].clientX
@@ -422,6 +428,21 @@ function ZoomLightbox({ src, onClose }: { src: string; onClose: () => void }) {
     return () => window.removeEventListener("keydown", onKey)
   }, [onClose])
 
+  // Android back button: push a history entry when lightbox opens, intercept
+  // popstate to close the lightbox (instead of navigating away from the app).
+  useEffect(() => {
+    // Push a dummy state so back button closes lightbox instead of leaving app
+    window.history.pushState({ lightbox: true }, "", window.location.href)
+    const handlePopState = (e: PopStateEvent) => {
+      e.preventDefault()
+      onClose()
+    }
+    window.addEventListener("popstate", handlePopState)
+    return () => {
+      window.removeEventListener("popstate", handlePopState)
+    }
+  }, [onClose])
+
   // Render in a portal at document.body so the lightbox is always on top of
   // the Radix Sheet portal (escapes any ancestor stacking context) and its
   // control buttons can never be shadowed by the reader's header buttons.
@@ -431,6 +452,10 @@ function ZoomLightbox({ src, onClose }: { src: string; onClose: () => void }) {
       ref={containerRef}
       className="fixed inset-0 z-[300] flex items-center justify-center bg-black"
       style={{ touchAction: "none" }}
+      onClick={(e) => {
+        // Click on background (not on image or controls) closes the lightbox
+        if (e.target === e.currentTarget) onClose()
+      }}
     >
       {/* Top bar: close + rotate + zoom controls.
           stopPropagation on pointer/touch so the container's pinch/pan/swipe
