@@ -32,8 +32,10 @@ export function LoginDialog() {
   // set the internal view state accordingly.
   useEffect(() => {
     if (loginOpen && loginView) {
-      setView(loginView)
-      setLoginView(null) // clear after consuming
+      Promise.resolve().then(() => {
+        setView(loginView)
+        setLoginView(null)
+      })
     }
   }, [loginOpen, loginView, setLoginView])
   // Tracks whether the entered email is a Google-only user (no password set).
