@@ -33,9 +33,11 @@ export function LoginDialog() {
   useEffect(() => {
     if (loginOpen) {
       const lastEmail = typeof window !== "undefined" ? localStorage.getItem("last_email") : null
-      if (lastEmail && !email) setEmail(lastEmail)
+      if (lastEmail && !email) {
+        Promise.resolve().then(() => setEmail(lastEmail))
+      }
     }
-  }, [loginOpen]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [loginOpen])
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault()
