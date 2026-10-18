@@ -79,38 +79,9 @@ export const authOptions: NextAuthOptions = {
   secret: process.env.NEXTAUTH_SECRET || "tradeseekho-dev-secret-not-for-production",
   // We use a login DIALOG on "/" (no separate sign-in page route).
   pages: { signIn: "/" },
-  // Explicit cookie config — ensures session cookie persists after Google OAuth redirect.
-  // sameSite: "lax" allows the cookie to be sent on top-level redirects (Google callback).
-  // secure: true on production (HTTPS) — required for Vercel.
-  cookies: {
-    sessionToken: {
-      name: process.env.NODE_ENV === "production" ? "__Secure-next-auth.session-token" : "next-auth.session-token",
-      options: {
-        httpOnly: true,
-        sameSite: "lax",
-        path: "/",
-        secure: process.env.NODE_ENV === "production",
-        maxAge: 30 * 24 * 60 * 60, // 30 days
-      },
-    },
-    callbackUrl: {
-      name: process.env.NODE_ENV === "production" ? "__Secure-next-auth.callback-url" : "next-auth.callback-url",
-      options: {
-        sameSite: "lax",
-        path: "/",
-        secure: process.env.NODE_ENV === "production",
-      },
-    },
-    csrfToken: {
-      name: process.env.NODE_ENV === "production" ? "__Secure-next-auth.csrf-token" : "next-auth.csrf-token",
-      options: {
-        httpOnly: true,
-        sameSite: "lax",
-        path: "/",
-        secure: process.env.NODE_ENV === "production",
-      },
-    },
-  },
+  // Let NextAuth use its DEFAULT cookie config (don't override names).
+  // Changing cookie names (e.g. __Secure- prefix) breaks existing sessions.
+  // NextAuth defaults are already correct: httpOnly, sameSite=lax, secure in production.
   providers,
   callbacks: {
     async signIn({ user, account }) {

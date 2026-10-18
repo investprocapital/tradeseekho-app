@@ -48,7 +48,6 @@ export function Providers({ children }: { children: React.ReactNode }) {
   return (
     <ThemeProvider attribute="class" defaultTheme="light" enableSystem={false} disableTransitionOnChange>
       <SessionProvider
-        refetchInterval={5 * 60} // Refresh session every 5 min (keeps it alive)
         refetchOnWindowFocus={true} // Re-check session when user returns to app
       >
         <QueryClientProvider client={qc}>
