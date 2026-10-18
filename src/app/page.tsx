@@ -221,7 +221,7 @@ export default function Home() {
 
         {/* Broker Ad Banner — only in client mode (not admin) */}
         {!showAdmin && (
-          <div className="shrink-0 mb-2 border-t border-border/50 bg-background/95 px-2 py-1.5">
+          <div className="shrink-0 mb-2 border-t border-border/50 bg-background/95 px-2 py-1.5" style={{ paddingBottom: "max(8px, env(safe-area-inset-bottom))" }}>
             <BrokerAdBanner fixed />
           </div>
         )}

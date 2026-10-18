@@ -38,7 +38,13 @@ export function BottomNav() {
   }
 
   return (
-    <nav className="shrink-0 z-[60] w-full border-t border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/85 pb-[env(safe-area-inset-bottom)]">
+    <nav
+      className="shrink-0 z-[60] w-full border-t border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/85"
+      style={{
+        paddingBottom: "max(8px, env(safe-area-inset-bottom))",
+        paddingTop: "4px",
+      }}
+    >
       <div className="mx-auto flex h-14 w-full max-w-3xl items-stretch justify-around px-1">
         {TABS.map((tab) => {
           const Icon = tab.icon

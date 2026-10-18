@@ -339,3 +339,12 @@ html[lang="ar"] [class*="rounded-lg"] {
   overflow-x: auto;
   max-width: 100%;
 }
+
+/* ─── Safe Area utilities for mobile devices with gesture navigation ─── */
+/* Ensures bottom nav + content aren't cut off by system gesture bar */
+.safe-area-bottom {
+  padding-bottom: max(8px, env(safe-area-inset-bottom));
+}
+.safe-area-top {
+  padding-top: env(safe-area-inset-top);
+}
