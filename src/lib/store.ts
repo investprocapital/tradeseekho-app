@@ -68,6 +68,8 @@ interface AppState {
 
   loginOpen: boolean
   setLoginOpen: (v: boolean) => void
+  loginView: "landing" | "set-password" | null
+  setLoginView: (v: "landing" | "set-password" | null) => void
 
   leaderboardOpen: boolean
   setLeaderboardOpen: (v: boolean) => void
@@ -159,6 +161,8 @@ export const useStore = create<AppState>()(
 
       loginOpen: false,
       setLoginOpen: (v) => set({ loginOpen: v }),
+      loginView: null,
+      setLoginView: (v) => set({ loginView: v }),
 
       leaderboardOpen: false,
       setLeaderboardOpen: (v) => set({ leaderboardOpen: v }),

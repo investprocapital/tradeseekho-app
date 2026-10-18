@@ -13,6 +13,8 @@ type View = "landing" | "signin" | "signup" | "forgot" | "forgot-sent" | "set-pa
 export function LoginDialog() {
   const loginOpen = useStore((s) => s.loginOpen)
   const setLoginOpen = useStore((s) => s.setLoginOpen)
+  const loginView = useStore((s) => s.loginView)
+  const setLoginView = useStore((s) => s.setLoginView)
   const setShowAdmin = useStore((s) => s.setShowAdmin)
   const { theme, setTheme } = useTheme()
 
@@ -25,6 +27,15 @@ export function LoginDialog() {
   const [busy, setBusy] = useState(false)
   const [err, setErr] = useState<string | null>(null)
   const [resetLink, setResetLink] = useState("")
+
+  // When login dialog opens with a specific view (e.g. "set-password" from Settings),
+  // set the internal view state accordingly.
+  useEffect(() => {
+    if (loginOpen && loginView) {
+      setView(loginView)
+      setLoginView(null) // clear after consuming
+    }
+  }, [loginOpen, loginView, setLoginView])
   // Tracks whether the entered email is a Google-only user (no password set).
   // If true, we show a "Use Continue with Google" hint instead of "Invalid password".
   const [googleUserHint, setGoogleUserHint] = useState(false)

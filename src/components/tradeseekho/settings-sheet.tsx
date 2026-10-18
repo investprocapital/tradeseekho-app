@@ -4,7 +4,7 @@ import { useTheme } from "next-themes"
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet"
 import { Switch } from "@/components/ui/switch"
 import { Separator } from "@/components/ui/separator"
-import { Bell, Shield, Moon, Sun, User as UserIcon, Award, Bookmark, Languages, Trophy, ChevronRight, BookOpen, Mail, FileText, Info, Check, LogOut } from "lucide-react"
+import { Bell, Shield, Moon, Sun, User as UserIcon, Award, Bookmark, Languages, Trophy, ChevronRight, BookOpen, Mail, FileText, Info, Check, LogOut, Lock } from "lucide-react"
 import { useStore } from "@/lib/store"
 import { useCertificates } from "./use-data"
 import { Button } from "@/components/ui/button"
@@ -26,6 +26,8 @@ export function SettingsSheet() {
   const setCertOpen = useStore((s) => s.setCertOpen)
   const setPriceAlertsOpen = useStore((s) => s.setPriceAlertsOpen)
   const setShowAdmin = useStore((s) => s.setShowAdmin)
+  const setLoginOpen = useStore((s) => s.setLoginOpen)
+  const setLoginView = useStore((s) => s.setLoginView)
   const { data: session } = useSession()
   const { theme, setTheme } = useTheme()
   const { data: certData } = useCertificates()
@@ -51,6 +53,10 @@ export function SettingsSheet() {
             <Section title="Account">
               <Row icon={UserIcon} label="Edit profile" hint="Change name & password"
                 onClick={() => { setOpen(false); setEditProfileOpen(true) }} />
+              {/* Set Password — for Google users to set a password so browser
+                  can save it for auto-fill. Opens login dialog in set-password mode. */}
+              <Row icon={Lock} label="Set Password" hint="Save login to device (Google users)"
+                onClick={() => { setOpen(false); setLoginView("set-password"); setLoginOpen(true) }} />
               <Row icon={Bookmark} label="My Bookmarks" hint={bookmarksCount > 0 ? `${bookmarksCount} saved` : "No bookmarks yet"}
                 onClick={() => { setOpen(false); setBookmarksOpen(true) }} />
               <Row icon={Trophy} label="Leaderboard" hint="View rankings"
