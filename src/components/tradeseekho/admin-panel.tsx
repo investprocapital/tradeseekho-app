@@ -1124,6 +1124,21 @@ function AdsTab() {
               onCheckedChange={(v) => setForm((f) => f && ({ ...f, commentsEnabled: v }))}
             />
           </div>
+
+          {/* Google Login Button ON/OFF — admin controls whether the
+              "Continue with Google" button shows on the login page. */}
+          <div className="flex items-center justify-between rounded-lg border border-blue-500/30 bg-blue-500/5 p-3">
+            <div>
+              <div className="text-sm font-bold">Google Login Button</div>
+              <div className="text-[11px] text-muted-foreground">
+                Show/hide the "Continue with Google" button on the login page. When OFF, only email/password login is available.
+              </div>
+            </div>
+            <Switch
+              checked={form.googleLoginEnabled ?? true}
+              onCheckedChange={(v) => setForm((f) => f && ({ ...f, googleLoginEnabled: v }))}
+            />
+          </div>
         </CardContent>
       </Card>
 
@@ -1148,6 +1163,7 @@ type AdminAdsForm = {
   signalBottomAd?: boolean
   signalBottomAdUnitId?: string
   commentsEnabled?: boolean
+  googleLoginEnabled?: boolean
 }
 
 /* ---------------- Pro Requests ---------------- */

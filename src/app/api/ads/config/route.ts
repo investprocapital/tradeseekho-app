@@ -45,5 +45,6 @@ export async function GET(req: Request) {
     interstitialUnitId: s.interstitialUnitId,
     signalBottomAd: s.signalBottomAd,
     signalBottomAdUnitId: s.signalBottomAdUnitId,
+    googleLoginEnabled: s.googleLoginEnabled,
   })
 }

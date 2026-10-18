@@ -23,6 +23,7 @@ export async function GET() {
       signalBottomAd: s.signalBottomAd,
       signalBottomAdUnitId: s.signalBottomAdUnitId,
       commentsEnabled: s.commentsEnabled,
+      googleLoginEnabled: s.googleLoginEnabled,
     })
   } catch (e: any) {
     console.error("[admin/ads] DB unreachable:", e?.message)
@@ -38,6 +39,7 @@ export async function GET() {
       signalBottomAd: true,
       signalBottomAdUnitId: "",
       commentsEnabled: true,
+      googleLoginEnabled: true,
     })
   }
 }
@@ -87,6 +89,8 @@ export async function PUT(req: Request) {
 
   // Comments section ON/OFF toggle (signal detail page)
   if ("commentsEnabled" in body) data.commentsEnabled = !!body.commentsEnabled
+  // Google Login button ON/OFF
+  if ("googleLoginEnabled" in body) data.googleLoginEnabled = !!body.googleLoginEnabled
 
   const updated = await db.adSettings.upsert({
     where: { id: "singleton" },
@@ -105,5 +109,6 @@ export async function PUT(req: Request) {
     signalBottomAd: updated.signalBottomAd,
     signalBottomAdUnitId: updated.signalBottomAdUnitId,
     commentsEnabled: updated.commentsEnabled,
+    googleLoginEnabled: updated.googleLoginEnabled,
   })
 }

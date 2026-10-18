@@ -22,6 +22,7 @@ export interface AdminAds {
   signalBottomAd?: boolean
   signalBottomAdUnitId?: string
   commentsEnabled?: boolean
+  googleLoginEnabled?: boolean
 }
 
 async function j<T>(res: Response | Promise<Response>): Promise<T> {

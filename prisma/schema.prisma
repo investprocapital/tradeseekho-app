@@ -7,7 +7,7 @@ generator client {
 }
 
 datasource db {
-  provider  = "sqlite"
+  provider  = "postgresql"
   url       = env("DATABASE_URL")
   directUrl = env("DIRECT_URL")
 }
@@ -218,6 +218,9 @@ model AdSettings {
   // Comments section on signal detail page — global ON/OFF toggle.
   // When OFF: hides the entire comments section + blocks DB writes to Comment table.
   commentsEnabled      Boolean  @default(true)
+  // Google Login button ON/OFF — admin can hide/show the "Continue with Google"
+  // button on the login page from the admin panel.
+  googleLoginEnabled   Boolean  @default(true)
   updatedAt            DateTime @updatedAt
 }
 

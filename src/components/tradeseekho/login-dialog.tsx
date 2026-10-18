@@ -3,12 +3,20 @@
 import { useState, useEffect } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import { signIn } from "next-auth/react"
+import { useQuery } from "@tanstack/react-query"
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog"
 import { useStore } from "@/lib/store"
 import { Mail, Lock, User, Loader2, AlertCircle, ArrowLeft, ArrowRight, Eye, EyeOff, GraduationCap, BarChart3, TrendingUp, Moon, Sun } from "lucide-react"
 import { useTheme } from "next-themes"
 
 type View = "landing" | "signin" | "signup" | "forgot" | "forgot-sent" | "set-password"
+
+// Fetch ad settings (includes googleLoginEnabled toggle)
+async function fetchLoginSettings() {
+  const res = await fetch("/api/ads/config", { cache: "no-store" })
+  if (!res.ok) return { googleLoginEnabled: true }
+  return res.json()
+}
 
 export function LoginDialog() {
   const loginOpen = useStore((s) => s.loginOpen)
@@ -17,6 +25,14 @@ export function LoginDialog() {
   const setLoginView = useStore((s) => s.setLoginView)
   const setShowAdmin = useStore((s) => s.setShowAdmin)
   const { theme, setTheme } = useTheme()
+
+  // Fetch ad settings to check if Google Login button is enabled/disabled
+  const { data: loginSettings } = useQuery<{ googleLoginEnabled?: boolean }>({
+    queryKey: ["login-settings"],
+    queryFn: fetchLoginSettings,
+    staleTime: 60_000,
+  })
+  const googleLoginEnabled = loginSettings?.googleLoginEnabled ?? true
 
   const [view, setView] = useState<View>("landing")
   const [email, setEmail] = useState("")
@@ -212,10 +228,14 @@ export function LoginDialog() {
                   <p className="mt-1 text-sm text-white/50">Login to your account to continue</p>
 
                   <div className="mt-6 w-full space-y-3">
-                    <button onClick={google} disabled={busy}
-                      className="flex h-12 w-full items-center justify-center gap-2 rounded-xl border border-[#1E3A5F] bg-transparent text-sm font-semibold text-white transition hover:border-[#06b6d4] hover:bg-[#06b6d4]/5 active:scale-[0.98] disabled:opacity-50">
-                      <GoogleG /> Continue with Google
-                    </button>
+                    {/* Google Login button — shown only if admin has enabled it.
+                        Admin Panel > Ads tab > "Google Login Button" toggle. */}
+                    {googleLoginEnabled && (
+                      <button onClick={google} disabled={busy}
+                        className="flex h-12 w-full items-center justify-center gap-2 rounded-xl border border-[#1E3A5F] bg-transparent text-sm font-semibold text-white transition hover:border-[#06b6d4] hover:bg-[#06b6d4]/5 active:scale-[0.98] disabled:opacity-50">
+                        <GoogleG /> Continue with Google
+                      </button>
+                    )}
                     <button onClick={() => { setView("signin"); setErr(null) }}
                       className="flex h-12 w-full items-center justify-center gap-2 rounded-xl text-sm font-bold text-white shadow-lg transition active:scale-[0.98]"
                       style={{ background: "linear-gradient(135deg, #00D09C 0%, #0072FF 100%)", boxShadow: "0 4px 20px rgba(0, 208, 156, 0.25)" }}>
