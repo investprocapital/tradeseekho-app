@@ -7,7 +7,7 @@ generator client {
 }
 
 datasource db {
-  provider  = "sqlite"
+  provider  = "postgresql"
   url       = env("DATABASE_URL")
   directUrl = env("DIRECT_URL")
 }
@@ -222,6 +222,9 @@ model AdSettings {
   // Google Login button ON/OFF — admin can hide/show the "Continue with Google"
   // button on the login page from the admin panel.
   googleLoginEnabled   Boolean  @default(true)
+  // Price Alerts feature ON/OFF — admin can enable/disable the entire
+  // Price Alerts section (button on home + alerts sheet).
+  priceAlertsEnabled   Boolean  @default(true)
   updatedAt            DateTime @updatedAt
 }
 

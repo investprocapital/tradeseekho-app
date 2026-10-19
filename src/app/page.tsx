@@ -2,6 +2,7 @@
 
 import { useEffect } from "react"
 import { useSession } from "next-auth/react"
+import { useQuery } from "@tanstack/react-query"
 import { motion } from "framer-motion"
 import { Sprout, LineChart, Trophy, CheckCircle2, Award, BookOpen, Crown, ArrowRight, Lock, BarChart3, ChevronRight, Bell } from "lucide-react"
 import { useStore } from "@/lib/store"
@@ -296,6 +297,18 @@ function MarketGaugeCard() {
 // Shows a summary of active alerts + opens the Price Alert sheet on click.
 function PriceAlertCard() {
   const setPriceAlertsOpen = useStore((s) => s.setPriceAlertsOpen)
+  // Fetch ad settings to check if Price Alerts is enabled
+  const { data: adSettings } = useQuery<{ priceAlertsEnabled?: boolean }>({
+    queryKey: ["ad-settings"],
+    queryFn: async () => {
+      const res = await fetch("/api/ads/config", { cache: "no-store" })
+      if (!res.ok) return { priceAlertsEnabled: true }
+      return res.json()
+    },
+    staleTime: 60_000,
+  })
+  // If admin has disabled Price Alerts, hide the card entirely
+  if (adSettings?.priceAlertsEnabled === false) return null
   return (
     <motion.button
       initial={{ opacity: 0, y: 8 }}

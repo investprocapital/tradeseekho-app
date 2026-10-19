@@ -1139,6 +1139,21 @@ function AdsTab() {
               onCheckedChange={(v) => setForm((f) => f && ({ ...f, googleLoginEnabled: v }))}
             />
           </div>
+
+          {/* Price Alerts ON/OFF — admin can enable/disable the entire
+              Price Alerts feature (home button + alerts sheet). */}
+          <div className="flex items-center justify-between rounded-lg border border-amber-500/30 bg-amber-500/5 p-3">
+            <div>
+              <div className="text-sm font-bold">Price Alerts Feature</div>
+              <div className="text-[11px] text-muted-foreground">
+                Show/hide the Price Alerts button on home dashboard. When OFF, the entire alerts section is hidden.
+              </div>
+            </div>
+            <Switch
+              checked={form.priceAlertsEnabled ?? true}
+              onCheckedChange={(v) => setForm((f) => f && ({ ...f, priceAlertsEnabled: v }))}
+            />
+          </div>
         </CardContent>
       </Card>
 
@@ -1164,6 +1179,7 @@ type AdminAdsForm = {
   signalBottomAdUnitId?: string
   commentsEnabled?: boolean
   googleLoginEnabled?: boolean
+  priceAlertsEnabled?: boolean
 }
 
 /* ---------------- Pro Requests ---------------- */

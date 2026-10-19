@@ -46,5 +46,6 @@ export async function GET(req: Request) {
     signalBottomAd: s.signalBottomAd,
     signalBottomAdUnitId: s.signalBottomAdUnitId,
     googleLoginEnabled: s.googleLoginEnabled,
+    priceAlertsEnabled: s.priceAlertsEnabled,
   })
 }
