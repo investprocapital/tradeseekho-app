@@ -196,6 +196,36 @@ export async function GET(req: Request) {
       }
     }
 
+    // ─── AUTO-DELETE: triggered alerts older than 12 hours ───
+    // Keeps Supabase clean — triggered alerts are no longer useful after 12h.
+    // This runs on every cron tick (every 1 min) but the query is cheap
+    // (indexed on triggeredAt) and only deletes rows that match.
+    try {
+      const twelveHoursAgo = new Date(Date.now() - 12 * 60 * 60 * 1000)
+      const deletedAlerts = await withDbRetry(() => db.priceAlert.deleteMany({
+        where: {
+          triggered: true,
+          triggeredAt: { lt: twelveHoursAgo },
+        },
+      }))
+
+      // Also delete old price-alert notifications (older than 12h)
+      // These are the "🔔 GOLD Alert Triggered!" notifications in the bell.
+      // Signal TP/SL notifications are kept (different type/deepLink).
+      const deletedNotifs = await withDbRetry(() => db.notification.deleteMany({
+        where: {
+          deepLink: "app://price-alert",
+          createdAt: { lt: twelveHoursAgo },
+        },
+      }))
+
+      if (deletedAlerts.count > 0 || deletedNotifs.count > 0) {
+        console.log(`[cron] Auto-deleted ${deletedAlerts.count} triggered alerts + ${deletedNotifs.count} old notifications (older than 12h)`)
+      }
+    } catch (e) {
+      console.error("[cron] auto-delete failed (non-fatal):", e?.message)
+    }
+
     return NextResponse.json({
       ok: true,
       checked: alerts.length,

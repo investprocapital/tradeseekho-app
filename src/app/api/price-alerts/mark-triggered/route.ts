@@ -46,6 +46,21 @@ export async function POST(req: Request) {
       },
     }))
 
+    // ─── AUTO-CLEANUP: delete triggered alerts + old notifications older than 12h ───
+    // Keeps Supabase clean — triggered alerts are useless after 12h.
+    // Runs on every mark-triggered call (when app is open + alert fires).
+    try {
+      const twelveHoursAgo = new Date(Date.now() - 12 * 60 * 60 * 1000)
+      await withDbRetry(() => db.priceAlert.deleteMany({
+        where: { triggered: true, triggeredAt: { lt: twelveHoursAgo } },
+      }))
+      await withDbRetry(() => db.notification.deleteMany({
+        where: { deepLink: "app://price-alert", createdAt: { lt: twelveHoursAgo } },
+      }))
+    } catch {
+      // Non-fatal — cleanup will run again on next trigger
+    }
+
     return NextResponse.json({ ok: true })
   } catch (e: any) {
     console.error("[mark-triggered] error:", e?.message)
