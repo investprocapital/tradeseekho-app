@@ -5,6 +5,7 @@ import { useSession } from "next-auth/react"
 import { motion } from "framer-motion"
 import { Sprout, LineChart, Trophy, CheckCircle2, Award, BookOpen, Crown, ArrowRight, Lock, BarChart3, ChevronRight, Bell } from "lucide-react"
 import { useStore } from "@/lib/store"
+import type { Lang } from "@/lib/i18n"
 import { useLessonsBundle, useProMe, useCurrentUser } from "@/components/tradeseekho/use-data"
 import { useAlertChecker } from "@/components/tradeseekho/use-alert-checker"
 import { Header } from "@/components/tradeseekho/header"
@@ -40,6 +41,7 @@ export default function Home() {
   const showAdmin = useStore((s) => s.showAdmin)
   const setShowAdmin = useStore((s) => s.setShowAdmin)
   const lang = useStore((s) => s.lang)
+  const setLang = useStore((s) => s.setLang)
   const bottomTab = useStore((s) => s.bottomTab)
   const openLesson = useStore((s) => s.openLesson)
   const setBottomTab = useStore((s) => s.setBottomTab)
@@ -55,6 +57,18 @@ export default function Home() {
     }
   }, [status, session])
   const { data: userData } = useCurrentUser()
+
+  // Auto-apply user's saved preferred language from Supabase on login.
+  // This ensures the language persists across devices — even if localStorage
+  // is cleared, the user's language preference is restored from their profile.
+  useEffect(() => {
+    if (status === "authenticated" && userData?.user?.preferredLang) {
+      const savedLang = userData.user.preferredLang as Lang
+      if (["en", "ur", "hi", "ar"].includes(savedLang) && savedLang !== lang) {
+        setLang(savedLang)
+      }
+    }
+  }, [status, userData, lang, setLang])
   const { data, isLoading } = useLessonsBundle("all")
 
   // Global price alert checker — polls every 20s, shows toast when target hit.

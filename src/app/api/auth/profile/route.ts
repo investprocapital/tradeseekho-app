@@ -17,7 +17,7 @@ export async function PUT(req: Request) {
   if (!sessionUserId) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 })
   }
-  let body: { name?: string; currentPassword?: string; newPassword?: string }
+  let body: { name?: string; currentPassword?: string; newPassword?: string; preferredLang?: string }
   try {
     body = await req.json()
   } catch {
@@ -27,11 +27,16 @@ export async function PUT(req: Request) {
   const user = await db.user.findUnique({ where: { id: sessionUserId } })
   if (!user) return NextResponse.json({ error: "not_found" }, { status: 404 })
 
-  const data: { name?: string | null; password?: string } = {}
+  const data: { name?: string | null; password?: string; preferredLang?: string } = {}
 
   // name update
   if (typeof body.name === "string" && body.name.trim().length > 0) {
     data.name = body.name.trim().slice(0, 80)
+  }
+
+  // preferredLang update
+  if (typeof body.preferredLang === "string" && ["en", "ur", "hi", "ar"].includes(body.preferredLang)) {
+    data.preferredLang = body.preferredLang
   }
 
   // password update

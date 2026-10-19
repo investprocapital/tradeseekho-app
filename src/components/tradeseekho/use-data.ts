@@ -105,6 +105,7 @@ export interface CurrentUser {
   image: string | null
   role: string
   proStatus: string
+  preferredLang: string | null
 }
 
 // Fetches the signed-in user's profile (including avatar) from /api/auth/me.

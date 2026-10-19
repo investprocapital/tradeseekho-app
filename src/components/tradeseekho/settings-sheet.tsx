@@ -69,27 +69,46 @@ export function SettingsSheet() {
 
             {/* APP PREFERENCES */}
             <Section title="App Preferences">
-              {/* Language */}
+              {/* Language — professional popup with flags + native names.
+                  Saves to BOTH localStorage (Zustand persist) + Supabase User Profile. */}
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <button className="flex w-full items-center gap-2 rounded-lg px-3 py-2.5 text-sm font-bold transition hover:bg-muted/40">
                     <Languages className="h-4 w-4 text-brand" />
                     <span className="flex-1 text-start">App Language</span>
-                    <span className="text-[11px] text-muted-foreground">{LANGS[lang].label}</span>
+                    <span className="text-[11px] text-muted-foreground">
+                      {lang === "en" ? "🇬🇧 English" : lang === "ur" ? "🇵🇰 اردو" : lang === "hi" ? "🇮🇳 हिन्दी" : lang === "ar" ? "🌍 العربية" : LANGS[lang].label}
+                    </span>
                     <ChevronRight className="h-3.5 w-3.5 text-muted-foreground" />
                   </button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-48">
+                <DropdownMenuContent align="end" className="w-56">
                   <DropdownMenuLabel className="text-xs uppercase tracking-wide text-muted-foreground">
-                    Language / زبان / भाषा / لغة
+                    Select Language / زبان منتخب کریں
                   </DropdownMenuLabel>
                   <DropdownMenuSeparator />
                   {LANG_ORDER.map((code) => (
-                    <DropdownMenuItem key={code} onSelect={(e) => { e.preventDefault(); setLang(code) }} className="gap-2">
-                      <span className={LANGS[code].dir === "rtl" ? "font-urdu text-base" : ""}>
+                    <DropdownMenuItem
+                      key={code}
+                      onSelect={(e) => {
+                        e.preventDefault()
+                        setLang(code)
+                        // Save to Supabase User Profile (so it persists across devices)
+                        fetch("/api/auth/profile", {
+                          method: "PUT",
+                          headers: { "content-type": "application/json" },
+                          body: JSON.stringify({ preferredLang: code }),
+                        }).catch(() => {})
+                      }}
+                      className="gap-3 py-2.5"
+                    >
+                      <span className="text-lg">
+                        {code === "en" ? "🇬🇧" : code === "ur" ? "🇵🇰" : code === "hi" ? "🇮🇳" : code === "ar" ? "🌍" : "🌐"}
+                      </span>
+                      <span className={`flex-1 ${LANGS[code].dir === "rtl" ? "font-urdu text-base" : ""}`}>
                         {LANGS[code].native}
                       </span>
-                      {lang === code && <Check className="ms-auto h-4 w-4 text-brand" />}
+                      {lang === code && <Check className="h-4 w-4 text-brand" />}
                     </DropdownMenuItem>
                   ))}
                 </DropdownMenuContent>

@@ -16,7 +16,7 @@ export async function GET() {
     if (!uid) return NextResponse.json({ user: null })
     const u = await withDbRetry(() => db.user.findUnique({
       where: { id: uid },
-      select: { id: true, email: true, name: true, image: true, role: true, proStatus: true },
+      select: { id: true, email: true, name: true, image: true, role: true, proStatus: true, preferredLang: true },
     }))
     if (!u) return NextResponse.json({ user: null })
     return NextResponse.json({ user: u })
