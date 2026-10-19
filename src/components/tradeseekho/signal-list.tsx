@@ -11,6 +11,7 @@ import { ScrollArea } from "@/components/ui/scroll-area"
 import { toast } from "sonner"
 import { useStore, useT } from "@/lib/store"
 import { pairLabel } from "@/lib/signals"
+import { useProMe } from "./use-data"
 import { CommentSection } from "./comment-section"
 import { SignalBottomAd } from "./signal-bottom-ad"
 // NOTE: MarketGauge + MarketGaugeScreen removed from signal-list to reduce
@@ -72,9 +73,15 @@ export function SignalList() {
   const [showChart, setShowChart] = useState(false)
   const signalsOpen = useStore((s) => s.signalsOpen)
   const setSignalsOpen = useStore((s) => s.setSignalsOpen)
+  const setProOpen = useStore((s) => s.setProOpen)
+  const setProPlan = useStore((s) => s.setProPlan)
   const t = useT()
   const lang = useStore((s) => s.lang)
   const rtlFont = lang === "ur" ? "font-urdu" : lang === "ar" ? "font-arabic" : ""
+
+  // Check if user has "signals" Pro plan (for paywall logic)
+  const { data: proMe } = useProMe()
+  const hasSignalsPro = proMe?.proPlans?.includes("signals") ?? false
 
   // Fetch ad settings (includes commentsEnabled toggle). When comments are OFF,
   // the entire comments section is hidden from the signal detail page.
@@ -160,17 +167,40 @@ export function SignalList() {
           <ScrollArea className="ts-scroll flex-1">
             <div className="p-4">
               <div className="grid gap-2.5">
-                {signals.map((s) => {
+                {signals.map((s, idx) => {
                   const badge = STATUS_BADGE[s.status] ?? STATUS_BADGE.active
                   const isLoss = s.status === "sl_hit"
+                  // PAYWALL: 1st signal free, 2nd+ blurred for non-Pro users
+                  const isLocked = !hasSignalsPro && idx >= 1
                   return (
                     <motion.button
                       key={s.id}
                       initial={{ opacity: 0, y: 8 }}
                       animate={{ opacity: 1, y: 0 }}
-                      onClick={() => { setSelected(s); setSignalsOpen(false) }}
-                      className="flex items-center gap-3 rounded-xl border border-border bg-card p-3 text-start transition hover:border-brand/50"
+                      onClick={() => {
+                        if (isLocked) {
+                          // Open Pro dialog with "signals" plan
+                          setSignalsOpen(false)
+                          setProPlan("signals")
+                          setProOpen(true)
+                        } else {
+                          setSelected(s); setSignalsOpen(false)
+                        }
+                      }}
+                      className={`relative flex items-center gap-3 rounded-xl border bg-card p-3 text-start transition ${
+                        isLocked
+                          ? "border-gold/30 hover:border-gold/60"
+                          : "border-border hover:border-brand/50"
+                      }`}
                     >
+                      {/* Blur overlay for locked signals */}
+                      {isLocked && (
+                        <div className="absolute inset-0 z-10 rounded-xl bg-background/60 backdrop-blur-sm flex flex-col items-center justify-center gap-1">
+                          <span className="text-2xl">🔒</span>
+                          <span className="rounded-full bg-gold px-3 py-1 text-[10px] font-black text-white">PRO</span>
+                          <span className="text-[10px] font-bold text-muted-foreground">Tap to unlock</span>
+                        </div>
+                      )}
                       {chartImage(s) ? (
                         <img src={chartImage(s)} alt="" className="h-12 w-16 shrink-0 rounded-lg object-cover" draggable={false} />
                       ) : (
