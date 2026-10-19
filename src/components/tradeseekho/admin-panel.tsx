@@ -1759,35 +1759,31 @@ function UsersTab() {
         </div>
       </div>
 
-      {/* Users Table */}
+      {/* Users Table — horizontal scroll on mobile so all columns visible */}
       <Card>
-        <ScrollArea className="ts-scroll max-h-[60vh] overflow-x-auto">
-          <Table>
+        <div className="max-h-[60vh] overflow-auto overscroll-contain" style={{ WebkitOverflowScrolling: "touch" }}>
+          <Table className="min-w-[900px]">
             <TableHeader>
               <TableRow>
                 <TableHead>Email</TableHead>
                 <TableHead>Name</TableHead>
-                <TableHead className="hidden md:table-cell">Auth</TableHead>
-                <TableHead className="hidden md:table-cell">Password (hash)</TableHead>
-                <TableHead>Pro Status</TableHead>
-                <TableHead className="hidden lg:table-cell">Plan / Payment</TableHead>
-                <TableHead className="hidden md:table-cell">Joined</TableHead>
-                <TableHead>Quiz</TableHead>
-                <TableHead className="hidden lg:table-cell">Device</TableHead>
+                <TableHead className="whitespace-nowrap">Pro Status</TableHead>
+                <TableHead className="whitespace-nowrap">Plan Type</TableHead>
+                <TableHead className="whitespace-nowrap">Payment Method</TableHead>
+                <TableHead className="whitespace-nowrap">Joined</TableHead>
+                <TableHead className="whitespace-nowrap">Quiz</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {isLoading ? (
-                <TableRow><TableCell colSpan={9} className="py-6 text-center text-muted-foreground">Loading...</TableCell></TableRow>
+                <TableRow><TableCell colSpan={7} className="py-6 text-center text-muted-foreground">Loading...</TableCell></TableRow>
               ) : users.length === 0 ? (
-                <TableRow><TableCell colSpan={9} className="py-6 text-center text-muted-foreground">No users found.</TableCell></TableRow>
+                <TableRow><TableCell colSpan={7} className="py-6 text-center text-muted-foreground">No users found.</TableCell></TableRow>
               ) : users.map((u) => (
                 <TableRow key={u.id} className="hover:bg-muted/30">
-                  <TableCell className="font-semibold text-xs">{u.email}</TableCell>
-                  <TableCell className="text-xs">{u.name}</TableCell>
-                  <TableCell className="hidden md:table-cell text-xs text-muted-foreground whitespace-nowrap">{u.authMethod}</TableCell>
-                  <TableCell className="hidden md:table-cell text-[10px] font-mono text-muted-foreground whitespace-nowrap">{u.password}</TableCell>
-                  <TableCell>
+                  <TableCell className="font-semibold text-xs whitespace-nowrap">{u.email}</TableCell>
+                  <TableCell className="text-xs whitespace-nowrap">{u.name}</TableCell>
+                  <TableCell className="whitespace-nowrap">
                     {u.proStatus === "active" ? (
                       <Badge className="bg-gold/20 text-gold-foreground text-[10px]">PRO</Badge>
                     ) : u.proStatus === "pending" ? (
@@ -1796,34 +1792,39 @@ function UsersTab() {
                       <Badge variant="outline" className="text-[10px]">Free</Badge>
                     )}
                   </TableCell>
-                  <TableCell className="hidden lg:table-cell text-xs text-muted-foreground whitespace-nowrap">
-                    {u.proMethod ? (
-                      <div className="flex flex-col gap-0.5">
-                        <span className="font-bold">{u.proMethod}</span>
-                        {u.proPlanType && (
-                          <span className={`text-[9px] font-bold ${
-                            u.proPlanType === "all" ? "text-brand"
-                            : u.proPlanType === "lessons" ? "text-blue-500"
-                            : u.proPlanType === "alerts" ? "text-amber-600"
-                            : u.proPlanType === "signals" ? "text-purple-500"
-                            : "text-muted-foreground"
+                  {/* Plan Type — shows which plan(s) the user has */}
+                  <TableCell className="whitespace-nowrap">
+                    {u.proPlanType ? (
+                      <div className="flex flex-wrap gap-1">
+                        {u.proPlanType.split(",").map((plan) => (
+                          <Badge key={plan} className={`text-[9px] ${
+                            plan === "alerts" ? "bg-amber-500/15 text-amber-600"
+                            : plan === "lessons" ? "bg-blue-500/15 text-blue-500"
+                            : plan === "signals" ? "bg-purple-500/15 text-purple-500"
+                            : plan === "all" ? "bg-brand-muted text-brand"
+                            : "bg-muted text-muted-foreground"
                           }`}>
-                            {u.proPlanType === "all" ? "Full Pro" : u.proPlanType === "lessons" ? "Lessons" : u.proPlanType === "alerts" ? "Alerts" : u.proPlanType === "signals" ? "Signals" : u.proPlanType}
-                          </span>
-                        )}
+                            {plan === "alerts" ? "Alerts" : plan === "lessons" ? "Lessons" : plan === "signals" ? "Signals" : plan === "all" ? "All" : plan}
+                          </Badge>
+                        ))}
                       </div>
-                    ) : "-"}
+                    ) : (
+                      <span className="text-xs text-muted-foreground">—</span>
+                    )}
                   </TableCell>
-                  <TableCell className="hidden md:table-cell text-xs text-muted-foreground whitespace-nowrap">
+                  {/* Payment Method */}
+                  <TableCell className="text-xs whitespace-nowrap">
+                    {u.proMethod || "—"}
+                  </TableCell>
+                  <TableCell className="text-xs text-muted-foreground whitespace-nowrap">
                     {new Date(u.joinedAt).toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" })}
                   </TableCell>
                   <TableCell className="text-xs font-bold whitespace-nowrap">{u.passedQuizzes}/{u.totalLessons}</TableCell>
-                  <TableCell className="hidden lg:table-cell text-xs text-muted-foreground">{u.deviceInfo}</TableCell>
                 </TableRow>
               ))}
             </TableBody>
           </Table>
-        </ScrollArea>
+        </div>
       </Card>
     </div>
   )

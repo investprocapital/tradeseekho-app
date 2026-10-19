@@ -43,12 +43,13 @@ export async function GET(req: Request) {
       password: true,
       role: true,
       proStatus: true,
+      proPlans: true,
       createdAt: true,
       lessonsCompleted: true,
       proRequests: {
         orderBy: { createdAt: "desc" },
         take: 1,
-        select: { method: true, note: true, status: true, createdAt: true },
+        select: { method: true, note: true, status: true, planType: true, createdAt: true },
       },
       _count: {
         select: {
@@ -71,7 +72,8 @@ export async function GET(req: Request) {
     proStatus: u.proStatus,
     proMethod: u.proRequests[0]?.method || null,
     proNote: u.proRequests[0]?.note || null,
-    proPlanType: u.proRequests[0]?.planType || null,
+    // Show ALL plans the user has (from proPlans field), not just the last request
+    proPlanType: u.proPlans || u.proRequests[0]?.planType || null,
     joinedAt: u.createdAt.toISOString(),
     passedQuizzes: u._count.progress,
     totalLessons,
