@@ -10,7 +10,7 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
-import { Crown, Copy, Upload, Loader2, AlertCircle, CheckCircle2, Clock, Smartphone, Image as ImageIcon, CreditCard, Globe, Coins, Share2, Download } from "lucide-react"
+import { Crown, Copy, Upload, Loader2, AlertCircle, CheckCircle2, Clock, Smartphone, Image as ImageIcon, CreditCard, Globe, Coins, Share2, Download, RotateCcw } from "lucide-react"
 import { useStore, useT } from "@/lib/store"
 import { useProMe, useSubmitProRequest } from "./use-data"
 import { toast } from "sonner"
@@ -230,6 +230,20 @@ export function ProDialog() {
                 {proPlan === "alerts" ? "Alerts Plan" : proPlan === "lessons" ? "Lessons Plan" : proPlan === "signals" ? "Signals Plan" : proPlan}
               </Badge>
             )}
+            {/* Reset button — clears form (method, file, note, error) */}
+            <button
+              type="button"
+              onClick={() => {
+                setMethod("JazzCash")
+                setFile(null); setFilePreview(null)
+                setNote(""); setErr(null)
+                toast.success("Form reset")
+              }}
+              className="ml-auto flex items-center gap-1 rounded-lg border border-border bg-card px-2 py-1 text-[10px] font-bold text-muted-foreground transition hover:bg-muted"
+              title="Reset form"
+            >
+              <RotateCcw className="h-3 w-3" /> Reset
+            </button>
           </DialogTitle>
           <DialogDescription>
             Unlock all lessons, ad-free experience & certificates.
@@ -252,8 +266,12 @@ export function ProDialog() {
               <p className="text-xs text-muted-foreground">Buy another plan if you want to unlock more features.</p>
             </div>
           ) : isPro && !alreadyHasThisPlan ? (
-            /* Has SOME pro plan but not THIS one — show payment form for the missing plan */
+            /* Has SOME pro plan but not THIS one — show info banner + NORMAL form
+               (same form as non-Pro users, with all payment details including
+               crypto address + QR code). The banner tells them what they already
+               have and what they're buying. */
             <form onSubmit={onSubmit} className="space-y-4">
+              {/* Info banner: shows current plans + what they're buying */}
               <div className="flex items-start gap-2 rounded-lg border border-blue-500/40 bg-blue-500/10 p-3 text-xs">
                 <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-blue-500" />
                 <span>You have: <b>{currentPlans.split(",").join(", ")}</b>. Buy the <b>{proPlan}</b> plan to unlock more features.</span>
@@ -287,7 +305,88 @@ export function ProDialog() {
                   })}
                 </div>
               </div>
-              {/* Screenshot upload */}
+              {/* Payment details: Card / SadaPay / Crypto (with QR + address) / JazzCash / Easypaisa */}
+              {method === "Card" ? (
+                <div className="rounded-xl border border-dashed border-border bg-muted/30 p-3">
+                  <div className="flex items-start gap-2">
+                    <CreditCard className="mt-0.5 h-5 w-5 shrink-0 text-[#1A1F71]" />
+                    <div className="flex-1">
+                      <div className="text-[11px] uppercase tracking-wide text-muted-foreground">Card Payment</div>
+                      <div className="text-sm font-bold text-foreground">{settings?.cardInstructions || "Contact admin on WhatsApp for card payment link"}</div>
+                      <div className="mt-1 text-[10px] text-muted-foreground">Pay ${usdPrice} USD via secure card link</div>
+                    </div>
+                  </div>
+                </div>
+              ) : method === "SadaPay" ? (
+                <div className="rounded-xl border border-dashed border-[#6C2BD9]/40 bg-[#6C2BD9]/5 p-3">
+                  <div className="flex items-start gap-2">
+                    <Globe className="mt-0.5 h-5 w-5 shrink-0 text-[#6C2BD9]" />
+                    <div className="flex-1">
+                      <div className="text-[11px] uppercase tracking-wide text-muted-foreground">SadaPay · International</div>
+                      <div className="text-sm font-bold text-foreground">{settings?.sadapayName || "TradeSeekho PK"}</div>
+                      <div className="mt-1.5 space-y-1">
+                        <div className="flex items-center justify-between"><span className="text-[10px] text-muted-foreground">Number:</span><span className="font-mono text-xs font-bold text-foreground">{settings?.sadapayNumber || "03XX-XXXXXXX"}</span></div>
+                        <div className="flex items-center justify-between"><span className="text-[10px] text-muted-foreground">IBAN:</span><span className="font-mono text-xs font-bold text-foreground">{settings?.sadapayIban || "PK36SAPK0000000000000000"}</span></div>
+                      </div>
+                      <div className="mt-2 flex justify-end"><Button type="button" size="sm" variant="outline" className="gap-1.5" onClick={() => copy(settings?.sadapayNumber || "")}><Copy className="h-3.5 w-3.5" /> Copy Number</Button></div>
+                      <div className="mt-1 text-[10px] text-muted-foreground">Send ${usdPrice} USD or Rs {pkrPrice} PKR</div>
+                    </div>
+                  </div>
+                </div>
+              ) : cryptoCtx ? (
+                <div className="rounded-xl border border-dashed p-3" style={{ borderColor: `${cryptoCtx.color}66`, backgroundColor: `${cryptoCtx.color}0D` }}>
+                  <div className="flex items-start gap-2">
+                    <Coins className="mt-0.5 h-5 w-5 shrink-0" style={{ color: cryptoCtx.color }} />
+                    <div className="flex-1">
+                      <div className={`text-[11px] uppercase tracking-wide text-muted-foreground ${rtlFont}`}>{cryptoCtx.sectionTitle}</div>
+                      {/* QR + address block */}
+                      <div className="mt-2 flex flex-col items-center gap-3 sm:flex-row sm:items-start">
+                        <div className="rounded-lg border-2 border-border bg-white p-2 shadow-sm">
+                          {cryptoCtx.address ? (
+                            <QRCodeSVG value={cryptoCtx.address} size={120} level="M" marginSize={1} fgColor="#0b0f17" bgColor="#ffffff" />
+                          ) : (
+                            <div className="flex h-[120px] w-[120px] items-center justify-center text-[10px] text-muted-foreground">No address</div>
+                          )}
+                        </div>
+                        <div className="flex-1 space-y-1.5 self-stretch">
+                          <div className="space-y-0.5">
+                            <div className={`text-[10px] text-muted-foreground ${rtlFont}`}>{t("pro.address")}</div>
+                            <div className="break-all font-mono text-[11px] font-bold text-foreground">{cryptoCtx.address || "—"}</div>
+                          </div>
+                          <div className="flex items-center justify-between">
+                            <span className={`text-[10px] text-muted-foreground ${rtlFont}`}>{t("pro.network")}</span>
+                            <span className="text-xs font-bold" style={{ color: cryptoCtx.color }}>{cryptoCtx.network}</span>
+                          </div>
+                          <div className="flex items-center justify-between">
+                            <span className={`text-[10px] text-muted-foreground ${rtlFont}`}>{t("pro.amount")}</span>
+                            <span className="text-xs font-bold text-foreground">${usdPrice} USDT</span>
+                          </div>
+                        </div>
+                      </div>
+                      {/* Action buttons: Copy + Save & Share */}
+                      <div className="mt-3 flex flex-wrap gap-2">
+                        <Button type="button" size="sm" variant="outline" className="gap-1.5" onClick={() => copy(cryptoCtx.address)} disabled={!cryptoCtx.address}><Copy className="h-3.5 w-3.5" /> {t("pro.copyAddress")}</Button>
+                        <Button type="button" size="sm" variant="secondary" className="gap-1.5" onClick={saveAndShare} disabled={sharing || !cryptoCtx.address}>{sharing ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Share2 className="h-3.5 w-3.5" />}{t("pro.saveShareAddress")}</Button>
+                      </div>
+                      {/* Network-specific warning */}
+                      <div className={`mt-2 rounded-lg bg-red-500/10 p-2 text-[10px] font-bold leading-relaxed text-destructive ${rtlFont}`}>{cryptoCtx.warning}</div>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div className="rounded-xl border border-dashed border-border bg-muted/30 p-3">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <div className="text-[11px] uppercase tracking-wide text-muted-foreground">Send Rs {displayAmount} to</div>
+                      <div className="font-mono text-base font-bold text-foreground">{currentNumber}</div>
+                      <div className="text-[10px] text-muted-foreground">{method} • TradeSeekho PK</div>
+                    </div>
+                    <Button type="button" size="sm" variant="outline" className="gap-1.5" onClick={() => copy(currentNumber || "")}><Copy className="h-3.5 w-3.5" /> Copy</Button>
+                  </div>
+                </div>
+              )}
+              <Separator />
+              {/* Screenshot upload (not required for Card method) */}
               {method !== "Card" && (
                 <div>
                   <Label className={`mb-2 block text-xs font-bold uppercase tracking-wide text-muted-foreground ${rtlFont}`}>2. {t("pro.uploadScreenshot")}</Label>
