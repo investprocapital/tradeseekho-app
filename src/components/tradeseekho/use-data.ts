@@ -201,7 +201,7 @@ export function useSubmitProRequest() {
   return useMutation<
     { ok: boolean; requestId: string },
     Error,
-    { method: string; amount?: number; note?: string; txHash?: string; file: File }
+    { method: string; amount?: number; note?: string; txHash?: string; planType?: string; file: File }
   >({
     mutationFn: async (vars) => {
       const fd = new FormData()
@@ -209,6 +209,7 @@ export function useSubmitProRequest() {
       if (vars.amount) fd.append("amount", String(vars.amount))
       if (vars.note) fd.append("note", vars.note)
       if (vars.txHash) fd.append("txHash", vars.txHash)
+      if (vars.planType) fd.append("planType", vars.planType)
       fd.append("file", vars.file)
       const res = await fetch("/api/pro/request", { method: "POST", body: fd })
       return j(res)

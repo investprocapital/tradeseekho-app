@@ -70,6 +70,10 @@ interface AppState {
   setLoginOpen: (v: boolean) => void
   loginView: "landing" | "set-password" | null
   setLoginView: (v: "landing" | "set-password" | null) => void
+  // Which plan the client is buying (set when opening Pro dialog from specific page)
+  // "alerts" = from Price Alerts, "lessons" = from locked lesson, "signals" = from signals
+  proPlan: "alerts" | "lessons" | "signals" | null
+  setProPlan: (v: "alerts" | "lessons" | "signals" | null) => void
 
   leaderboardOpen: boolean
   setLeaderboardOpen: (v: boolean) => void
@@ -163,6 +167,8 @@ export const useStore = create<AppState>()(
       setLoginOpen: (v) => set({ loginOpen: v }),
       loginView: null,
       setLoginView: (v) => set({ loginView: v }),
+      proPlan: null,
+      setProPlan: (v) => set({ proPlan: v }),
 
       leaderboardOpen: false,
       setLeaderboardOpen: (v) => set({ leaderboardOpen: v }),

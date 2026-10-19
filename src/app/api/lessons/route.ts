@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server"
 import { db } from "@/lib/db"
-import { getCurrentUserId, isUserPro } from "@/lib/auth"
+import { getCurrentUserId, isUserProForPlan } from "@/lib/auth"
 import type { CategoryDTO, LessonListItemDTO } from "@/lib/types"
 
 export const dynamic = "force-dynamic"
@@ -35,7 +35,7 @@ export async function GET(req: Request) {
     const { searchParams } = new URL(req.url)
     const category = searchParams.get("category") // slug or "all"
     const userId = await getCurrentUserId()
-    const pro = await isUserPro()
+    const pro = await isUserProForPlan("lessons")
 
     const [categories, lessons] = await withRetry(() => Promise.all([
       db.category.findMany({ orderBy: { order: "asc" } }),

@@ -172,16 +172,33 @@ export async function getCurrentUserId(): Promise<string> {
   return id && id.length > 0 ? id : "local-learner"
 }
 
-/** Check if the current user has active Pro status (all lessons unlocked). */
+/** Check if the current user has active Pro status (any plan). */
 export async function isUserPro(): Promise<boolean> {
   const userId = await getCurrentUserId()
   if (userId === "local-learner") return false
-  const user = await db.user.findUnique({ where: { id: userId }, select: { proStatus: true, proExpiresAt: true } })
+  const user = await db.user.findUnique({ where: { id: userId }, select: { proStatus: true, proPlans: true, proExpiresAt: true } })
   if (!user) return false
   if (user.proStatus !== "active") return false
-  // If there's an expiry date and it's in the past, Pro has expired
   if (user.proExpiresAt && user.proExpiresAt < new Date()) return false
-  return true
+  // Has at least one plan
+  return user.proPlans && user.proPlans.length > 0
+}
+
+/**
+ * Check if the current user has a SPECIFIC Pro plan active.
+ * Plans: "alerts" | "lessons" | "signals"
+ * A user can have multiple plans (bought one by one).
+ */
+export async function isUserProForPlan(plan: "alerts" | "lessons" | "signals"): Promise<boolean> {
+  const userId = await getCurrentUserId()
+  if (userId === "local-learner") return false
+  const user = await db.user.findUnique({ where: { id: userId }, select: { proStatus: true, proPlans: true, proExpiresAt: true } })
+  if (!user) return false
+  if (user.proStatus !== "active") return false
+  if (user.proExpiresAt && user.proExpiresAt < new Date()) return false
+  // Check if the specific plan is in the user's proPlans (comma-separated)
+  const plans = user.proPlans ? user.proPlans.split(",").filter(Boolean) : []
+  return plans.includes(plan)
 }
 
 /** Hash a password with bcrypt (10 rounds). */

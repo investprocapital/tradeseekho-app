@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server"
 import { db } from "@/lib/db"
-import { getCurrentUserId, isUserPro } from "@/lib/auth"
+import { getCurrentUserId, isUserProForPlan } from "@/lib/auth"
 import { withDbRetry } from "@/lib/db-retry"
 
 export const dynamic = "force-dynamic"
@@ -44,10 +44,10 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "symbol and targetPrice required" }, { status: 400 })
     }
 
-    // Check if user is Pro (alerts plan or all plan)
-    const isPro = await isUserPro()
+    // Check if user has the "alerts" Pro plan
+    const hasAlertsPro = await isUserProForPlan("alerts")
 
-    if (!isPro) {
+    if (!hasAlertsPro) {
       // FREE USER: count active (untriggered) alerts — limit to 1
       const activeCount = await withDbRetry(() => db.priceAlert.count({
         where: { userId, triggered: false },
@@ -55,7 +55,7 @@ export async function POST(req: Request) {
       if (activeCount >= 1) {
         return NextResponse.json({
           error: "free_limit",
-          message: "Free users can only set 1 active alert. Upgrade to Pro for unlimited alerts.",
+          message: "Free users can only set 1 active alert. Buy Alerts Pro plan for unlimited alerts.",
         }, { status: 403 })
       }
     }

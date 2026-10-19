@@ -55,6 +55,7 @@ export function PriceAlertSheet() {
   const open = useStore((s) => s.priceAlertsOpen)
   const setOpen = useStore((s) => s.setPriceAlertsOpen)
   const setProOpen = useStore((s) => s.setProOpen)
+  const setProPlan = useStore((s) => s.setProPlan)
   const { data: session } = useSession()
   const qc = useQueryClient()
 
@@ -101,11 +102,12 @@ export function PriceAlertSheet() {
       setTargetPrice("")
     },
     onError: (e: Error) => {
-      // Free user limit reached → open Pro dialog instead of showing error
+      // Free user limit reached → open Pro dialog with "alerts" plan pre-selected
       if ((e as any).code === "free_limit") {
         setOpen(false)
+        setProPlan("alerts")
         setProOpen(true)
-        toast.info("Free users get 1 alert only. Upgrade to Pro for unlimited alerts! 🔔")
+        toast.info("Free users get 1 alert only. Buy Alerts Pro plan for unlimited alerts! 🔔")
       } else {
         toast.error(e.message)
       }

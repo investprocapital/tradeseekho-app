@@ -48,6 +48,7 @@ export default function Home() {
   const setBottomTab = useStore((s) => s.setBottomTab)
   const setActiveCategory = useStore((s) => s.setActiveCategory)
   const setProOpen = useStore((s) => s.setProOpen)
+  const setProPlan = useStore((s) => s.setProPlan)
   const { data: proMe } = useProMe()
   const isPro = proMe?.proStatus === "active"
 
@@ -199,7 +200,7 @@ export default function Home() {
                   <p className="py-8 text-center text-sm text-muted-foreground">No lessons yet.</p>
                 ) : (
                   visibleLessons.map((l, i) => (
-                    <LessonRow key={l.id} lesson={l} lang={lang} isPro={isPro} seqLocked={!isPro && i > 0 && !visibleLessons[i - 1].passed} onOpen={() => openLesson(l.id)} onPro={() => setProOpen(true)} />
+                    <LessonRow key={l.id} lesson={l} lang={lang} isPro={isPro} seqLocked={!isPro && i > 0 && !visibleLessons[i - 1].passed} onOpen={() => openLesson(l.id)} onPro={() => { setProPlan("lessons"); setProOpen(true) }} />
                   ))
                 )}
               </div>
@@ -224,7 +225,7 @@ export default function Home() {
                   quizLessons.map((l, i) => {
                     const lessonIdx = lessons.indexOf(l)
                     const seqLocked = !isPro && lessonIdx > 0 && !lessons[lessonIdx - 1].passed
-                    return <QuizRow key={l.id} lesson={l} lang={lang} isPro={isPro} seqLocked={seqLocked} onOpen={() => openLesson(l.id)} onPro={() => setProOpen(true)} />
+                    return <QuizRow key={l.id} lesson={l} lang={lang} isPro={isPro} seqLocked={seqLocked} onOpen={() => openLesson(l.id)} onPro={() => { setProPlan("lessons"); setProOpen(true) }} />
                   })
                 )}
               </div>

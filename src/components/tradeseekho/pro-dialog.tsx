@@ -49,6 +49,7 @@ type Method = "JazzCash" | "Easypaisa" | "Card" | "SadaPay" | "USDT" | "USDT_BEP
 export function ProDialog() {
   const open = useStore((s) => s.proOpen)
   const setOpen = useStore((s) => s.setProOpen)
+  const proPlan = useStore((s) => s.proPlan) // which plan client is buying (from store context)
   const setLoginOpen = useStore((s) => s.setLoginOpen)
   const t = useT()
   const lang = useStore((s) => s.lang)
@@ -141,7 +142,10 @@ export function ProDialog() {
     try {
       // For crypto/Payoneer: send txHash SEPARATELY from note (so admin can verify)
       const txHash = needsTxId ? note.trim() : undefined
-      await submit.mutateAsync({ method, amount: Number(displayAmount) || 0, note: needsTxId ? "" : note, txHash, file })
+      // planType: from store context (which page client came from)
+      // alerts = Price Alerts page, lessons = locked lesson, signals = signals page
+      const planType = proPlan || "alerts" // default to alerts if not set
+      await submit.mutateAsync({ method, amount: Number(displayAmount) || 0, note: needsTxId ? "" : note, txHash, planType, file })
       toast.success("Payment submitted!", { description: "We'll review and activate Pro within 24h." })
       setFile(null); setFilePreview(null); setNote("")
     } catch (e2: any) {
@@ -213,6 +217,16 @@ export function ProDialog() {
         <DialogHeader className="border-b border-border bg-gradient-to-br from-gold/15 to-brand-muted/30 p-5">
           <DialogTitle className="flex items-center gap-2 text-xl font-extrabold">
             <Crown className="h-5 w-5 text-gold" /> TradeSeekho PK Pro
+            {proPlan && (
+              <Badge className={
+                proPlan === "alerts" ? "bg-amber-500/15 text-amber-600"
+                : proPlan === "lessons" ? "bg-blue-500/15 text-blue-500"
+                : proPlan === "signals" ? "bg-purple-500/15 text-purple-500"
+                : "bg-muted text-muted-foreground"
+              }>
+                {proPlan === "alerts" ? "Alerts Plan" : proPlan === "lessons" ? "Lessons Plan" : proPlan === "signals" ? "Signals Plan" : proPlan}
+              </Badge>
+            )}
           </DialogTitle>
           <DialogDescription>
             Unlock all lessons, ad-free experience & certificates.

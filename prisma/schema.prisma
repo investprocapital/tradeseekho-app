@@ -7,7 +7,7 @@ generator client {
 }
 
 datasource db {
-  provider  = "sqlite"
+  provider  = "postgresql"
   url       = env("DATABASE_URL")
   directUrl = env("DIRECT_URL")
 }
@@ -121,6 +121,7 @@ model User {
   password        String?    // bcrypt hash for email/password auth; null for OAuth/local
   role            String     @default("student") // student | admin
   proStatus       String     @default("none") // none | pending | active (manual payment approval)
+  proPlans        String     @default("") // comma-separated: "alerts" | "lessons" | "signals" | "alerts,lessons" etc.
   proExpiresAt    DateTime?  // optional expiry; null = lifetime
   fcmToken        String?    // Firebase Cloud Messaging token (for push notifications when app is closed)
   preferredLang   String?    // en | ur | hi | ar — saved per-user, auto-applied on login
