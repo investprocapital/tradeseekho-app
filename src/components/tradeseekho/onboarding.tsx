@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useRef } from "react"
+import { useSession } from "next-auth/react"
 import { motion, AnimatePresence } from "framer-motion"
 import { GraduationCap, TrendingUp, Crown, ArrowRight, Check, X } from "lucide-react"
 import { Button } from "@/components/ui/button"
@@ -37,6 +38,7 @@ const SLIDES = [
 ] as const
 
 export function Onboarding() {
+  const { status } = useSession()
   const seen = useStore((s) => s.onboardingSeen)
   const hasHydrated = useStore((s) => s.hasHydrated)
   const setSeen = useStore((s) => s.setOnboardingSeen)
@@ -45,7 +47,13 @@ export function Onboarding() {
   const last = i === SLIDES.length - 1
   const touchStartX = useRef(0)
 
-  if (!hasHydrated || seen) return null
+  // Show onboarding ONLY for users who:
+  // 1. Store has hydrated (localStorage loaded)
+  // 2. Haven't seen onboarding yet (onboardingSeen = false)
+  // 3. Are NOT currently authenticated (so new visitors see it, returning logged-in users don't)
+  if (!hasHydrated) return null
+  if (seen) return null
+  if (status === "authenticated") return null
 
   const close = () => setSeen(true)
 
