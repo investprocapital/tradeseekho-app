@@ -153,14 +153,17 @@ export function ProDialog() {
       setFile(null); setFilePreview(null); setNote("")
     } catch (e2: any) {
       const msg = e2?.message || ""
-      if (msg.includes("already_pro")) setErr("You're already Pro.")
-      else if (msg.includes("unauthorized")) setErr("Please sign in first.")
-      else if (msg.includes("txid_required")) setErr("Transaction Hash / TxID is required for crypto payments.")
-      else if (msg.includes("txid_invalid")) setErr("Invalid Tx Hash format. BSC/ETH: 0x + 64 hex chars (66 total). Tron: 64 hex chars.")
-      else if (msg.includes("bad_method")) setErr("Invalid payment method. Please refresh and try again.")
-      else if (msg.includes("no_file")) setErr("Please upload a payment screenshot.")
-      else if (msg.includes("not_image")) setErr("Please select an image file (JPG/PNG).")
-      else if (msg.includes("too_large")) setErr("Image too large. Max 5MB.")
+      const code = (e2 as any)?.code || ""
+      if (code === "already_has_plan" || msg.includes("already_has_plan")) setErr(`You already have the ${proPlan || "this"} plan. Buy a different plan.`)
+      else if (code === "already_pro" || msg.includes("already_pro")) setErr("You're already Pro.")
+      else if (code === "unauthorized" || msg.includes("unauthorized")) setErr("Please sign in first.")
+      else if (code === "txid_required" || msg.includes("txid_required")) setErr("Transaction Hash / TxID is required for crypto payments.")
+      else if (code === "txid_invalid" || msg.includes("txid_invalid")) setErr("Invalid Tx Hash format. Please paste the full Transaction Hash.")
+      else if (code === "bad_method" || msg.includes("bad_method")) setErr("Invalid payment method. Please refresh and try again.")
+      else if (code === "bad_plan" || msg.includes("bad_plan")) setErr("Invalid plan type. Please refresh and try again.")
+      else if (code === "no_file" || msg.includes("no_file")) setErr("Please upload a payment screenshot.")
+      else if (code === "not_image" || msg.includes("not_image")) setErr("Please select an image file (JPG/PNG).")
+      else if (code === "too_large" || msg.includes("too_large")) setErr("Image too large. Max 5MB.")
       else setErr("Submission failed. Try again.")
     }
   }

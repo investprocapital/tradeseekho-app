@@ -17,11 +17,12 @@ export const dynamic = "force-dynamic"
 // For crypto payments (USDT, USDT_BEP20), the txHash (Transaction Hash / TxID)
 // is saved SEPARATELY from the user note — so admin can verify on BSCScan.
 export async function POST(req: Request) {
-  const session = await getServerSession(authOptions)
-  const userId = (session?.user as { id?: string } | undefined)?.id
-  if (!userId) return NextResponse.json({ error: "unauthorized" }, { status: 401 })
+  try {
+    const session = await getServerSession(authOptions)
+    const userId = (session?.user as { id?: string } | undefined)?.id
+    if (!userId) return NextResponse.json({ error: "unauthorized" }, { status: 401 })
 
-  const form = await req.formData()
+    const form = await req.formData()
   const method = String(form.get("method") || "")
   const amount = Number(form.get("amount") || 0)
   const txHash = String(form.get("txHash") || form.get("note") || "").trim().slice(0, 100)
@@ -86,9 +87,15 @@ export async function POST(req: Request) {
     if (file.size > 5 * 1024 * 1024) return NextResponse.json({ error: "too_large" }, { status: 400 })
   }
 
-  // Already Pro? skip
-  const u = await db.user.findUnique({ where: { id: userId } })
-  if (u?.proStatus === "active") return NextResponse.json({ error: "already_pro" }, { status: 400 })
+  // Already has THIS specific plan? Block duplicate purchase.
+  // But allow buying a DIFFERENT plan (user can have multiple plans).
+  const u = await db.user.findUnique({ where: { id: userId }, select: { proStatus: true, proPlans: true } })
+  if (u?.proStatus === "active" && u.proPlans) {
+    const existingPlans = u.proPlans.split(",").filter(Boolean)
+    if (existingPlans.includes(planType)) {
+      return NextResponse.json({ error: "already_has_plan", message: `You already have the ${planType} plan.` }, { status: 400 })
+    }
+  }
 
   // Upload screenshot to Vercel Blob CDN (with auto-compress)
   let screenshotPath = ""
@@ -123,6 +130,10 @@ export async function POST(req: Request) {
       status: "pending",
     },
   })
-  await db.user.update({ where: { id: userId }, data: { proStatus: "pending" } })
-  return NextResponse.json({ ok: true, requestId: req2.id })
+    await db.user.update({ where: { id: userId }, data: { proStatus: "pending" } })
+    return NextResponse.json({ ok: true, requestId: req2.id })
+  } catch (e: any) {
+    console.error("[pro/request] error:", e?.message)
+    return NextResponse.json({ error: "server_error", message: e?.message || "Submission failed" }, { status: 500 })
+  }
 }

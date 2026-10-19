@@ -213,7 +213,15 @@ export function useSubmitProRequest() {
       if (vars.planType) fd.append("planType", vars.planType)
       fd.append("file", vars.file)
       const res = await fetch("/api/pro/request", { method: "POST", body: fd })
-      return j(res)
+      if (!res.ok) {
+        // Read the JSON error body so the catch block can match error codes
+        const errBody = await res.json().catch(() => ({}))
+        const error = new Error(errBody?.error || errBody?.message || `http_${res.status}`)
+        ;(error as any).code = errBody?.error
+        ;(error as any).message2 = errBody?.message
+        throw error
+      }
+      return res.json()
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["pro-me"] }),
   })
