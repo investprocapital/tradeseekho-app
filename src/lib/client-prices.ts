@@ -1,40 +1,38 @@
 "use client"
 
 /**
- * Client-side price fetcher — ZERO server cost, NO API keys needed.
+ * Client-side price fetcher — ZERO server DB cost.
  *
  * Sources:
  *   - Crypto (BTC, ETH): Binance public WebSocket (free, real-time, no API key)
  *     wss://stream.binance.com:9443/ws/btcusdt@ticker
- *   - Forex/Gold/Oil (XAUUSD, EURUSD, GBPUSD, WTI): Yahoo Finance REST (FREE, no key)
- *     https://query1.finance.yahoo.com/v8/finance/chart/GC=F?interval=1d&range=2d
- *     Polled every 30s — no rate limits, no API key, completely free.
+ *   - Forex/Gold/Oil (XAUUSD, EURUSD, GBPUSD, WTI): Server proxy → Yahoo Finance
+ *     GET /api/prices?symbols=OANDA:XAUUSD,FX:EURUSD,...
+ *     Server fetches from Yahoo Finance (solves CORS), returns to client.
+ *     Polled every 30s — no rate limits, no API key.
  *
- * IMPORTANT: This runs ENTIRELY in the browser. No server proxy → 0 server cost.
- * The server-side cron job (/api/cron/check-alerts) separately fetches prices
- * for alert checking when the app is closed (FCM push). That's a different path.
+ * IMPORTANT: Price data is NEVER stored in Supabase. The /api/prices endpoint
+ * is a stateless proxy — it fetches live prices on each request and returns them.
+ * Zero database impact.
  */
 
 import { useEffect, useRef, useState } from "react"
 
 // Symbol → provider mapping
 export const PRICE_SYMBOLS = {
-  // Binance (crypto) — uses Binance symbol format
-  "BINANCE:BTCUSDT": { provider: "binance", binanceSymbol: "btcusdt", label: "BTCUSD", yahooSymbol: null },
-  "BINANCE:ETHUSDT": { provider: "binance", binanceSymbol: "ethusdt", label: "ETHUSD", yahooSymbol: null },
-  // Yahoo Finance (forex/commodities) — uses Yahoo ticker format
-  // GC=F = Gold futures, EURUSD=X = EUR/USD forex, GBPUSD=X = GBP/USD, CL=F = WTI Crude Oil
-  "OANDA:XAUUSD": { provider: "yahoo", binanceSymbol: null, label: "GOLD", yahooSymbol: "GC=F" },
-  "FX:EURUSD": { provider: "yahoo", binanceSymbol: null, label: "EURUSD", yahooSymbol: "EURUSD=X" },
-  "TVC:USOIL": { provider: "yahoo", binanceSymbol: null, label: "WTI OIL", yahooSymbol: "CL=F" },
-  "FX:GBPUSD": { provider: "yahoo", binanceSymbol: null, label: "GBPUSD", yahooSymbol: "GBPUSD=X" },
+  "BINANCE:BTCUSDT": { provider: "binance", label: "BTCUSD" },
+  "BINANCE:ETHUSDT": { provider: "binance", label: "ETHUSD" },
+  "OANDA:XAUUSD": { provider: "yahoo", label: "GOLD" },
+  "FX:EURUSD": { provider: "yahoo", label: "EURUSD" },
+  "TVC:USOIL": { provider: "yahoo", label: "WTI OIL" },
+  "FX:GBPUSD": { provider: "yahoo", label: "GBPUSD" },
 } as const
 
 export type PriceSymbol = keyof typeof PRICE_SYMBOLS
 
 export interface PriceData {
   price: number
-  change: number // percentage change (24h)
+  change: number
   sell: number
   buy: number
   spread: number
@@ -44,7 +42,7 @@ export interface PriceData {
 
 type PriceMap = Record<string, PriceData>
 
-// In-memory price store shared across all hook instances
+// In-memory price store
 let globalPrices: PriceMap = {}
 let globalListeners: Set<() => void> = new Set()
 let binanceWs: WebSocket | null = null
@@ -56,39 +54,40 @@ function notifyListeners() {
 }
 
 /**
- * Fetch price + 24h change from Yahoo Finance.
- * Yahoo Finance is COMPLETELY FREE — no API key, no rate limits.
- * URL: https://query1.finance.yahoo.com/v8/finance/chart/{ticker}?interval=1d&range=2d
- *
- * Returns: { price, change } where change is 24h percentage change.
+ * Fetch forex/gold/oil prices via server proxy (solves CORS).
+ * The server endpoint fetches from Yahoo Finance + Binance REST.
  */
-async function fetchYahooPrice(symbol: string): Promise<{ price: number; change: number } | null> {
+async function fetchYahooPrices() {
   try {
-    const meta = PRICE_SYMBOLS[symbol as PriceSymbol]
-    if (!meta?.yahooSymbol) return null
-    const url = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(meta.yahooSymbol)}?interval=1d&range=2d`
-    const res = await fetch(url, {
-      cache: "no-store",
-      headers: { "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36" },
-    })
-    if (!res.ok) return null
+    const yahooSymbols = Object.keys(PRICE_SYMBOLS).filter(
+      (s) => PRICE_SYMBOLS[s as PriceSymbol].provider === "yahoo"
+    )
+    const res = await fetch(`/api/prices?symbols=${encodeURIComponent(yahooSymbols.join(","))}`, { cache: "no-store" })
+    if (!res.ok) return
     const data = await res.json()
-    const result = data?.chart?.result?.[0]
-    if (!result) return null
-    const price = result?.meta?.regularMarketPrice
-    const prevClose = result?.meta?.chartPreviousClose ?? result?.meta?.previousClose
-    if (typeof price !== "number" || !Number.isFinite(price)) return null
-    const change = prevClose ? ((price - prevClose) / prevClose) * 100 : 0
-    return { price, change }
+    const prices = data?.prices ?? {}
+    for (const [sym, info] of Object.entries(prices)) {
+      const p = info as { price: number; change: number }
+      if (p.price && Number.isFinite(p.price)) {
+        globalPrices[sym] = {
+          price: p.price,
+          change: p.change || 0,
+          sell: p.price,
+          buy: p.price,
+          spread: 0,
+          status: "live",
+          updatedAt: Date.now(),
+        }
+      }
+    }
+    notifyListeners()
   } catch {
-    return null
+    // Network error — will retry on next poll
   }
 }
 
 /**
- * Initialize the Binance WebSocket for BTC + ETH.
- * Single combined stream: wss://stream.binance.com:9443/stream?streams=btcusdt@ticker/ethusdt@ticker
- * @ticker stream provides: current price, 24h change %, bid/ask
+ * Initialize Binance WebSocket for BTC + ETH.
  */
 function initBinanceWebSocket() {
   if (binanceWs) return
@@ -102,15 +101,14 @@ function initBinanceWebSocket() {
         const msg = JSON.parse(event.data)
         const ticker = msg?.data
         if (!ticker) return
-        // Symbol comes as "BTCUSDT" — map back to our format
-        const rawSymbol = ticker.s // e.g. "BTCUSDT"
+        const rawSymbol = ticker.s
         const ourSymbol = rawSymbol === "BTCUSDT" ? "BINANCE:BTCUSDT" : rawSymbol === "ETHUSDT" ? "BINANCE:ETHUSDT" : null
         if (!ourSymbol) return
 
-        const price = parseFloat(ticker.c) // current price
-        const change = parseFloat(ticker.P) // 24h change %
-        const bid = parseFloat(ticker.b) // best bid
-        const ask = parseFloat(ticker.a) // best ask
+        const price = parseFloat(ticker.c)
+        const change = parseFloat(ticker.P)
+        const bid = parseFloat(ticker.b)
+        const ask = parseFloat(ticker.a)
         if (!Number.isFinite(price)) return
 
         globalPrices[ourSymbol] = {
@@ -123,89 +121,35 @@ function initBinanceWebSocket() {
           updatedAt: Date.now(),
         }
         notifyListeners()
-      } catch {
-        // ignore parse errors
-      }
+      } catch {}
     }
 
     ws.onclose = () => {
       binanceWs = null
-      // Reconnect after 5s (Binance sometimes drops connections)
-      setTimeout(() => {
-        if (initStarted && !binanceWs) initBinanceWebSocket()
-      }, 5000)
+      setTimeout(() => { if (initStarted && !binanceWs) initBinanceWebSocket() }, 5000)
     }
 
-    ws.onerror = () => {
-      // Let onclose handle reconnect
-    }
-  } catch {
-    // WebSocket not available (SSR) — ignore
-  }
+    ws.onerror = () => {}
+  } catch {}
 }
 
 /**
- * Initialize Yahoo Finance polling for forex/gold/oil symbols.
- * Polls every 30s — Yahoo Finance has no rate limits for this endpoint.
+ * Initialize Yahoo Finance polling via server proxy.
  */
 function initYahooPolling() {
   if (yahooInterval) return
-  const forexSymbols = Object.keys(PRICE_SYMBOLS).filter(
-    (s) => PRICE_SYMBOLS[s as PriceSymbol].provider === "yahoo"
-  )
-
-  const poll = async () => {
-    const results = await Promise.all(
-      forexSymbols.map(async (sym) => {
-        const data = await fetchYahooPrice(sym)
-        return { sym, data }
-      })
-    )
-    for (const { sym, data } of results) {
-      if (data) {
-        globalPrices[sym] = {
-          price: data.price,
-          change: data.change,
-          sell: data.price,
-          buy: data.price,
-          spread: 0,
-          status: "live",
-          updatedAt: Date.now(),
-        }
-      }
-    }
-    notifyListeners()
-  }
-
-  // Initial fetch immediately, then every 30s
-  poll()
-  yahooInterval = setInterval(poll, 30_000)
+  fetchYahooPrices()
+  yahooInterval = setInterval(fetchYahooPrices, 30_000)
 }
 
-/**
- * Initialize all price streams. Call once on the client.
- * NO API keys needed — Binance WebSocket + Yahoo Finance are both free.
- */
 function ensureInitialized() {
   if (initStarted) return
-  if (typeof window === "undefined") return // SSR guard
+  if (typeof window === "undefined") return
   initStarted = true
-
-  // Binance WebSocket (crypto) — no API key needed
   initBinanceWebSocket()
-
-  // Yahoo Finance polling (forex/gold/oil) — no API key needed, completely free
   initYahooPolling()
 }
 
-/**
- * React hook: subscribe to live prices for all watchlist symbols.
- * Returns a map of symbol → PriceData. Updates in real-time.
- *
- * Usage:
- *   const prices = useLivePrices()
- *   const btcPrice = prices["BINANCE:BTCUSDT"]?.price
- */
 export function useLivePrices(): PriceMap {
   const [, forceUpdate] = useState(0)
 
@@ -213,61 +157,28 @@ export function useLivePrices(): PriceMap {
     ensureInitialized()
     const listener = () => forceUpdate((n) => n + 1)
     globalListeners.add(listener)
-    // Schedule initial update via microtask (avoids setState-in-effect lint)
     if (Object.keys(globalPrices).length > 0) {
       Promise.resolve().then(() => forceUpdate((n) => n + 1))
     }
-    return () => {
-      globalListeners.delete(listener)
-    }
+    return () => { globalListeners.delete(listener) }
   }, [])
 
   return globalPrices
 }
 
-/**
- * Get a single symbol's current price (synchronous — from cache).
- * Returns null if not yet fetched.
- */
 export function getPrice(symbol: string): number | null {
   const p = globalPrices[symbol]
   return p ? p.price : null
 }
 
-/**
- * Fetch a single price on-demand (not cached). Used by alert checker.
- * This is the ONLY function that does a direct fetch (not WebSocket).
- */
 export async function fetchSinglePrice(symbol: string): Promise<number | null> {
-  const meta = PRICE_SYMBOLS[symbol as PriceSymbol]
-  if (!meta) return null
-
-  if (meta.provider === "binance" && meta.binanceSymbol) {
-    try {
-      const res = await fetch(`https://api.binance.com/api/v3/ticker/price?symbol=${meta.binanceSymbol.toUpperCase()}`, { cache: "no-store" })
-      if (!res.ok) return null
-      const data = await res.json()
-      return parseFloat(data?.price) || null
-    } catch {
-      return null
-    }
+  try {
+    const res = await fetch(`/api/prices?symbols=${encodeURIComponent(symbol)}`, { cache: "no-store" })
+    if (!res.ok) return null
+    const data = await res.json()
+    const p = data?.prices?.[symbol]
+    return p?.price && Number.isFinite(p.price) ? p.price : null
+  } catch {
+    return null
   }
-
-  if (meta.provider === "yahoo" && meta.yahooSymbol) {
-    try {
-      const url = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(meta.yahooSymbol)}?interval=1d&range=1d`
-      const res = await fetch(url, {
-        cache: "no-store",
-        headers: { "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36" },
-      })
-      if (!res.ok) return null
-      const data = await res.json()
-      const price = data?.chart?.result?.[0]?.meta?.regularMarketPrice
-      return typeof price === "number" ? price : null
-    } catch {
-      return null
-    }
-  }
-
-  return null
 }
