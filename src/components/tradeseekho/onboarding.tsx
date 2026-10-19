@@ -1,111 +1,165 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useRef } from "react"
 import { motion, AnimatePresence } from "framer-motion"
-import { GraduationCap, BarChart3, Languages, ArrowRight, Check } from "lucide-react"
+import { GraduationCap, TrendingUp, Crown, ArrowRight, Check, X } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { useStore, useT } from "@/lib/store"
+import { useStore } from "@/lib/store"
 
 const SLIDES = [
-  { icon: GraduationCap, key: "onb.slide1Title", body: "onb.slide1Body", color: "var(--brand)" },
-  { icon: BarChart3, key: "onb.slide2Title", body: "onb.slide2Body", color: "#00bfa5" },
-  { icon: Languages, key: "onb.slide3Title", body: "onb.slide3Body", color: "var(--gold)" },
+  {
+    icon: GraduationCap,
+    titleUr: "سیکھو ٹریڈنگ صفر سے",
+    titleEn: "Learn Trading From Zero",
+    subUr: "Beginner سے Advanced تک 43+ Lessons اردو میں",
+    subEn: "43+ Lessons in Urdu — Beginner to Advanced",
+    color: "#00D09C",
+    bg: "from-[#00D09C]/20 to-transparent",
+  },
+  {
+    icon: TrendingUp,
+    titleUr: "Live Signals & Alerts",
+    titleEn: "Live Signals & Alerts",
+    subUr: "BTC، GOLD، EURUSD کے Live Signals اور Price Alerts",
+    subEn: "Live Signals & Price Alerts for BTC, GOLD, EURUSD",
+    color: "#0072FF",
+    bg: "from-[#0072FF]/20 to-transparent",
+  },
+  {
+    icon: Crown,
+    titleUr: "بنو Pro Trader",
+    titleEn: "Become a Pro Trader",
+    subUr: "Quiz پاس کرو، Market Gauge سمجھو اور confident trading شروع کرو",
+    subEn: "Pass quizzes, learn Market Gauge & start confident trading",
+    color: "#F3BA2F",
+    bg: "from-[#F3BA2F]/20 to-transparent",
+  },
 ] as const
 
 export function Onboarding() {
-  const t = useT()
-  const lang = useStore((s) => s.lang)
-  const rtlFont = lang === "ur" ? "font-urdu" : lang === "ar" ? "font-arabic" : ""
   const seen = useStore((s) => s.onboardingSeen)
   const hasHydrated = useStore((s) => s.hasHydrated)
   const setSeen = useStore((s) => s.setOnboardingSeen)
+  const setLoginOpen = useStore((s) => s.setLoginOpen)
   const [i, setI] = useState(0)
   const last = i === SLIDES.length - 1
+  const touchStartX = useRef(0)
 
-  // Never render during SSR / before the persisted store rehydrates — avoids
-  // both a hydration mismatch and a flash for returning users.
   if (!hasHydrated || seen) return null
 
   const close = () => setSeen(true)
-  const next = () => (last ? close() : setI((v) => v + 1))
+
+  // On last screen "Get Started" → mark seen + open login
+  const getStarted = () => {
+    setSeen(true)
+    setLoginOpen(true)
+  }
+
+  const next = () => (last ? getStarted() : setI((v) => v + 1))
   const slide = SLIDES[i]
   const Icon = slide.icon
 
+  // Swipe support
+  const onTouchStart = (e: React.TouchEvent) => {
+    touchStartX.current = e.touches[0].clientX
+  }
+  const onTouchEnd = (e: React.TouchEvent) => {
+    const dx = e.changedTouches[0].clientX - touchStartX.current
+    if (dx < -50 && i < SLIDES.length - 1) setI((v) => v + 1) // swipe left → next
+    if (dx > 50 && i > 0) setI((v) => v - 1) // swipe right → prev
+  }
+
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 p-4 backdrop-blur">
-      <motion.div
-        initial={{ opacity: 0, scale: 0.95, y: 10 }}
-        animate={{ opacity: 1, scale: 1, y: 0 }}
-        className="relative w-full max-w-md overflow-hidden rounded-3xl border border-border bg-card p-6 shadow-2xl sm:p-8"
+    <div className="fixed inset-0 z-[200] flex flex-col bg-[#070F2B]">
+      {/* Skip button — top right */}
+      <button
+        onClick={close}
+        className="absolute right-4 top-4 z-10 inline-flex h-9 items-center gap-1 rounded-full bg-white/5 px-4 text-xs font-bold text-white/60 transition hover:bg-white/10 hover:text-white"
       >
-        <button
-          onClick={close}
-          className="absolute end-4 top-4 z-10 inline-flex h-8 w-8 items-center justify-center rounded-full text-xs font-bold text-muted-foreground hover:bg-muted"
-        >
-          {t("action.skip")}
-        </button>
+        Skip <X className="h-3.5 w-3.5" />
+      </button>
 
-        <div className="hero-grid absolute inset-0 opacity-40" />
-        <div className="relative">
-          <AnimatePresence mode="wait">
-            <motion.div
-              key={i}
-              initial={{ opacity: 0, x: 30 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: -30 }}
-              transition={{ duration: 0.3 }}
+      {/* Background glow */}
+      <div className={`pointer-events-none absolute inset-0 bg-gradient-to-b ${slide.bg}`} />
+      <div
+        className="pointer-events-none absolute left-1/2 top-1/3 h-72 w-72 -translate-x-1/2 rounded-full opacity-10 blur-[80px] transition-colors"
+        style={{ background: slide.color }}
+      />
+
+      {/* Slide content — swipeable */}
+      <div
+        className="flex flex-1 flex-col items-center justify-center px-8"
+        onTouchStart={onTouchStart}
+        onTouchEnd={onTouchEnd}
+      >
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={i}
+            initial={{ opacity: 0, x: 40 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: -40 }}
+            transition={{ duration: 0.3 }}
+            className="flex flex-col items-center text-center"
+          >
+            {/* Icon */}
+            <span
+              className="inline-flex h-24 w-24 items-center justify-center rounded-3xl text-white shadow-2xl"
+              style={{ background: slide.color }}
             >
-              <span
-                className="inline-flex h-16 w-16 items-center justify-center rounded-2xl text-white shadow-lg"
-                style={{ background: slide.color }}
-              >
-                <Icon className="h-8 w-8" />
-              </span>
-              <h2 className={`mt-5 text-2xl font-extrabold tracking-tight text-foreground ${rtlFont}`}>
-                {t(slide.key)}
-              </h2>
-              <p className={`mt-2 text-sm text-muted-foreground ${rtlFont}`}>
-                {t(slide.body)}
-              </p>
-            </motion.div>
-          </AnimatePresence>
+              <Icon className="h-12 w-12" />
+            </span>
 
-          {/* Dots */}
-          <div className="mt-6 flex items-center gap-1.5">
-            {SLIDES.map((_, idx) => (
-              <button
-                key={idx}
-                onClick={() => setI(idx)}
-                className={`h-1.5 rounded-full transition-all ${idx === i ? "w-7 bg-brand" : "w-1.5 bg-muted-foreground/30"}`}
-                aria-label={`Slide ${idx + 1}`}
-              />
-            ))}
-          </div>
+            {/* Title — Urdu + English */}
+            <h2 className="mt-8 text-2xl font-extrabold leading-tight text-white font-urdu">
+              {slide.titleUr}
+            </h2>
+            <p className="mt-1 text-sm font-semibold text-white/40">
+              {slide.titleEn}
+            </p>
 
-          <div className="mt-5 flex items-center justify-between">
+            {/* Subtitle — Urdu + English */}
+            <p className="mt-4 max-w-xs text-sm leading-relaxed text-white/60 font-urdu">
+              {slide.subUr}
+            </p>
+            <p className="mt-1.5 max-w-xs text-xs leading-relaxed text-white/30">
+              {slide.subEn}
+            </p>
+          </motion.div>
+        </AnimatePresence>
+      </div>
+
+      {/* Bottom section: dots + button */}
+      <div className="shrink-0 px-8 pb-10 pt-4">
+        {/* Dots indicator */}
+        <div className="mb-6 flex items-center justify-center gap-2">
+          {SLIDES.map((_, idx) => (
             <button
-              onClick={() => setI(Math.max(0, i - 1))}
-              className={`text-sm font-semibold text-muted-foreground ${i === 0 ? "invisible" : ""}`}
-            >
-              ‹ Prev
-            </button>
-            <Button
-              className="gap-2 bg-brand font-bold text-brand-foreground hover:bg-brand/90"
-              onClick={next}
-            >
-              {last ? (
-                <>
-                  {t("action.finish")} <Check className="h-4 w-4" />
-                </>
-              ) : (
-                <>
-                  {t("action.next")} <ArrowRight className="h-4 w-4 rtl:rotate-180" />
-                </>
-              )}
-            </Button>
-          </div>
+              key={idx}
+              onClick={() => setI(idx)}
+              className={`h-2 rounded-full transition-all ${idx === i ? "w-8" : "w-2 bg-white/20"}`}
+              style={idx === i ? { background: slide.color } : {}}
+              aria-label={`Slide ${idx + 1}`}
+            />
+          ))}
         </div>
-      </motion.div>
+
+        {/* Get Started / Next button */}
+        <Button
+          className="h-13 w-full gap-2 py-3.5 text-base font-bold text-white shadow-lg transition active:scale-[0.98]"
+          style={{ background: slide.color }}
+          onClick={next}
+        >
+          {last ? (
+            <>
+              Get Started <Check className="h-5 w-5" />
+            </>
+          ) : (
+            <>
+              Next <ArrowRight className="h-5 w-5" />
+            </>
+          )}
+        </Button>
+      </div>
     </div>
   )
 }
