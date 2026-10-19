@@ -14,16 +14,17 @@ export async function GET() {
     }
     const user = await withDbRetry(() => db.user.findUnique({
       where: { id: userId },
-      select: { proStatus: true, proExpiresAt: true },
+      select: { proStatus: true, proPlans: true, proExpiresAt: true },
     }))
     const latest = await withDbRetry(() => db.proRequest.findFirst({
       where: { userId },
       orderBy: { createdAt: "desc" },
-      select: { id: true, method: true, status: true, createdAt: true, reviewerNote: true },
+      select: { id: true, method: true, status: true, planType: true, createdAt: true, reviewerNote: true },
     }))
     return NextResponse.json({
       proStatus: user?.proStatus ?? "none",
-      proExpiresAt: user?.proExpiresAt ?? null,
+      proPlans: user?.proPlans ?? "",
+      proExpiredAt: user?.proExpiresAt ?? null,
       latestRequest: latest,
     })
   } catch (e: any) {

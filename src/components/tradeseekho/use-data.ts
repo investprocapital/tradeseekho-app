@@ -185,8 +185,9 @@ export function useUpdateProfile() {
 
 export interface ProMe {
   proStatus: "none" | "pending" | "active"
+  proPlans: string
   proExpiresAt: string | null
-  latestRequest: { id: string; method: string; status: string; createdAt: string; reviewerNote: string | null } | null
+  latestRequest: { id: string; method: string; status: string; planType: string; createdAt: string; reviewerNote: string | null } | null
 }
 
 export function useProMe() {

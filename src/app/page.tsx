@@ -50,7 +50,14 @@ export default function Home() {
   const setProOpen = useStore((s) => s.setProOpen)
   const setProPlan = useStore((s) => s.setProPlan)
   const { data: proMe } = useProMe()
-  const isPro = proMe?.proStatus === "active"
+  // Check SPECIFIC plans — not just proStatus.
+  // proStatus="active" is set when ANY plan is approved, but each feature
+  // should only unlock if the user has the corresponding plan.
+  const hasLessonsPro = proMe?.proPlans?.includes("lessons") ?? false
+  const hasAlertsPro = proMe?.proPlans?.includes("alerts") ?? false
+  const hasSignalsPro = proMe?.proPlans?.includes("signals") ?? false
+  // For lesson/quiz locking: only "lessons" plan unlocks all lessons
+  const isPro = hasLessonsPro
 
   // Save email to localStorage when user is authenticated (for auto-fill next login)
   useEffect(() => {

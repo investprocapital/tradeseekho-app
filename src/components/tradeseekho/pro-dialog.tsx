@@ -74,6 +74,9 @@ export function ProDialog() {
 
   const isPro = proMe?.proStatus === "active"
   const isPending = proMe?.proStatus === "pending"
+  // Check if user already has the specific plan they're trying to buy
+  const currentPlans = proMe?.proPlans ?? ""
+  const alreadyHasThisPlan = proPlan ? currentPlans.includes(proPlan) : false
 
   const usdPrice = settings?.usdPrice ?? 5
   const pkrRate = settings?.pkrRate ?? 280
@@ -234,15 +237,27 @@ export function ProDialog() {
         </DialogHeader>
 
         <div className="p-5">
-          {/* Already Pro */}
-          {isPro ? (
+          {/* Already has this specific plan */}
+          {isPro && alreadyHasThisPlan ? (
             <div className="flex flex-col items-center gap-3 py-8 text-center">
               <span className="inline-flex h-16 w-16 items-center justify-center rounded-full bg-gold/20">
-                <Crown className="h-8 w-8 text-gold" />
+                <CheckCircle2 className="h-8 w-8 text-gold" />
               </span>
-              <h3 className="text-lg font-extrabold text-foreground">You&apos;re Pro! 🎉</h3>
-              <p className="text-sm text-muted-foreground">Thanks for supporting TradeSeekho PK. Enjoy unlimited access.</p>
+              <h3 className="text-lg font-extrabold text-foreground">
+                {proPlan === "alerts" ? "Alerts Plan Active! 🎉" : proPlan === "lessons" ? "Lessons Plan Active! 🎉" : proPlan === "signals" ? "Signals Plan Active! 🎉" : "Plan Active! 🎉"}
+              </h3>
+              <p className="text-sm text-muted-foreground">
+                You already have this plan. Your current plans: {currentPlans.split(",").join(", ")}
+              </p>
+              <p className="text-xs text-muted-foreground">Buy another plan if you want to unlock more features.</p>
             </div>
+          ) : isPro && !alreadyHasThisPlan ? (
+            /* Has SOME pro plan but not THIS one — show payment form for the missing plan */
+            <form onSubmit={onSubmit} className="space-y-4">
+              <div className="flex items-start gap-2 rounded-lg border border-blue-500/40 bg-blue-500/10 p-3 text-xs">
+                <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-blue-500" />
+                <span>You have: <b>{currentPlans.split(",").join(", ")}</b>. Buy the <b>{proPlan}</b> plan to unlock more features.</span>
+              </div>
           ) : isPending ? (
             <div className="flex flex-col items-center gap-3 py-8 text-center">
               <span className="inline-flex h-16 w-16 items-center justify-center rounded-full bg-gold/15">
