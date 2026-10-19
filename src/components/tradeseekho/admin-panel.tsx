@@ -1792,24 +1792,27 @@ function UsersTab() {
                       <Badge variant="outline" className="text-[10px]">Free</Badge>
                     )}
                   </TableCell>
-                  {/* Plan Type — shows which plan(s) the user has */}
-                  <TableCell className="whitespace-nowrap">
+                  {/* Plan Type — color badges: Alerts=Blue, Signals=Green, Lessons=Orange, All=Gold */}
+                  <TableCell className="whitespace-nowrap py-3">
                     {u.proPlanType ? (
-                      <div className="flex flex-wrap gap-1">
-                        {u.proPlanType.split(",").map((plan) => (
-                          <Badge key={plan} className={`text-[9px] ${
-                            plan === "alerts" ? "bg-amber-500/15 text-amber-600"
-                            : plan === "lessons" ? "bg-blue-500/15 text-blue-500"
-                            : plan === "signals" ? "bg-purple-500/15 text-purple-500"
-                            : plan === "all" ? "bg-brand-muted text-brand"
-                            : "bg-muted text-muted-foreground"
-                          }`}>
-                            {plan === "alerts" ? "Alerts" : plan === "lessons" ? "Lessons" : plan === "signals" ? "Signals" : plan === "all" ? "All" : plan}
-                          </Badge>
-                        ))}
+                      <div className="flex flex-wrap gap-1.5">
+                        {u.proPlanType.split(",").map((plan) => {
+                          const styles: Record<string, { bg: string; label: string; icon: string }> = {
+                            alerts:   { bg: "bg-blue-500 text-white",            label: "Alerts",   icon: "🔔" },
+                            signals:  { bg: "bg-emerald-500 text-white",         label: "Signals",  icon: "📡" },
+                            lessons:  { bg: "bg-orange-500 text-white",          label: "Lessons",  icon: "📚" },
+                            all:      { bg: "bg-gradient-to-r from-amber-400 to-yellow-500 text-white", label: "All", icon: "👑" },
+                          }
+                          const s = styles[plan] || { bg: "bg-muted text-muted-foreground", label: plan, icon: "" }
+                          return (
+                            <span key={plan} className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[9px] font-bold shadow-sm ${s.bg}`}>
+                              {s.icon} {s.label}
+                            </span>
+                          )
+                        })}
                       </div>
                     ) : (
-                      <span className="text-xs text-muted-foreground">—</span>
+                      <span className="text-[10px] text-muted-foreground/50">—</span>
                     )}
                   </TableCell>
                   {/* Payment Method */}
