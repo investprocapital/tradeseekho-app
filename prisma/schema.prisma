@@ -7,7 +7,7 @@ generator client {
 }
 
 datasource db {
-  provider  = "sqlite"
+  provider  = "postgresql"
   url       = env("DATABASE_URL")
   directUrl = env("DIRECT_URL")
 }
@@ -145,6 +145,7 @@ model ProRequest {
   screenshotPath String   // CDN URL (Vercel Blob) or base64 data URL
   txHash         String?  // Transaction Hash / TxID (crypto payments) — separate from note
   note           String?  // optional user note (NOT the tx hash — that's in txHash)
+  planType       String   @default("all") // all | lessons | alerts | signals — what the client paid for
   status         String   @default("pending") // pending | approved | rejected
   reviewedAt     DateTime?
   reviewerNote   String?

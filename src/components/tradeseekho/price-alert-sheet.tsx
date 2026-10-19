@@ -54,6 +54,7 @@ const PAIR_ICONS: Record<string, string> = {
 export function PriceAlertSheet() {
   const open = useStore((s) => s.priceAlertsOpen)
   const setOpen = useStore((s) => s.setPriceAlertsOpen)
+  const setProOpen = useStore((s) => s.setProOpen)
   const { data: session } = useSession()
   const qc = useQueryClient()
 
@@ -87,7 +88,10 @@ export function PriceAlertSheet() {
       })
       if (!res.ok) {
         const err = await res.json().catch(() => ({}))
-        throw new Error(err.error || "Failed to set alert")
+        // Throw with the error code so onError can detect "free_limit"
+        const error = new Error(err.error || err.message || "Failed to set alert")
+        ;(error as any).code = err.error
+        throw error
       }
       return res.json()
     },
@@ -96,7 +100,16 @@ export function PriceAlertSheet() {
       toast.success("Price alert set! 🔔")
       setTargetPrice("")
     },
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: Error) => {
+      // Free user limit reached → open Pro dialog instead of showing error
+      if ((e as any).code === "free_limit") {
+        setOpen(false)
+        setProOpen(true)
+        toast.info("Free users get 1 alert only. Upgrade to Pro for unlimited alerts! 🔔")
+      } else {
+        toast.error(e.message)
+      }
+    },
   })
 
   const deleteMutation = useMutation({

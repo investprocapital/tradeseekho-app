@@ -1258,10 +1258,24 @@ function ProRequestsTab() {
                     }>{r.status}</Badge>
                   </div>
 
-                  {/* ─── Payment Method + Amount ─── */}
+                  {/* ─── Payment Method + Amount + Plan Type ─── */}
                   <div className="grid grid-cols-2 gap-2 text-xs">
                     <div><span className="text-muted-foreground">Method:</span> <span className="font-bold">{r.method}</span></div>
                     <div><span className="text-muted-foreground">Amount:</span> <span className="font-bold">Rs {r.amount} (${Math.round(r.amount / 280)})*</span></div>
+                  </div>
+                  {/* Plan Type badge — shows what the client paid for:
+                      all = full Pro | lessons = lessons only | alerts = alerts only | signals = signals only */}
+                  <div className="flex items-center gap-2">
+                    <span className="text-[10px] font-bold uppercase tracking-wide text-muted-foreground">Plan:</span>
+                    <Badge className={
+                      r.planType === "all" ? "bg-brand-muted text-brand"
+                      : r.planType === "lessons" ? "bg-blue-500/15 text-blue-500"
+                      : r.planType === "alerts" ? "bg-amber-500/15 text-amber-600"
+                      : r.planType === "signals" ? "bg-purple-500/15 text-purple-500"
+                      : "bg-muted text-muted-foreground"
+                    }>
+                      {r.planType === "all" ? "Full Pro (All)" : r.planType === "lessons" ? "Lessons Only" : r.planType === "alerts" ? "Alerts Only" : r.planType === "signals" ? "Signals Only" : r.planType}
+                    </Badge>
                   </div>
 
                   {/* ─── Tx Hash / TxID (crypto only) — with Copy + Explorer link ─── */}
@@ -1756,7 +1770,7 @@ function UsersTab() {
                 <TableHead className="hidden md:table-cell">Auth</TableHead>
                 <TableHead className="hidden md:table-cell">Password (hash)</TableHead>
                 <TableHead>Pro Status</TableHead>
-                <TableHead className="hidden lg:table-cell">Pro Method / TID</TableHead>
+                <TableHead className="hidden lg:table-cell">Plan / Payment</TableHead>
                 <TableHead className="hidden md:table-cell">Joined</TableHead>
                 <TableHead>Quiz</TableHead>
                 <TableHead className="hidden lg:table-cell">Device</TableHead>
@@ -1783,7 +1797,22 @@ function UsersTab() {
                     )}
                   </TableCell>
                   <TableCell className="hidden lg:table-cell text-xs text-muted-foreground whitespace-nowrap">
-                    {u.proMethod ? `${u.proMethod}${u.proNote ? " · " + u.proNote.slice(0, 20) : ""}` : "-"}
+                    {u.proMethod ? (
+                      <div className="flex flex-col gap-0.5">
+                        <span className="font-bold">{u.proMethod}</span>
+                        {u.proPlanType && (
+                          <span className={`text-[9px] font-bold ${
+                            u.proPlanType === "all" ? "text-brand"
+                            : u.proPlanType === "lessons" ? "text-blue-500"
+                            : u.proPlanType === "alerts" ? "text-amber-600"
+                            : u.proPlanType === "signals" ? "text-purple-500"
+                            : "text-muted-foreground"
+                          }`}>
+                            {u.proPlanType === "all" ? "Full Pro" : u.proPlanType === "lessons" ? "Lessons" : u.proPlanType === "alerts" ? "Alerts" : u.proPlanType === "signals" ? "Signals" : u.proPlanType}
+                          </span>
+                        )}
+                      </div>
+                    ) : "-"}
                   </TableCell>
                   <TableCell className="hidden md:table-cell text-xs text-muted-foreground whitespace-nowrap">
                     {new Date(u.joinedAt).toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" })}

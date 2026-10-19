@@ -1,20 +1,19 @@
 import { NextResponse } from "next/server"
 import { db } from "@/lib/db"
-import { getCurrentUserId } from "@/lib/auth"
+import { getCurrentUserId, isUserPro } from "@/lib/auth"
+import { withDbRetry } from "@/lib/db-retry"
 
 export const dynamic = "force-dynamic"
 
 // GET /api/price-alerts — list the user's price alerts
-// Uses getCurrentUserId which falls back to "local-learner" for anonymous users.
-// This ensures alerts work even without sign-in (stored per device).
 export async function GET() {
   const userId = await getCurrentUserId()
 
-  const alerts = await db.priceAlert.findMany({
+  const alerts = await withDbRetry(() => db.priceAlert.findMany({
     where: { userId },
     orderBy: { createdAt: "desc" },
     take: 50,
-  })
+  }))
 
   return NextResponse.json({
     alerts: alerts.map((a) => ({
@@ -31,40 +30,59 @@ export async function GET() {
 
 // POST /api/price-alerts — create a new price alert
 // Body: { symbol: string, targetPrice: number, direction?: "above" | "below" }
+//
+// FREE USER LIMIT: Only 1 active (untriggered) alert allowed.
+// If user tries to set a 2nd alert → returns 403 "free_limit" → client shows Pro popup.
+// Pro users (alerts or all plan) get unlimited alerts.
 export async function POST(req: Request) {
-  const userId = await getCurrentUserId()
+  try {
+    const userId = await getCurrentUserId()
 
-  const body = await req.json()
-  const { symbol, targetPrice, direction } = body
-  if (!symbol || typeof targetPrice !== "number" || !Number.isFinite(targetPrice)) {
-    return NextResponse.json({ error: "symbol and targetPrice required" }, { status: 400 })
+    const body = await req.json()
+    const { symbol, targetPrice, direction } = body
+    if (!symbol || typeof targetPrice !== "number" || !Number.isFinite(targetPrice)) {
+      return NextResponse.json({ error: "symbol and targetPrice required" }, { status: 400 })
+    }
+
+    // Check if user is Pro (alerts plan or all plan)
+    const isPro = await isUserPro()
+
+    if (!isPro) {
+      // FREE USER: count active (untriggered) alerts — limit to 1
+      const activeCount = await withDbRetry(() => db.priceAlert.count({
+        where: { userId, triggered: false },
+      }))
+      if (activeCount >= 1) {
+        return NextResponse.json({
+          error: "free_limit",
+          message: "Free users can only set 1 active alert. Upgrade to Pro for unlimited alerts.",
+        }, { status: 403 })
+      }
+    }
+
+    const alert = await withDbRetry(() => db.priceAlert.create({
+      data: {
+        userId,
+        symbol,
+        targetPrice,
+        direction: direction === "below" ? "below" : "above",
+      },
+    }))
+
+    return NextResponse.json({
+      ok: true,
+      alert: {
+        id: alert.id,
+        symbol: alert.symbol,
+        targetPrice: alert.targetPrice,
+        direction: alert.direction,
+        triggered: alert.triggered,
+      },
+    })
+  } catch (e: any) {
+    console.error("[price-alerts POST] error:", e?.message)
+    return NextResponse.json({ error: "failed", message: e?.message }, { status: 500 })
   }
-
-  // Limit: max 20 alerts per user
-  const count = await db.priceAlert.count({ where: { userId } })
-  if (count >= 20) {
-    return NextResponse.json({ error: "Maximum 20 alerts allowed. Delete some first." }, { status: 400 })
-  }
-
-  const alert = await db.priceAlert.create({
-    data: {
-      userId,
-      symbol,
-      targetPrice,
-      direction: direction === "below" ? "below" : "above",
-    },
-  })
-
-  return NextResponse.json({
-    ok: true,
-    alert: {
-      id: alert.id,
-      symbol: alert.symbol,
-      targetPrice: alert.targetPrice,
-      direction: alert.direction,
-      triggered: alert.triggered,
-    },
-  })
 }
 
 // DELETE /api/price-alerts?id=X — delete a price alert

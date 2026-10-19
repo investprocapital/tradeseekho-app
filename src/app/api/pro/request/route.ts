@@ -26,11 +26,16 @@ export async function POST(req: Request) {
   const amount = Number(form.get("amount") || 0)
   const txHash = String(form.get("txHash") || form.get("note") || "").trim().slice(0, 100)
   const note = String(form.get("note") || "").trim().slice(0, 300)
+  const planType = String(form.get("planType") || "all") // all | lessons | alerts | signals
   const file = form.get("file")
 
   const VALID_METHODS = ["JazzCash", "Easypaisa", "Card", "SadaPay", "USDT", "USDT_BEP20", "Payoneer"]
   if (!VALID_METHODS.includes(method)) {
     return NextResponse.json({ error: "bad_method" }, { status: 400 })
+  }
+  const VALID_PLANS = ["all", "lessons", "alerts", "signals"]
+  if (!VALID_PLANS.includes(planType)) {
+    return NextResponse.json({ error: "bad_plan" }, { status: 400 })
   }
 
   // For crypto methods: txHash is mandatory + must be valid
@@ -113,6 +118,7 @@ export async function POST(req: Request) {
       amount,
       txHash: finalTxHash,
       note: note || null,
+      planType,
       screenshotPath,
       status: "pending",
     },

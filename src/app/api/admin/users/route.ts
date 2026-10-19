@@ -71,6 +71,7 @@ export async function GET(req: Request) {
     proStatus: u.proStatus,
     proMethod: u.proRequests[0]?.method || null,
     proNote: u.proRequests[0]?.note || null,
+    proPlanType: u.proRequests[0]?.planType || null,
     joinedAt: u.createdAt.toISOString(),
     passedQuizzes: u._count.progress,
     totalLessons,

@@ -210,6 +210,7 @@ export interface AdminProRequest {
   screenshotPath: string
   txHash: string | null
   note: string | null
+  planType: string
   status: string
   reviewerNote: string | null
   createdAt: string
@@ -342,6 +343,7 @@ export interface AdminUser {
   proStatus: string
   proMethod: string | null
   proNote: string | null
+  proPlanType: string | null
   joinedAt: string
   passedQuizzes: number
   totalLessons: number
