@@ -258,6 +258,70 @@ export function ProDialog() {
                 <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-blue-500" />
                 <span>You have: <b>{currentPlans.split(",").join(", ")}</b>. Buy the <b>{proPlan}</b> plan to unlock more features.</span>
               </div>
+              {/* Sign-in gate */}
+              {!session?.user && (
+                <div className="flex items-start gap-2 rounded-lg border border-gold/40 bg-gold/10 p-3 text-xs">
+                  <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-gold" />
+                  <span>Please <button type="button" className="font-bold text-gold underline" onClick={() => { setOpen(false); setLoginOpen(true) }}>sign in</button> first so we can link your payment to your account.</span>
+                </div>
+              )}
+              {/* Price */}
+              <div className="rounded-xl border border-border bg-card p-3 text-center">
+                <div className="text-3xl font-extrabold text-foreground">${usdPrice}<span className="text-sm font-medium text-muted-foreground"> USD</span></div>
+                <div className="mt-1 text-sm font-bold text-brand">≈ Rs {pkrPrice} PKR</div>
+                <p className="mt-1 text-[11px] text-muted-foreground">One-time payment • Lifetime access • No auto-renewal</p>
+              </div>
+              {/* Method selection */}
+              <div>
+                <Label className="mb-2 block text-xs font-bold uppercase tracking-wide text-muted-foreground">1. Choose payment method</Label>
+                <div className={`grid gap-2 ${methods.length > 2 ? "grid-cols-1" : "grid-cols-2"}`}>
+                  {methods.map((m) => {
+                    const Icon = m.icon
+                    return (
+                      <button key={m.id} type="button" onClick={() => setMethod(m.id)}
+                        className={`flex items-center gap-2 rounded-xl border-2 p-3 text-start transition ${method === m.id ? "border-brand bg-brand-muted/40" : "border-border hover:bg-muted/40"}`}>
+                        <span className={`inline-flex h-8 w-8 items-center justify-center rounded-lg text-white ${m.accent}`}><Icon className="h-4 w-4" /></span>
+                        <div><div className="text-sm font-bold">{m.label}</div>{m.subtitle ? <div className="text-[9px] text-muted-foreground">{m.subtitle}</div> : <div className="text-[10px] text-muted-foreground">Tap to select</div>}</div>
+                      </button>
+                    )
+                  })}
+                </div>
+              </div>
+              {/* Screenshot upload */}
+              {method !== "Card" && (
+                <div>
+                  <Label className={`mb-2 block text-xs font-bold uppercase tracking-wide text-muted-foreground ${rtlFont}`}>2. {t("pro.uploadScreenshot")}</Label>
+                  <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={onFile} />
+                  {filePreview ? (
+                    <div className="relative overflow-hidden rounded-xl border border-border">
+                      <img src={filePreview} alt="screenshot" className="h-40 w-full object-cover" />
+                      <button type="button" onClick={() => { setFile(null); setFilePreview(null) }} className="absolute right-2 top-2 rounded-full bg-foreground/80 px-2 py-0.5 text-xs font-bold text-background">Change</button>
+                    </div>
+                  ) : (
+                    <button type="button" onClick={() => fileRef.current?.click()} className="flex w-full flex-col items-center gap-2 rounded-xl border-2 border-dashed border-border bg-muted/30 py-6 text-center transition hover:border-brand/50 hover:bg-muted/50">
+                      <ImageIcon className="h-6 w-6 text-muted-foreground" />
+                      <span className={`text-sm font-bold ${rtlFont}`}>{t("pro.tapToUpload")}</span>
+                      <span className="text-[10px] text-muted-foreground">JPG/PNG • max 4MB</span>
+                    </button>
+                  )}
+                </div>
+              )}
+              {/* Note / TxID */}
+              <div className="space-y-1.5">
+                <Label htmlFor="note" className={rtlFont}>
+                  {method === "Payoneer" ? "Payoneer Transaction ID" : t("pro.txIdNote")}
+                  {(method === "USDT" || method === "USDT_BEP20" || method === "Payoneer") && <span className="font-bold text-destructive">{t("pro.txIdRequired")}</span>}
+                </Label>
+                <Textarea id="note" value={note} onChange={(e) => setNote(e.target.value)} rows={2}
+                  placeholder={method === "Payoneer" ? "Enter your Payoneer Transaction ID here (required)" : (method === "USDT" || method === "USDT_BEP20") ? t("pro.txIdPlaceholderUsdt") : t("pro.txIdPlaceholderOther")}
+                  className="text-sm" />
+              </div>
+              {err && <p className="flex items-center gap-1.5 text-xs font-semibold text-destructive"><AlertCircle className="h-3.5 w-3.5" /> {err}</p>}
+              <Button type="submit" className="h-12 w-full gap-2 bg-brand font-bold text-brand-foreground hover:bg-brand/90" disabled={submit.isPending}>
+                {submit.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />} Submit for approval
+              </Button>
+              <p className="text-center text-[10px] text-muted-foreground">Pro activates after admin approves your payment (usually within 24h).</p>
+            </form>
           ) : isPending ? (
             <div className="flex flex-col items-center gap-3 py-8 text-center">
               <span className="inline-flex h-16 w-16 items-center justify-center rounded-full bg-gold/15">
