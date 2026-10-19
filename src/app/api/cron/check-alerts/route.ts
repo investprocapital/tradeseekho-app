@@ -35,12 +35,12 @@ const BINANCE_MAP: Record<string, string> = {
   "BINANCE:ETHUSDT": "ETHUSDT",
 }
 
-// TwelveData symbol → our symbol format
-const TWELVEDATA_MAP: Record<string, string> = {
-  "OANDA:XAUUSD": "XAU/USD",
-  "FX:EURUSD": "EUR/USD",
-  "TVC:USOIL": "WTI",
-  "FX:GBPUSD": "GBP/USD",
+// Yahoo Finance ticker → our symbol format (FREE, no API key needed)
+const YAHOO_MAP: Record<string, string> = {
+  "OANDA:XAUUSD": "GC=F",
+  "FX:EURUSD": "EURUSD=X",
+  "TVC:USOIL": "CL=F",
+  "FX:GBPUSD": "GBPUSD=X",
 }
 
 async function fetchBinancePrice(binanceSymbol: string): Promise<number | null> {
@@ -57,18 +57,19 @@ async function fetchBinancePrice(binanceSymbol: string): Promise<number | null> 
   }
 }
 
-async function fetchTwelveDataPrice(tdSymbol: string): Promise<number | null> {
-  const apiKey = process.env.TWELVEDATA_API_KEY
-  if (!apiKey) return null
+// Yahoo Finance price fetch — FREE, no API key, no rate limits.
+async function fetchYahooPrice(yahooSymbol: string): Promise<number | null> {
   try {
-    const res = await fetch(`https://api.twelvedata.com/price?symbol=${encodeURIComponent(tdSymbol)}&apikey=${apiKey}`, {
+    const url = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(yahooSymbol)}?interval=1d&range=1d`
+    const res = await fetch(url, {
       cache: "no-store",
       signal: AbortSignal.timeout(8000),
+      headers: { "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36" },
     })
     if (!res.ok) return null
     const data = await res.json()
-    if (data?.status === "error") return null
-    return parseFloat(data?.price) || null
+    const price = data?.chart?.result?.[0]?.meta?.regularMarketPrice
+    return typeof price === "number" ? price : null
   } catch {
     return null
   }
@@ -145,8 +146,8 @@ export async function GET(req: Request) {
         let price: number | null = null
         if (BINANCE_MAP[sym]) {
           price = await fetchBinancePrice(BINANCE_MAP[sym])
-        } else if (TWELVEDATA_MAP[sym]) {
-          price = await fetchTwelveDataPrice(TWELVEDATA_MAP[sym])
+        } else if (YAHOO_MAP[sym]) {
+          price = await fetchYahooPrice(YAHOO_MAP[sym])
         }
         if (price !== null) prices.set(sym, price)
       })

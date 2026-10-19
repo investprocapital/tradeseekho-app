@@ -1,14 +1,14 @@
 "use client"
 
 /**
- * Client-side price fetcher — ZERO server cost.
+ * Client-side price fetcher — ZERO server cost, NO API keys needed.
  *
  * Sources:
  *   - Crypto (BTC, ETH): Binance public WebSocket (free, real-time, no API key)
  *     wss://stream.binance.com:9443/ws/btcusdt@ticker
- *   - Forex/Gold/Oil (XAUUSD, EURUSD, WTI): TwelveData REST API (free tier 800 req/day)
- *     https://api.twelvedata.com/price?symbol=XAU/USD&apikey=xxx
- *     Polled every 30s (800/day ÷ 24h × 60min = ~1 req/min per symbol, well under limit)
+ *   - Forex/Gold/Oil (XAUUSD, EURUSD, GBPUSD, WTI): Yahoo Finance REST (FREE, no key)
+ *     https://query1.finance.yahoo.com/v8/finance/chart/GC=F?interval=1d&range=2d
+ *     Polled every 30s — no rate limits, no API key, completely free.
  *
  * IMPORTANT: This runs ENTIRELY in the browser. No server proxy → 0 server cost.
  * The server-side cron job (/api/cron/check-alerts) separately fetches prices
@@ -20,13 +20,14 @@ import { useEffect, useRef, useState } from "react"
 // Symbol → provider mapping
 export const PRICE_SYMBOLS = {
   // Binance (crypto) — uses Binance symbol format
-  "BINANCE:BTCUSDT": { provider: "binance", binanceSymbol: "btcusdt", label: "BTCUSD", twelveDataSymbol: null },
-  "BINANCE:ETHUSDT": { provider: "binance", binanceSymbol: "ethusdt", label: "ETHUSD", twelveDataSymbol: null },
-  // TwelveData (forex/commodities) — uses TwelveData symbol format
-  "OANDA:XAUUSD": { provider: "twelvedata", binanceSymbol: null, label: "GOLD", twelveDataSymbol: "XAU/USD" },
-  "FX:EURUSD": { provider: "twelvedata", binanceSymbol: null, label: "EURUSD", twelveDataSymbol: "EUR/USD" },
-  "TVC:USOIL": { provider: "twelvedata", binanceSymbol: null, label: "WTI OIL", twelveDataSymbol: "WTI" },
-  "FX:GBPUSD": { provider: "twelvedata", binanceSymbol: null, label: "GBPUSD", twelveDataSymbol: "GBP/USD" },
+  "BINANCE:BTCUSDT": { provider: "binance", binanceSymbol: "btcusdt", label: "BTCUSD", yahooSymbol: null },
+  "BINANCE:ETHUSDT": { provider: "binance", binanceSymbol: "ethusdt", label: "ETHUSD", yahooSymbol: null },
+  // Yahoo Finance (forex/commodities) — uses Yahoo ticker format
+  // GC=F = Gold futures, EURUSD=X = EUR/USD forex, GBPUSD=X = GBP/USD, CL=F = WTI Crude Oil
+  "OANDA:XAUUSD": { provider: "yahoo", binanceSymbol: null, label: "GOLD", yahooSymbol: "GC=F" },
+  "FX:EURUSD": { provider: "yahoo", binanceSymbol: null, label: "EURUSD", yahooSymbol: "EURUSD=X" },
+  "TVC:USOIL": { provider: "yahoo", binanceSymbol: null, label: "WTI OIL", yahooSymbol: "CL=F" },
+  "FX:GBPUSD": { provider: "yahoo", binanceSymbol: null, label: "GBPUSD", yahooSymbol: "GBPUSD=X" },
 } as const
 
 export type PriceSymbol = keyof typeof PRICE_SYMBOLS
@@ -47,7 +48,7 @@ type PriceMap = Record<string, PriceData>
 let globalPrices: PriceMap = {}
 let globalListeners: Set<() => void> = new Set()
 let binanceWs: WebSocket | null = null
-let twelvedataInterval: ReturnType<typeof setInterval> | null = null
+let yahooInterval: ReturnType<typeof setInterval> | null = null
 let initStarted = false
 
 function notifyListeners() {
@@ -55,28 +56,30 @@ function notifyListeners() {
 }
 
 /**
- * Fetch a single price from TwelveData REST API.
- * Free tier: 800 requests/day. With 4 symbols × every 30s = 11,520 req/day = WAY over limit.
- * So we poll every 60s (4 × 24 × 60 = 5,760/day) — still over but close.
- * Better: poll every 2 min = 2,880/day (under limit, leaves headroom).
+ * Fetch price + 24h change from Yahoo Finance.
+ * Yahoo Finance is COMPLETELY FREE — no API key, no rate limits.
+ * URL: https://query1.finance.yahoo.com/v8/finance/chart/{ticker}?interval=1d&range=2d
+ *
+ * Returns: { price, change } where change is 24h percentage change.
  */
-async function fetchTwelveDataPrice(symbol: string, apiKey: string): Promise<{ price: number; change: number } | null> {
+async function fetchYahooPrice(symbol: string): Promise<{ price: number; change: number } | null> {
   try {
     const meta = PRICE_SYMBOLS[symbol as PriceSymbol]
-    if (!meta?.twelveDataSymbol) return null
-    const url = `https://api.twelvedata.com/price?symbol=${encodeURIComponent(meta.twelveDataSymbol)}&apikey=${apiKey}`
-    const res = await fetch(url, { cache: "no-store" })
+    if (!meta?.yahooSymbol) return null
+    const url = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(meta.yahooSymbol)}?interval=1d&range=2d`
+    const res = await fetch(url, {
+      cache: "no-store",
+      headers: { "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36" },
+    })
     if (!res.ok) return null
     const data = await res.json()
-    if (data?.status === "error") {
-      console.warn(`[twelvedata] ${symbol}:`, data?.message)
-      return null
-    }
-    const price = parseFloat(data?.price)
-    if (!Number.isFinite(price)) return null
-    // TwelveData /price endpoint doesn't return change; fetch separately if needed
-    // For now, change = 0 (UI can show "live" without change %)
-    return { price, change: 0 }
+    const result = data?.chart?.result?.[0]
+    if (!result) return null
+    const price = result?.meta?.regularMarketPrice
+    const prevClose = result?.meta?.chartPreviousClose ?? result?.meta?.previousClose
+    if (typeof price !== "number" || !Number.isFinite(price)) return null
+    const change = prevClose ? ((price - prevClose) / prevClose) * 100 : 0
+    return { price, change }
   } catch {
     return null
   }
@@ -142,19 +145,19 @@ function initBinanceWebSocket() {
 }
 
 /**
- * Initialize TwelveData polling for forex/gold/oil symbols.
- * Polls every 120s (2 min) to stay well under the 800 req/day free tier limit.
+ * Initialize Yahoo Finance polling for forex/gold/oil symbols.
+ * Polls every 30s — Yahoo Finance has no rate limits for this endpoint.
  */
-function initTwelveDataPolling(apiKey: string) {
-  if (twelvedataInterval) return
+function initYahooPolling() {
+  if (yahooInterval) return
   const forexSymbols = Object.keys(PRICE_SYMBOLS).filter(
-    (s) => PRICE_SYMBOLS[s as PriceSymbol].provider === "twelvedata"
+    (s) => PRICE_SYMBOLS[s as PriceSymbol].provider === "yahoo"
   )
 
   const poll = async () => {
     const results = await Promise.all(
       forexSymbols.map(async (sym) => {
-        const data = await fetchTwelveDataPrice(sym, apiKey)
+        const data = await fetchYahooPrice(sym)
         return { sym, data }
       })
     )
@@ -174,14 +177,14 @@ function initTwelveDataPolling(apiKey: string) {
     notifyListeners()
   }
 
-  // Initial fetch immediately, then every 120s
+  // Initial fetch immediately, then every 30s
   poll()
-  twelvedataInterval = setInterval(poll, 120_000)
+  yahooInterval = setInterval(poll, 30_000)
 }
 
 /**
  * Initialize all price streams. Call once on the client.
- * TWELVEDATA_API_KEY should be exposed to the client via NEXT_PUBLIC_ prefix.
+ * NO API keys needed — Binance WebSocket + Yahoo Finance are both free.
  */
 function ensureInitialized() {
   if (initStarted) return
@@ -191,13 +194,8 @@ function ensureInitialized() {
   // Binance WebSocket (crypto) — no API key needed
   initBinanceWebSocket()
 
-  // TwelveData polling (forex/gold/oil) — needs public API key
-  const tdKey = process.env.NEXT_PUBLIC_TWELVEDATA_API_KEY
-  if (tdKey) {
-    initTwelveDataPolling(tdKey)
-  } else {
-    console.warn("[client-prices] NEXT_PUBLIC_TWELVEDATA_API_KEY not set — forex/gold/oil prices will be offline. Get a free key at https://twelvedata.com")
-  }
+  // Yahoo Finance polling (forex/gold/oil) — no API key needed, completely free
+  initYahooPolling()
 }
 
 /**
@@ -240,7 +238,7 @@ export function getPrice(symbol: string): number | null {
  * Fetch a single price on-demand (not cached). Used by alert checker.
  * This is the ONLY function that does a direct fetch (not WebSocket).
  */
-export async function fetchSinglePrice(symbol: string, apiKey?: string): Promise<number | null> {
+export async function fetchSinglePrice(symbol: string): Promise<number | null> {
   const meta = PRICE_SYMBOLS[symbol as PriceSymbol]
   if (!meta) return null
 
@@ -255,15 +253,17 @@ export async function fetchSinglePrice(symbol: string, apiKey?: string): Promise
     }
   }
 
-  if (meta.provider === "twelvedata" && meta.twelveDataSymbol) {
-    const key = apiKey || process.env.NEXT_PUBLIC_TWELVEDATA_API_KEY
-    if (!key) return null
+  if (meta.provider === "yahoo" && meta.yahooSymbol) {
     try {
-      const res = await fetch(`https://api.twelvedata.com/price?symbol=${encodeURIComponent(meta.twelveDataSymbol)}&apikey=${key}`, { cache: "no-store" })
+      const url = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(meta.yahooSymbol)}?interval=1d&range=1d`
+      const res = await fetch(url, {
+        cache: "no-store",
+        headers: { "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36" },
+      })
       if (!res.ok) return null
       const data = await res.json()
-      if (data?.status === "error") return null
-      return parseFloat(data?.price) || null
+      const price = data?.chart?.result?.[0]?.meta?.regularMarketPrice
+      return typeof price === "number" ? price : null
     } catch {
       return null
     }
