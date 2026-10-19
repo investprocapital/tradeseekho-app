@@ -121,20 +121,43 @@ export function AdminPanel() {
       </div>
 
       <Tabs value={adminTab} onValueChange={(v) => setAdminTab(v as any)} className="mt-4">
-        <div className="overflow-x-auto pb-1">
-          <TabsList className="flex w-max gap-1">
-            <TabsTrigger value="dashboard" className="gap-1 whitespace-nowrap"><BarChart3 className="h-4 w-4" /><span className="hidden xs:inline sm:inline">Dashboard</span></TabsTrigger>
-            <TabsTrigger value="users" className="gap-1 whitespace-nowrap"><Users className="h-4 w-4" /><span className="hidden xs:inline sm:inline">Users</span></TabsTrigger>
-            <TabsTrigger value="lessons" className="gap-1 whitespace-nowrap"><BookOpen className="h-4 w-4" /><span className="hidden xs:inline sm:inline">Lessons</span></TabsTrigger>
-            <TabsTrigger value="quizzes" className="gap-1 whitespace-nowrap"><BarChart3 className="h-4 w-4" /><span className="hidden xs:inline sm:inline">Quizzes</span></TabsTrigger>
-            <TabsTrigger value="ads" className="gap-1 whitespace-nowrap"><Megaphone className="h-4 w-4" /><span className="hidden xs:inline sm:inline">Ads</span></TabsTrigger>
-            <TabsTrigger value="broker-ads" className="gap-1 whitespace-nowrap"><Megaphone className="h-4 w-4" /><span className="hidden xs:inline sm:inline">Broker Ads</span></TabsTrigger>
-            <TabsTrigger value="payment" className="gap-1 whitespace-nowrap"><CreditCard className="h-4 w-4" /><span className="hidden xs:inline sm:inline">Payment</span></TabsTrigger>
-            <TabsTrigger value="pages" className="gap-1 whitespace-nowrap"><BookOpen className="h-4 w-4" /><span className="hidden xs:inline sm:inline">Pages</span></TabsTrigger>
-            <TabsTrigger value="signals" className="gap-1 whitespace-nowrap"><TrendingUp className="h-4 w-4" /><span className="hidden xs:inline sm:inline">Signals</span></TabsTrigger>
-            <TabsTrigger value="pro" className="gap-1 whitespace-nowrap"><Crown className="h-4 w-4" /><span className="hidden xs:inline sm:inline">Pro</span></TabsTrigger>
-            <TabsTrigger value="comments" className="gap-1 whitespace-nowrap"><MessageSquare className="h-4 w-4" /><span className="hidden xs:inline sm:inline">Comments</span></TabsTrigger>
-          </TabsList>
+        {/* Professional card-based navigation — replaces small icon tabs.
+            Each card: colored icon + label, full-width, grid layout. */}
+        <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4">
+          {[
+            { id: "dashboard", label: "Dashboard", icon: BarChart3, color: "bg-blue-500" },
+            { id: "users", label: "All Clients", icon: Users, color: "bg-emerald-500" },
+            { id: "lessons", label: "Lessons", icon: BookOpen, color: "bg-purple-500" },
+            { id: "quizzes", label: "Quizzes", icon: BarChart3, color: "bg-pink-500" },
+            { id: "signals", label: "Signals", icon: TrendingUp, color: "bg-cyan-500" },
+            { id: "pro", label: "Pro Payments", icon: Crown, color: "bg-amber-500" },
+            { id: "ads", label: "Ad Settings", icon: Megaphone, color: "bg-orange-500" },
+            { id: "broker-ads", label: "Broker Ads", icon: Megaphone, color: "bg-teal-500" },
+            { id: "payment", label: "Payment Settings", icon: CreditCard, color: "bg-indigo-500" },
+            { id: "pages", label: "Pages", icon: BookOpen, color: "bg-rose-500" },
+            { id: "comments", label: "Comments", icon: MessageSquare, color: "bg-sky-500" },
+          ].map((tab) => {
+            const Icon = tab.icon
+            const isActive = adminTab === tab.id
+            return (
+              <button
+                key={tab.id}
+                onClick={() => setAdminTab(tab.id as any)}
+                className={`flex items-center gap-2.5 rounded-xl border-2 p-3 text-start transition ${
+                  isActive
+                    ? "border-brand bg-brand-muted/30 shadow-sm"
+                    : "border-border bg-card hover:border-brand/40 hover:bg-muted/30"
+                }`}
+              >
+                <span className={`inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-white shadow-sm ${tab.color}`}>
+                  <Icon className="h-4 w-4" />
+                </span>
+                <span className={`text-xs font-bold ${isActive ? "text-brand" : "text-foreground"}`}>
+                  {tab.label}
+                </span>
+              </button>
+            )
+          })}
         </div>
         <TabsContent value="dashboard" className="mt-5"><DashboardTab /></TabsContent>
         <TabsContent value="users" className="mt-5"><UsersTab /></TabsContent>
