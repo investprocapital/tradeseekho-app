@@ -1760,9 +1760,9 @@ function UsersTab() {
       </div>
 
       {/* Users Table — horizontal scroll on mobile so all columns visible */}
-      <Card>
-        <div className="max-h-[60vh] overflow-auto overscroll-contain" style={{ WebkitOverflowScrolling: "touch" }}>
-          <Table className="min-w-[900px]">
+      <Card className="overflow-visible">
+        <div className="max-h-[60vh] w-full overflow-x-auto overflow-y-auto overscroll-contain" style={{ WebkitOverflowScrolling: "touch", touchAction: "pan-x pan-y" }}>
+          <table className="w-max min-w-[700px] border-collapse text-left text-xs">
             <TableHeader>
               <TableRow>
                 <TableHead>Email</TableHead>
@@ -1823,7 +1823,7 @@ function UsersTab() {
                 </TableRow>
               ))}
             </TableBody>
-          </Table>
+          </table>
         </div>
       </Card>
     </div>
