@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect } from "react"
+import { useEffect, useState, useRef } from "react"
 import { useSession } from "next-auth/react"
 import { useQuery } from "@tanstack/react-query"
 import { motion } from "framer-motion"
@@ -244,6 +244,9 @@ export default function Home() {
         ) : null}
         {/* Footer removed from dashboard — About Us / Privacy Policy / Contact Us
             are now in Settings > Support section. Keeps the dashboard clean. */}
+
+        {/* ─── What Students Say — swipeable review cards ─── */}
+        {!showAdmin && <ReviewsSection />}
 
         {/* Broker Ad Banner — only in client mode (not admin) */}
         {!showAdmin && (
@@ -498,5 +501,79 @@ function QuizRow({ lesson, lang, isPro, seqLocked, onOpen, onPro }: { lesson: Le
         </span>
       ) : lesson.passed ? <CheckCircle2 className="h-4 w-4 text-brand" /> : seqLocked ? <Lock className="h-4 w-4 text-muted-foreground" /> : <ChevronRight className="h-4 w-4 text-brand" />}
     </button>
+  )
+}
+
+/* ─── What Students Say — swipeable dark review cards ─── */
+const REVIEWS = [
+  { stars: 5, text: "Best app for beginners, 4 languages me samjhata hai, bht easy hai", name: "Ahmed", city: "Lahore" },
+  { stars: 5, text: "Live signals are very accurate, daily profit ho raha hai", name: "Ali Raza", city: "Karachi" },
+  { stars: 5, text: "Market Gauge feature is amazing, beginner se pro ban gaya", name: "Usman Khan", city: "Islamabad" },
+  { stars: 5, text: "Trading Seekho ne meri life change kar di, highly recommended", name: "Bilal", city: "Multan" },
+]
+
+function ReviewsSection() {
+  const [reviewIdx, setReviewIdx] = useState(0)
+  const touchStartX = useRef(0)
+
+  const onTouchStart = (e: React.TouchEvent) => { touchStartX.current = e.touches[0].clientX }
+  const onTouchEnd = (e: React.TouchEvent) => {
+    const dx = e.changedTouches[0].clientX - touchStartX.current
+    if (dx < -40) setReviewIdx((v) => Math.min(REVIEWS.length - 1, v + 1))
+    if (dx > 40) setReviewIdx((v) => Math.max(0, v - 1))
+  }
+
+  const r = REVIEWS[reviewIdx]
+
+  return (
+    <section className="mb-4">
+      <h2 className="mb-2 px-1 text-base font-black tracking-tight text-foreground">
+        What Students Say
+      </h2>
+      <div
+        className="relative overflow-hidden rounded-2xl border border-border bg-card p-4"
+        onTouchStart={onTouchStart}
+        onTouchEnd={onTouchEnd}
+      >
+        <motion.div
+          key={reviewIdx}
+          initial={{ opacity: 0, x: 20 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ duration: 0.25 }}
+          className="flex flex-col gap-2"
+        >
+          {/* Stars */}
+          <div className="flex gap-0.5">
+            {Array.from({ length: r.stars }).map((_, i) => (
+              <span key={i} className="text-sm text-amber-400">★</span>
+            ))}
+          </div>
+          {/* Review text */}
+          <p className="text-sm leading-relaxed text-foreground">
+            "{r.text}"
+          </p>
+          {/* Name + City */}
+          <div className="flex items-center gap-1.5">
+            <span className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-brand-muted text-xs font-bold text-brand">
+              {r.name.charAt(0)}
+            </span>
+            <span className="text-xs font-bold text-foreground">{r.name}</span>
+            <span className="text-xs text-muted-foreground">· {r.city}</span>
+          </div>
+        </motion.div>
+
+        {/* Dots */}
+        <div className="mt-3 flex items-center gap-1.5">
+          {REVIEWS.map((_, idx) => (
+            <button
+              key={idx}
+              type="button"
+              onClick={() => setReviewIdx(idx)}
+              className={`h-1.5 rounded-full transition-all ${idx === reviewIdx ? "w-6 bg-brand" : "w-1.5 bg-muted-foreground/30"}`}
+            />
+          ))}
+        </div>
+      </div>
+    </section>
   )
 }
