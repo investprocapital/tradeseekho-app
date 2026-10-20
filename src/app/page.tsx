@@ -84,12 +84,15 @@ export default function Home() {
   // Also creates a DB notification (shows in the bell) + browser notification.
   useAlertChecker()
 
-  // Auth gate: if user is not logged in, show Login dialog automatically
+  // Auth gate: if user is not logged in, show Login dialog automatically.
+  // BUT: don't open if onboarding is still showing (onboarding has its own
+  // "Get Started" button that opens login).
+  const onboardingSeen = useStore((s) => s.onboardingSeen)
   useEffect(() => {
-    if (status === "unauthenticated" && !loginOpen) {
+    if (status === "unauthenticated" && !loginOpen && onboardingSeen) {
       setLoginOpen(true)
     }
-  }, [status, loginOpen, setLoginOpen])
+  }, [status, loginOpen, setLoginOpen, onboardingSeen])
 
   // ROLE-GATED ADMIN PANEL: showAdmin is persisted in localStorage, but it
   // MUST only be active when the logged-in user's role is actually "admin".
