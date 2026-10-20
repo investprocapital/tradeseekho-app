@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useRef } from "react"
+import { useState } from "react"
 import { useSession } from "next-auth/react"
 import { motion, AnimatePresence } from "framer-motion"
 import { GraduationCap, TrendingUp, Crown, ArrowRight, Check, X } from "lucide-react"
@@ -45,7 +45,6 @@ export function Onboarding() {
   const setLoginOpen = useStore((s) => s.setLoginOpen)
   const [i, setI] = useState(0)
   const last = i === SLIDES.length - 1
-  const touchStartX = useRef(0)
 
   // Show onboarding ONLY for users who:
   // 1. Store has hydrated (localStorage loaded)
@@ -78,18 +77,8 @@ export function Onboarding() {
   const slide = SLIDES[i]
   const Icon = slide.icon
 
-  // Swipe support
-  const onTouchStart = (e: React.TouchEvent) => {
-    touchStartX.current = e.touches[0].clientX
-  }
-  const onTouchEnd = (e: React.TouchEvent) => {
-    const dx = e.changedTouches[0].clientX - touchStartX.current
-    if (dx < -50 && i < SLIDES.length - 1) setI((v) => v + 1) // swipe left → next
-    if (dx > 50 && i > 0) setI((v) => v - 1) // swipe right → prev
-  }
-
   return (
-    <div className="fixed inset-0 z-[200] flex flex-col bg-[#070F2B]" style={{ touchAction: "manipulation" }}>
+    <div className="fixed inset-0 z-[200] flex flex-col bg-[#070F2B]">
       {/* Skip button — top right → goes to Login */}
       <button
         type="button"
@@ -106,12 +95,8 @@ export function Onboarding() {
         style={{ background: slide.color }}
       />
 
-      {/* Slide content — swipeable */}
-      <div
-        className="flex flex-1 flex-col items-center justify-center px-8"
-        onTouchStart={onTouchStart}
-        onTouchEnd={onTouchEnd}
-      >
+      {/* Slide content */}
+      <div className="flex flex-1 flex-col items-center justify-center px-8">
         <AnimatePresence mode="wait">
           <motion.div
             key={i}
