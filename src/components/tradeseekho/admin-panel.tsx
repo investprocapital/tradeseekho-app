@@ -1177,6 +1177,20 @@ function AdsTab() {
               onCheckedChange={(v) => setForm((f) => f && ({ ...f, priceAlertsEnabled: v }))}
             />
           </div>
+
+          {/* Reviews Section ON/OFF — admin can show/hide "What Students Say" */}
+          <div className="flex items-center justify-between rounded-lg border border-cyan-500/30 bg-cyan-500/5 p-3">
+            <div>
+              <div className="text-sm font-bold">Reviews Section (What Students Say)</div>
+              <div className="text-[11px] text-muted-foreground">
+                Show/hide the student reviews section on the home page.
+              </div>
+            </div>
+            <Switch
+              checked={form.reviewsEnabled ?? true}
+              onCheckedChange={(v) => setForm((f) => f && ({ ...f, reviewsEnabled: v }))}
+            />
+          </div>
         </CardContent>
       </Card>
 
@@ -1203,6 +1217,7 @@ type AdminAdsForm = {
   commentsEnabled?: boolean
   googleLoginEnabled?: boolean
   priceAlertsEnabled?: boolean
+  reviewsEnabled?: boolean
 }
 
 /* ---------------- Pro Requests ---------------- */

@@ -7,7 +7,7 @@ generator client {
 }
 
 datasource db {
-  provider  = "sqlite"
+  provider  = "postgresql"
   url       = env("DATABASE_URL")
   directUrl = env("DIRECT_URL")
 }
@@ -227,6 +227,8 @@ model AdSettings {
   // Price Alerts feature ON/OFF — admin can enable/disable the entire
   // Price Alerts section (button on home + alerts sheet).
   priceAlertsEnabled   Boolean  @default(true)
+  // Reviews section ON/OFF — admin can show/hide "What Students Say" on home
+  reviewsEnabled       Boolean  @default(true)
   updatedAt            DateTime @updatedAt
 }
 

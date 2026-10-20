@@ -24,6 +24,7 @@ export interface AdminAds {
   commentsEnabled?: boolean
   googleLoginEnabled?: boolean
   priceAlertsEnabled?: boolean
+  reviewsEnabled?: boolean
 }
 
 async function j<T>(res: Response | Promise<Response>): Promise<T> {

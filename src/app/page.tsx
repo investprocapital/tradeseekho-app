@@ -510,11 +510,28 @@ const REVIEWS = [
   { stars: 5, text: "Live signals are very accurate, daily profit ho raha hai", name: "Ali Raza", city: "Karachi" },
   { stars: 5, text: "Market Gauge feature is amazing, beginner se pro ban gaya", name: "Usman Khan", city: "Islamabad" },
   { stars: 5, text: "Trading Seekho ne meri life change kar di, highly recommended", name: "Bilal", city: "Multan" },
+  { stars: 5, text: "Brilliant app! Learned forex in Urdu, now trading confidently in London", name: "James", city: "London, UK" },
+  { stars: 5, text: "हिंदी में समझाता है, बहुत आसान है। मैंने पहले ही प्रॉफिट कमाना शुरू कर दिया", name: "Rajesh", city: "Mumbai, India" },
+  { stars: 5, text: "Best trading education app,Market Gauge is a game changer for me", name: "Abdullah", city: "Dubai, UAE" },
+  { stars: 5, text: "Simple, effective and multilingual. Highly recommended for all traders", name: "Sarah", city: "Manchester, UK" },
 ]
 
 function ReviewsSection() {
   const [reviewIdx, setReviewIdx] = useState(0)
   const touchStartX = useRef(0)
+
+  // Check if reviews are enabled in admin settings
+  const { data: adSettings } = useQuery<{ reviewsEnabled?: boolean }>({
+    queryKey: ["ad-settings-reviews"],
+    queryFn: async () => {
+      const res = await fetch("/api/ads/config", { cache: "no-store" })
+      if (!res.ok) return { reviewsEnabled: true }
+      return res.json()
+    },
+    staleTime: 60_000,
+  })
+  // If admin has disabled reviews, hide the section entirely
+  if (adSettings?.reviewsEnabled === false) return null
 
   const onTouchStart = (e: React.TouchEvent) => { touchStartX.current = e.touches[0].clientX }
   const onTouchEnd = (e: React.TouchEvent) => {
