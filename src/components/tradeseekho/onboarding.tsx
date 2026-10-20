@@ -12,8 +12,8 @@ const SLIDES = [
     icon: GraduationCap,
     titleUr: "سیکھو ٹریڈنگ صفر سے",
     titleEn: "Learn Trading From Zero",
-    subUr: "Beginner سے Advanced تک 43+ Lessons اردو میں",
-    subEn: "43+ Lessons in Urdu — Beginner to Advanced",
+    subUr: "43+ Lessons - 4 Languages me: Hindi, Urdu, English, Arabic",
+    subEn: "43+ Lessons in 4 Languages - Hindi, Urdu, English, Arabic",
     color: "#00D09C",
     bg: "from-[#00D09C]/20 to-transparent",
   },
@@ -55,7 +55,11 @@ export function Onboarding() {
   if (seen) return null
   if (status === "authenticated") return null
 
-  const close = () => setSeen(true)
+  // Skip → go to Login page (mark seen + open login)
+  const close = () => {
+    setSeen(true)
+    setLoginOpen(true)
+  }
 
   // On last screen "Get Started" → mark seen + open login
   const getStarted = () => {
@@ -63,7 +67,14 @@ export function Onboarding() {
     setLoginOpen(true)
   }
 
-  const next = () => (last ? getStarted() : setI((v) => v + 1))
+  // Next → go to next screen (or Get Started if last)
+  const next = () => {
+    if (last) {
+      getStarted()
+    } else {
+      setI((v) => v + 1)
+    }
+  }
   const slide = SLIDES[i]
   const Icon = slide.icon
 
@@ -78,11 +89,12 @@ export function Onboarding() {
   }
 
   return (
-    <div className="fixed inset-0 z-[200] flex flex-col bg-[#070F2B]">
-      {/* Skip button — top right */}
+    <div className="fixed inset-0 z-[200] flex flex-col bg-[#070F2B]" style={{ touchAction: "manipulation" }}>
+      {/* Skip button — top right → goes to Login */}
       <button
-        onClick={close}
-        className="absolute right-4 top-4 z-10 inline-flex h-9 items-center gap-1 rounded-full bg-white/5 px-4 text-xs font-bold text-white/60 transition hover:bg-white/10 hover:text-white"
+        type="button"
+        onClick={() => close()}
+        className="absolute right-4 top-4 z-30 inline-flex h-9 items-center gap-1 rounded-full bg-white/5 px-4 text-xs font-bold text-white/60 transition hover:bg-white/10 hover:text-white"
       >
         Skip <X className="h-3.5 w-3.5" />
       </button>
@@ -143,6 +155,7 @@ export function Onboarding() {
           {SLIDES.map((_, idx) => (
             <button
               key={idx}
+              type="button"
               onClick={() => setI(idx)}
               className={`h-2 rounded-full transition-all ${idx === i ? "w-8" : "w-2 bg-white/20"}`}
               style={idx === i ? { background: slide.color } : {}}
@@ -153,9 +166,10 @@ export function Onboarding() {
 
         {/* Get Started / Next button */}
         <Button
-          className="h-13 w-full gap-2 py-3.5 text-base font-bold text-white shadow-lg transition active:scale-[0.98]"
-          style={{ background: slide.color }}
-          onClick={next}
+          type="button"
+          className="h-14 w-full gap-2 py-4 text-base font-bold text-white shadow-lg transition active:scale-[0.98]"
+          style={{ background: slide.color, minHeight: "56px" }}
+          onClick={() => next()}
         >
           {last ? (
             <>
