@@ -4,7 +4,6 @@ import { useState } from "react"
 import { useSession } from "next-auth/react"
 import { motion, AnimatePresence } from "framer-motion"
 import { GraduationCap, TrendingUp, Crown, ArrowRight, Check, X } from "lucide-react"
-import { Button } from "@/components/ui/button"
 import { useStore } from "@/lib/store"
 
 const SLIDES = [
@@ -149,23 +148,34 @@ export function Onboarding() {
           ))}
         </div>
 
-        {/* Get Started / Next button */}
-        <Button
-          type="button"
-          className="h-14 w-full gap-2 py-4 text-base font-bold text-white shadow-lg transition active:scale-[0.98]"
-          style={{ background: slide.color, minHeight: "56px" }}
-          onClick={() => next()}
-        >
-          {last ? (
-            <>
-              Get Started <Check className="h-5 w-5" />
-            </>
-          ) : (
-            <>
-              Next <ArrowRight className="h-5 w-5" />
-            </>
+        {/* Get Started / Next button — plain button (not Button component) */}
+        <div className="flex gap-2">
+          {i > 0 && (
+            <button
+              type="button"
+              className="flex h-14 items-center justify-center gap-2 rounded-lg border border-white/20 bg-white/5 px-6 text-sm font-bold text-white/60 transition active:scale-[0.98]"
+              onClick={() => setI((v) => v - 1)}
+            >
+              ‹ Back
+            </button>
           )}
-        </Button>
+          <button
+            type="button"
+            className="flex h-14 flex-1 items-center justify-center gap-2 rounded-lg py-4 text-base font-bold text-white shadow-lg transition active:scale-[0.98]"
+            style={{ background: slide.color, minHeight: "56px" }}
+            onClick={() => next()}
+          >
+            {last ? (
+              <>
+                Get Started <Check className="h-5 w-5" />
+              </>
+            ) : (
+              <>
+                Next <ArrowRight className="h-5 w-5" />
+              </>
+            )}
+          </button>
+        </div>
       </div>
     </div>
   )
