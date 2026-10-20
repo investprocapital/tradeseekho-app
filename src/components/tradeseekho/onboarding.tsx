@@ -2,7 +2,6 @@
 
 import { useState } from "react"
 import { useSession } from "next-auth/react"
-import { motion, AnimatePresence } from "framer-motion"
 import { GraduationCap, TrendingUp, Crown, ArrowRight, Check, X } from "lucide-react"
 import { useStore } from "@/lib/store"
 
@@ -14,7 +13,6 @@ const SLIDES = [
     subUr: "43+ Lessons - 4 Languages me: Hindi, Urdu, English, Arabic",
     subEn: "43+ Lessons in 4 Languages - Hindi, Urdu, English, Arabic",
     color: "#00D09C",
-    bg: "from-[#00D09C]/20 to-transparent",
   },
   {
     icon: TrendingUp,
@@ -23,7 +21,6 @@ const SLIDES = [
     subUr: "BTC، GOLD، EURUSD کے Live Signals اور Price Alerts",
     subEn: "Live Signals & Price Alerts for BTC, GOLD, EURUSD",
     color: "#0072FF",
-    bg: "from-[#0072FF]/20 to-transparent",
   },
   {
     icon: Crown,
@@ -32,7 +29,6 @@ const SLIDES = [
     subUr: "Quiz پاس کرو، Market Gauge سمجھو اور confident trading شروع کرو",
     subEn: "Pass quizzes, learn Market Gauge & start confident trading",
     color: "#F3BA2F",
-    bg: "from-[#F3BA2F]/20 to-transparent",
   },
 ] as const
 
@@ -45,134 +41,110 @@ export function Onboarding() {
   const [i, setI] = useState(0)
   const last = i === SLIDES.length - 1
 
-  // Show onboarding ONLY for users who:
-  // 1. Store has hydrated (localStorage loaded)
-  // 2. Haven't seen onboarding yet (onboardingSeen = false)
-  // 3. Are NOT currently authenticated (so new visitors see it, returning logged-in users don't)
   if (!hasHydrated) return null
   if (seen) return null
   if (status === "authenticated") return null
 
-  // Skip → go to Login page (mark seen + open login)
-  const close = () => {
+  const goLogin = () => {
     setSeen(true)
     setLoginOpen(true)
   }
 
-  // On last screen "Get Started" → mark seen + open login
-  const getStarted = () => {
-    setSeen(true)
-    setLoginOpen(true)
-  }
-
-  // Next → go to next screen (or Get Started if last)
   const next = () => {
     if (last) {
-      getStarted()
+      goLogin()
     } else {
-      setI((v) => v + 1)
+      setI(i + 1)
     }
   }
+
   const slide = SLIDES[i]
   const Icon = slide.icon
 
   return (
-    <div className="fixed inset-0 z-[200] flex flex-col bg-[#070F2B]">
-      {/* Skip button — top right → goes to Login */}
+    <div style={{ position: "fixed", inset: 0, zIndex: 200, display: "flex", flexDirection: "column", backgroundColor: "#070F2B" }}>
+      {/* Skip button */}
       <button
         type="button"
-        onClick={() => close()}
-        className="absolute right-4 top-4 z-30 inline-flex h-9 items-center gap-1 rounded-full bg-white/5 px-4 text-xs font-bold text-white/60 transition hover:bg-white/10 hover:text-white"
+        onClick={goLogin}
+        style={{ position: "absolute", right: 16, top: 16, zIndex: 30, display: "inline-flex", height: 36, alignItems: "center", gap: 4, borderRadius: 999, background: "rgba(255,255,255,0.05)", padding: "0 16px", fontSize: 12, fontWeight: 700, color: "rgba(255,255,255,0.6)", border: "none", cursor: "pointer" }}
       >
-        Skip <X className="h-3.5 w-3.5" />
+        Skip <X size={14} />
       </button>
 
       {/* Background glow */}
-      <div className={`pointer-events-none absolute inset-0 bg-gradient-to-b ${slide.bg}`} />
-      <div
-        className="pointer-events-none absolute left-1/2 top-1/3 h-72 w-72 -translate-x-1/2 rounded-full opacity-10 blur-[80px] transition-colors"
-        style={{ background: slide.color }}
-      />
+      <div style={{ position: "absolute", left: "50%", top: "33%", width: 288, height: 288, transform: "translateX(-50%)", borderRadius: 999, opacity: 0.1, filter: "blur(80px)", background: slide.color, pointerEvents: "none" }} />
 
       {/* Slide content */}
-      <div className="flex flex-1 flex-col items-center justify-center px-8">
-        <AnimatePresence mode="wait">
-          <motion.div
-            key={i}
-            initial={{ opacity: 0, x: 40 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: -40 }}
-            transition={{ duration: 0.3 }}
-            className="flex flex-col items-center text-center"
-          >
-            {/* Icon */}
-            <span
-              className="inline-flex h-24 w-24 items-center justify-center rounded-3xl text-white shadow-2xl"
-              style={{ background: slide.color }}
-            >
-              <Icon className="h-12 w-12" />
-            </span>
+      <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "0 32px", textAlign: "center" }}>
+        {/* Icon */}
+        <div style={{ display: "inline-flex", width: 96, height: 96, alignItems: "center", justifyContent: "center", borderRadius: 24, background: slide.color, boxShadow: "0 8px 32px rgba(0,0,0,0.3)" }}>
+          <Icon size={48} color="#fff" />
+        </div>
 
-            {/* Title — Urdu + English */}
-            <h2 className="mt-8 text-2xl font-extrabold leading-tight text-white font-urdu">
-              {slide.titleUr}
-            </h2>
-            <p className="mt-1 text-sm font-semibold text-white/40">
-              {slide.titleEn}
-            </p>
+        {/* Title Urdu */}
+        <h2 style={{ marginTop: 32, fontSize: 24, fontWeight: 800, color: "#fff", fontFamily: "var(--font-noto-nastaliq), serif" }}>
+          {slide.titleUr}
+        </h2>
 
-            {/* Subtitle — Urdu + English */}
-            <p className="mt-4 max-w-xs text-sm leading-relaxed text-white/60 font-urdu">
-              {slide.subUr}
-            </p>
-            <p className="mt-1.5 max-w-xs text-xs leading-relaxed text-white/30">
-              {slide.subEn}
-            </p>
-          </motion.div>
-        </AnimatePresence>
+        {/* Title English */}
+        <p style={{ marginTop: 4, fontSize: 14, fontWeight: 600, color: "rgba(255,255,255,0.4)" }}>
+          {slide.titleEn}
+        </p>
+
+        {/* Sub Urdu */}
+        <p style={{ marginTop: 16, maxWidth: 320, fontSize: 14, lineHeight: 1.5, color: "rgba(255,255,255,0.6)", fontFamily: "var(--font-noto-nastaliq), serif" }}>
+          {slide.subUr}
+        </p>
+
+        {/* Sub English */}
+        <p style={{ marginTop: 6, maxWidth: 320, fontSize: 12, lineHeight: 1.5, color: "rgba(255,255,255,0.3)" }}>
+          {slide.subEn}
+        </p>
       </div>
 
-      {/* Bottom section: dots + button */}
-      <div className="shrink-0 px-8 pb-10 pt-4">
-        {/* Dots indicator */}
-        <div className="mb-6 flex items-center justify-center gap-2">
+      {/* Bottom: dots + buttons */}
+      <div style={{ flexShrink: 0, padding: "16px 32px 40px" }}>
+        {/* Dots */}
+        <div style={{ marginBottom: 24, display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}>
           {SLIDES.map((_, idx) => (
             <button
               key={idx}
               type="button"
               onClick={() => setI(idx)}
-              className={`h-2 rounded-full transition-all ${idx === i ? "w-8" : "w-2 bg-white/20"}`}
-              style={idx === i ? { background: slide.color } : {}}
-              aria-label={`Slide ${idx + 1}`}
+              style={{
+                height: 8,
+                width: idx === i ? 32 : 8,
+                borderRadius: 999,
+                border: "none",
+                cursor: "pointer",
+                background: idx === i ? slide.color : "rgba(255,255,255,0.2)",
+                transition: "all 0.2s",
+              }}
             />
           ))}
         </div>
 
-        {/* Get Started / Next button — plain button (not Button component) */}
-        <div className="flex gap-2">
+        {/* Buttons */}
+        <div style={{ display: "flex", gap: 8 }}>
           {i > 0 && (
             <button
               type="button"
-              className="flex h-14 items-center justify-center gap-2 rounded-lg border border-white/20 bg-white/5 px-6 text-sm font-bold text-white/60 transition active:scale-[0.98]"
-              onClick={() => setI((v) => v - 1)}
+              onClick={() => setI(i - 1)}
+              style={{ height: 56, display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 8, borderRadius: 8, border: "1px solid rgba(255,255,255,0.2)", background: "rgba(255,255,255,0.05)", padding: "0 24px", fontSize: 14, fontWeight: 700, color: "rgba(255,255,255,0.6)", cursor: "pointer" }}
             >
               ‹ Back
             </button>
           )}
           <button
             type="button"
-            className="flex h-14 flex-1 items-center justify-center gap-2 rounded-lg py-4 text-base font-bold text-white shadow-lg transition active:scale-[0.98]"
-            style={{ background: slide.color, minHeight: "56px" }}
-            onClick={() => next()}
+            onClick={next}
+            style={{ height: 56, flex: 1, display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 8, borderRadius: 8, border: "none", background: slide.color, fontSize: 16, fontWeight: 700, color: "#fff", boxShadow: "0 4px 16px rgba(0,0,0,0.2)", cursor: "pointer" }}
           >
             {last ? (
-              <>
-                Get Started <Check className="h-5 w-5" />
-              </>
+              <>Get Started <Check size={20} /></>
             ) : (
-              <>
-                Next <ArrowRight className="h-5 w-5" />
-              </>
+              <>Next <ArrowRight size={20} /></>
             )}
           </button>
         </div>
