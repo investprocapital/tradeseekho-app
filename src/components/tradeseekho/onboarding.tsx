@@ -16,18 +16,20 @@ const SLIDES = [
   },
   {
     icon: TrendingUp,
+    // Screen 2: Only ONE title, then Roman Urdu, then English
     titleUr: "Live Signals & Alerts",
-    titleEn: "Live Signals & Alerts",
-    subUr: "BTC، GOLD، EURUSD کے Live Signals اور Price Alerts",
-    subEn: "Live Signals & Price Alerts for BTC, GOLD, EURUSD",
+    titleEn: "BTC, GOLD, EURUSD ke Live Signals aur Price Alerts",
+    subUr: "Live Signals & Price Alerts for BTC, GOLD, EURUSD",
+    subEn: "",
     color: "#0072FF",
   },
   {
     icon: Crown,
-    titleUr: "بنو Pro Trader",
-    titleEn: "Become a Pro Trader",
-    subUr: "Quiz پاس کرو، Market Gauge سمجھو اور confident trading شروع کرو",
-    subEn: "Pass quizzes, learn Market Gauge & start confident trading",
+    // Screen 3: Roman Urdu title → Urdu title → English title → Roman Urdu desc → Urdu desc → English desc
+    titleUr: "Bano Pro Trader",
+    titleEn: "بنو پرو ٹریڈر",
+    subUr: "Become a Pro Trader",
+    subEn: "Quiz pass karo, Market Gauge samjho aur confident trading shuru karo",
     color: "#F3BA2F",
   },
 ] as const
@@ -82,25 +84,62 @@ export function Onboarding() {
           <Icon size={48} color="#fff" />
         </div>
 
-        {/* Title Urdu */}
-        <h2 style={{ marginTop: 32, fontSize: 24, fontWeight: 800, color: "#fff", fontFamily: "var(--font-noto-nastaliq), serif" }}>
-          {slide.titleUr}
-        </h2>
+        {/* Screen 1: Urdu title → English → Roman Urdu → English */}
+        {i === 0 && (
+          <>
+            <h2 style={{ marginTop: 32, fontSize: 24, fontWeight: 800, color: "#fff", fontFamily: "var(--font-noto-nastaliq), serif" }}>
+              {slide.titleUr}
+            </h2>
+            <p style={{ marginTop: 4, fontSize: 14, fontWeight: 600, color: "rgba(255,255,255,0.4)" }}>
+              {slide.titleEn}
+            </p>
+            <p style={{ marginTop: 16, maxWidth: 320, fontSize: 14, lineHeight: 1.5, color: "rgba(255,255,255,0.6)" }}>
+              {slide.subUr}
+            </p>
+            <p style={{ marginTop: 6, maxWidth: 320, fontSize: 12, lineHeight: 1.5, color: "rgba(255,255,255,0.3)" }}>
+              {slide.subEn}
+            </p>
+          </>
+        )}
 
-        {/* Title English */}
-        <p style={{ marginTop: 4, fontSize: 14, fontWeight: 600, color: "rgba(255,255,255,0.4)" }}>
-          {slide.titleEn}
-        </p>
+        {/* Screen 2: Single title → Roman Urdu → English (no duplicate) */}
+        {i === 1 && (
+          <>
+            <h2 style={{ marginTop: 32, fontSize: 24, fontWeight: 800, color: "#fff" }}>
+              {slide.titleUr}
+            </h2>
+            <p style={{ marginTop: 12, maxWidth: 320, fontSize: 14, lineHeight: 1.5, color: "rgba(255,255,255,0.6)" }}>
+              {slide.titleEn}
+            </p>
+            <p style={{ marginTop: 6, maxWidth: 320, fontSize: 12, lineHeight: 1.5, color: "rgba(255,255,255,0.3)" }}>
+              {slide.subUr}
+            </p>
+          </>
+        )}
 
-        {/* Sub Urdu */}
-        <p style={{ marginTop: 16, maxWidth: 320, fontSize: 14, lineHeight: 1.5, color: "rgba(255,255,255,0.6)", fontFamily: "var(--font-noto-nastaliq), serif" }}>
-          {slide.subUr}
-        </p>
-
-        {/* Sub English */}
-        <p style={{ marginTop: 6, maxWidth: 320, fontSize: 12, lineHeight: 1.5, color: "rgba(255,255,255,0.3)" }}>
-          {slide.subEn}
-        </p>
+        {/* Screen 3: Roman Urdu → Urdu → English → Roman Urdu desc → Urdu desc → English desc */}
+        {i === 2 && (
+          <>
+            <h2 style={{ marginTop: 32, fontSize: 24, fontWeight: 800, color: "#fff" }}>
+              {slide.titleUr}
+            </h2>
+            <h3 style={{ marginTop: 6, fontSize: 20, fontWeight: 700, color: "#fff", fontFamily: "var(--font-noto-nastaliq), serif" }}>
+              {slide.titleEn}
+            </h3>
+            <p style={{ marginTop: 4, fontSize: 14, fontWeight: 600, color: "rgba(255,255,255,0.4)" }}>
+              {slide.subUr}
+            </p>
+            <p style={{ marginTop: 16, maxWidth: 320, fontSize: 14, lineHeight: 1.5, color: "rgba(255,255,255,0.6)" }}>
+              {slide.subEn}
+            </p>
+            <p style={{ marginTop: 8, maxWidth: 320, fontSize: 14, lineHeight: 1.5, color: "rgba(255,255,255,0.5)", fontFamily: "var(--font-noto-nastaliq), serif" }}>
+              کوئز پاس کرو، مارکیٹ گیج سمجھو اور کانفیڈنٹ ٹریڈنگ شروع کرو
+            </p>
+            <p style={{ marginTop: 6, maxWidth: 320, fontSize: 12, lineHeight: 1.5, color: "rgba(255,255,255,0.3)" }}>
+              Pass quizzes, learn Market Gauge &amp; start confident trading
+            </p>
+          </>
+        )}
       </div>
 
       {/* Bottom: dots + buttons */}
