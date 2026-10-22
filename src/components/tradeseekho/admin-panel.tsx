@@ -7,6 +7,7 @@ import {
   Download, Users, BookOpen, BarChart3, Shield, Lock, LogOut, Eye,
   Plus, Pencil, Trash2, Save, Send, Megaphone, Check, ChevronRight, ArrowLeft,
   Crown, X, Upload, CreditCard, Search, TrendingUp, MessageSquare, Copy, ExternalLink,
+  Bell,
 } from "lucide-react"
 import {
   Card, CardContent, CardHeader, CardTitle, CardDescription,
@@ -136,6 +137,7 @@ export function AdminPanel() {
             { id: "payment", label: "Payment Settings", icon: CreditCard, color: "bg-indigo-500" },
             { id: "pages", label: "Pages", icon: BookOpen, color: "bg-rose-500" },
             { id: "comments", label: "Comments", icon: MessageSquare, color: "bg-sky-500" },
+            { id: "notifications", label: "Notifications", icon: Bell, color: "bg-red-500" },
           ].map((tab) => {
             const Icon = tab.icon
             const isActive = adminTab === tab.id
@@ -170,6 +172,7 @@ export function AdminPanel() {
         <TabsContent value="signals" className="mt-5"><SignalManager /></TabsContent>
         <TabsContent value="pro" className="mt-5"><ProRequestsTab /></TabsContent>
         <TabsContent value="comments" className="mt-5"><ManageCommentsTab /></TabsContent>
+        <TabsContent value="notifications" className="mt-5"><NotificationsTab /></TabsContent>
       </Tabs>
     </div>
   )
@@ -2064,6 +2067,248 @@ function ManageCommentsTab() {
                       }}
                     >
                       <Trash2 className="h-3.5 w-3.5" /> Delete
+                    </Button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+    </div>
+  )
+}
+
+/* ---------------- Notifications Tab ---------------- */
+function NotificationsTab() {
+  const qc = useQueryClient()
+  const [title, setTitle] = useState("")
+  const [body, setBody] = useState("")
+  const [type, setType] = useState<"system" | "signal">("system")
+  const [deepLink, setDeepLink] = useState("")
+
+  // List all broadcast notifications
+  const { data, isLoading } = useQuery({
+    queryKey: ["admin-notifications"],
+    queryFn: async () => {
+      const res = await fetch("/api/admin/notifications")
+      if (!res.ok) throw new Error("failed")
+      return res.json()
+    },
+  })
+
+  // Send a new broadcast notification
+  const sendMutation = useMutation({
+    mutationFn: async (payload: { title: string; body: string; type: string; deepLink?: string }) => {
+      const res = await fetch("/api/admin/notifications", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify(payload),
+      })
+      if (!res.ok) {
+        const e = await res.json().catch(() => ({}))
+        throw new Error(e?.error || "failed")
+      }
+      return res.json()
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["admin-notifications"] })
+      // Also invalidate client notification feed so the bell refreshes
+      qc.invalidateQueries({ queryKey: ["notifications"] })
+      toast.success("Notification sent to all users")
+      setTitle(""); setBody(""); setDeepLink("")
+    },
+    onError: (e: any) => toast.error(e?.message || "Failed to send"),
+  })
+
+  // Delete a single notification
+  const deleteMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const res = await fetch(`/api/admin/notifications?id=${id}`, { method: "DELETE" })
+      if (!res.ok) throw new Error("failed")
+      return res.json()
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["admin-notifications"] })
+      qc.invalidateQueries({ queryKey: ["notifications"] })
+      toast.success("Notification deleted")
+    },
+  })
+
+  // Delete ALL notifications
+  const deleteAllMutation = useMutation({
+    mutationFn: async () => {
+      const res = await fetch("/api/admin/notifications?all=true", { method: "DELETE" })
+      if (!res.ok) throw new Error("failed")
+      return res.json()
+    },
+    onSuccess: (r: any) => {
+      qc.invalidateQueries({ queryKey: ["admin-notifications"] })
+      qc.invalidateQueries({ queryKey: ["notifications"] })
+      toast.success(`Deleted ${r?.deleted ?? 0} notifications`)
+    },
+  })
+
+  // Delete old notifications (older than 7 days)
+  const deleteOldMutation = useMutation({
+    mutationFn: async (days: number) => {
+      const res = await fetch(`/api/admin/notifications?olderThanDays=${days}`, { method: "DELETE" })
+      if (!res.ok) throw new Error("failed")
+      return res.json()
+    },
+    onSuccess: (r: any) => {
+      qc.invalidateQueries({ queryKey: ["admin-notifications"] })
+      qc.invalidateQueries({ queryKey: ["notifications"] })
+      toast.success(`Deleted ${r?.deleted ?? 0} old notifications`)
+    },
+  })
+
+  const list: Array<{
+    id: string; type: string; title: string; body: string
+    deepLink?: string; createdAt: string
+  }> = data?.notifications ?? []
+
+  const canSend = title.trim().length > 0 && body.trim().length > 0 && !sendMutation.isPending
+
+  return (
+    <div className="space-y-4">
+      {/* Send new notification */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Send className="h-5 w-5 text-brand" /> Send New Notification
+          </CardTitle>
+          <CardDescription>
+            Broadcast a notification to every user&apos;s bell instantly. Use for announcements, news, or marketing messages.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <div className="grid gap-3 sm:grid-cols-2">
+            <div className="space-y-1.5">
+              <Label className="text-xs font-bold">Type</Label>
+              <Select value={type} onValueChange={(v) => setType(v as any)}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="system">System / Announcement</SelectItem>
+                  <SelectItem value="signal">Signal Alert</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-xs font-bold">Deep Link (optional)</Label>
+              <Input
+                placeholder="app://signal/abc123 or app://lessons"
+                value={deepLink}
+                onChange={(e) => setDeepLink(e.target.value)}
+              />
+            </div>
+          </div>
+          <div className="space-y-1.5">
+            <Label className="text-xs font-bold">Title *</Label>
+            <Input
+              placeholder="e.g. New Gold signal published 🚀"
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              maxLength={120}
+            />
+          </div>
+          <div className="space-y-1.5">
+            <Label className="text-xs font-bold">Message *</Label>
+            <Textarea
+              placeholder="Write the notification body..."
+              value={body}
+              onChange={(e) => setBody(e.target.value)}
+              rows={3}
+              maxLength={500}
+            />
+            <p className="text-right text-[10px] text-muted-foreground">{body.length}/500</p>
+          </div>
+          <Button
+            className="w-full gap-1.5"
+            disabled={!canSend}
+            onClick={() => sendMutation.mutate({ title, body, type, deepLink: deepLink.trim() || undefined })}
+          >
+            <Send className="h-4 w-4" /> Send to All Users
+          </Button>
+        </CardContent>
+      </Card>
+
+      {/* Existing notifications */}
+      <Card>
+        <CardHeader>
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <div>
+              <CardTitle className="flex items-center gap-2">
+                <Bell className="h-5 w-5 text-brand" /> Existing Notifications
+              </CardTitle>
+              <CardDescription>
+                {list.length} broadcast notification{list.length === 1 ? "" : "s"} stored. Delete old ones to save space.
+              </CardDescription>
+            </div>
+            <div className="flex flex-wrap gap-1.5">
+              <Button
+                size="sm"
+                variant="outline"
+                className="gap-1.5"
+                disabled={list.length === 0 || deleteOldMutation.isPending}
+                onClick={() => {
+                  if (confirm("Delete all notifications older than 7 days?")) deleteOldMutation.mutate(7)
+                }}
+              >
+                <Trash2 className="h-3.5 w-3.5" /> Clear 7d+
+              </Button>
+              <Button
+                size="sm"
+                variant="destructive"
+                className="gap-1.5"
+                disabled={list.length === 0 || deleteAllMutation.isPending}
+                onClick={() => {
+                  if (confirm("Delete ALL notifications? This cannot be undone.")) deleteAllMutation.mutate()
+                }}
+              >
+                <Trash2 className="h-3.5 w-3.5" /> Delete All
+              </Button>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent>
+          {isLoading ? (
+            <p className="text-sm text-muted-foreground">Loading...</p>
+          ) : list.length === 0 ? (
+            <div className="rounded-xl border border-dashed border-border p-8 text-center">
+              <Bell className="mx-auto h-8 w-8 text-muted-foreground/50" />
+              <p className="mt-2 text-sm text-muted-foreground">No notifications yet. Send your first one above.</p>
+            </div>
+          ) : (
+            <div className="max-h-[600px] space-y-2 overflow-y-auto">
+              {list.map((n) => (
+                <div key={n.id} className="rounded-xl border border-border bg-card p-3">
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="min-w-0 flex-1">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span className="text-sm font-bold text-foreground">{n.title}</span>
+                        <span className={`rounded-full px-1.5 py-0.5 text-[9px] font-bold ${n.type === "signal" ? "bg-amber-500/20 text-amber-600" : "bg-emerald-500/20 text-emerald-600"}`}>
+                          {n.type === "signal" ? "SIGNAL" : "SYSTEM"}
+                        </span>
+                        <span className="text-[10px] text-muted-foreground">
+                          {new Date(n.createdAt).toLocaleDateString("en-GB", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" })}
+                        </span>
+                      </div>
+                      <p className="mt-1 text-sm text-muted-foreground">{n.body}</p>
+                      {n.deepLink && (
+                        <p className="mt-1 truncate text-[10px] text-muted-foreground/70">→ {n.deepLink}</p>
+                      )}
+                    </div>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="shrink-0 gap-1 text-destructive hover:text-destructive"
+                      disabled={deleteMutation.isPending}
+                      onClick={() => {
+                        if (confirm("Delete this notification?")) deleteMutation.mutate(n.id)
+                      }}
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
                     </Button>
                   </div>
                 </div>
