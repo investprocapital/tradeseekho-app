@@ -7,6 +7,7 @@ import {
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { useStore, useT } from "@/lib/store"
+import { usePendingProCount } from "./admin-data"
 
 export function Header() {
   const t = useT()
@@ -17,6 +18,11 @@ export function Header() {
   const setLoginOpen = useStore((s) => s.setLoginOpen)
   const setBottomTab = useStore((s) => s.setBottomTab)
   const setShowAdmin = useStore((s) => s.setShowAdmin)
+  // Pending Pro payment count → drives the red badge on the Bell icon.
+  // Only fetched when admin is logged in (status === "authenticated").
+  // Polled every 30s so the badge stays fresh.
+  const { data: pendingData } = usePendingProCount(status === "authenticated")
+  const pendingCount = status === "authenticated" ? (pendingData?.pending ?? 0) : 0
 
   return (
     <header className="shrink-0 z-40 w-full border-b border-border/70 bg-background/85 backdrop-blur supports-[backdrop-filter]:bg-background/70">
@@ -46,7 +52,16 @@ export function Header() {
 
         <Button variant="ghost" size="icon" className="relative h-9 w-9" aria-label="Notifications" onClick={() => setNotificationsOpen(true)}>
           <Bell className="h-[18px] w-[18px]" />
-          <span className="pointer-events-none absolute right-2 top-2 h-1.5 w-1.5 rounded-full bg-gold ring-2 ring-background" />
+          {pendingCount > 0 ? (
+            <span
+              className="pointer-events-none absolute -right-0.5 -top-0.5 inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-red-500 px-1 text-[9px] font-extrabold leading-none text-white ring-2 ring-background"
+              aria-label={`${pendingCount} pending payment${pendingCount === 1 ? "" : "s"}`}
+            >
+              {pendingCount > 99 ? "99+" : pendingCount}
+            </span>
+          ) : (
+            <span className="pointer-events-none absolute right-2 top-2 h-1.5 w-1.5 rounded-full bg-gold ring-2 ring-background" />
+          )}
         </Button>
 
         <Button variant="ghost" size="icon" className="h-9 w-9" aria-label="Settings" onClick={() => setSettingsOpen(true)}>

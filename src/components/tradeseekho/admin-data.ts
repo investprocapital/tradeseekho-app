@@ -226,6 +226,24 @@ export function useAdminProRequests(status = "all") {
   })
 }
 
+// Lightweight count of pending Pro payment requests — used for the red badge
+// on the Pro Payments nav button + the header Bell icon. Polled every 30s so
+// the badge stays fresh without manual refresh.
+//
+// `enabled` defaults to true (used by AdminPanel which only renders for admins).
+// The Header passes `enabled={status === "authenticated"}` so unauthenticated
+// visitors don't trigger a poll every 30s.
+export function usePendingProCount(enabled = true) {
+  return useQuery<{ pending: number }>({
+    queryKey: ["admin-pro", "pending-count"],
+    queryFn: () => j(fetch("/api/admin/pro/pending-count").then((r) => r)),
+    refetchInterval: enabled ? 30_000 : false,
+    // Don't retry forever — if DB is cold-starting, just show 0
+    retry: 1,
+    enabled,
+  })
+}
+
 export function useApproveProRequest() {
   const qc = useQueryClient()
   return useMutation<void, Error, { id: string; note?: string }>({
@@ -239,6 +257,8 @@ export function useApproveProRequest() {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["admin-pro"] })
       qc.invalidateQueries({ queryKey: ["admin-stats"] })
+      // Refresh the pending-count badge immediately
+      qc.invalidateQueries({ queryKey: ["admin-pro", "pending-count"] })
     },
   })
 }
@@ -253,7 +273,11 @@ export function useRejectProRequest() {
         body: JSON.stringify({ note }),
       })
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["admin-pro"] }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["admin-pro"] })
+      // Refresh the pending-count badge immediately
+      qc.invalidateQueries({ queryKey: ["admin-pro", "pending-count"] })
+    },
   })
 }
 

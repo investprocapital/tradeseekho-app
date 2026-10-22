@@ -42,7 +42,7 @@ import {
   useAdminProRequests, useApproveProRequest, useRejectProRequest,
   useProSettings, useSaveProSettings,
   useBrokerAds, useSaveBrokerAds, useAdminPages, useSavePage,
-  useAdminUsers,
+  useAdminUsers, usePendingProCount,
 } from "./admin-data"
 import { SignalManager } from "./signal-manager"
 import { useQueryClient, useQuery, useMutation } from "@tanstack/react-query"
@@ -72,6 +72,10 @@ export function AdminPanel() {
   const setAdminTab = useStore((s) => s.setAdminTab)
   const setShowAdmin = useStore((s) => s.setShowAdmin)
   const logout = useLogout()
+  // Pending Pro payment count → drives the red badge on Pro Payments button.
+  // Polled every 30s by the hook so the badge stays fresh.
+  const { data: pendingData } = usePendingProCount()
+  const pendingCount = pendingData?.pending ?? 0
 
   const authed = adminAuthed || me?.authed
 
@@ -141,11 +145,13 @@ export function AdminPanel() {
           ].map((tab) => {
             const Icon = tab.icon
             const isActive = adminTab === tab.id
+            // Red badge on Pro Payments button = count of pending payment requests
+            const badge = tab.id === "pro" && pendingCount > 0 ? pendingCount : 0
             return (
               <button
                 key={tab.id}
                 onClick={() => setAdminTab(tab.id as any)}
-                className={`flex items-center gap-2.5 rounded-xl border-2 p-3 text-start transition ${
+                className={`relative flex items-center gap-2.5 rounded-xl border-2 p-3 text-start transition ${
                   isActive
                     ? "border-brand bg-brand-muted/30 shadow-sm"
                     : "border-border bg-card hover:border-brand/40 hover:bg-muted/30"
@@ -157,6 +163,14 @@ export function AdminPanel() {
                 <span className={`text-xs font-bold ${isActive ? "text-brand" : "text-foreground"}`}>
                   {tab.label}
                 </span>
+                {badge > 0 && (
+                  <span
+                    className="absolute -right-1.5 -top-1.5 inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-extrabold leading-none text-white shadow-sm ring-2 ring-background"
+                    aria-label={`${badge} pending payment${badge === 1 ? "" : "s"}`}
+                  >
+                    {badge > 99 ? "99+" : badge}
+                  </span>
+                )}
               </button>
             )
           })}
