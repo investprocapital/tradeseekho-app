@@ -428,6 +428,9 @@ export interface AffiliateAdData {
   logoUrl: string
   bannerUrl: string
   combinedAdImage: string
+  showTitle: boolean
+  showButton: boolean
+  showDescription: boolean
   link: string
   updatedAt: string
 }

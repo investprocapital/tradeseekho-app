@@ -26,13 +26,15 @@ export async function GET() {
         logoUrl: row.logoUrl ?? "",
         bannerUrl: row.bannerUrl ?? "",
         combinedAdImage: row.combinedAdImage ?? "",
+        showTitle: row.showTitle,
+        showButton: row.showButton,
+        showDescription: row.showDescription,
         link: row.link,
         updatedAt: row.updatedAt.toISOString(),
       },
     })
   } catch (e: any) {
     console.error("[admin/affiliate-ads GET]", e?.message)
-    // Return safe defaults on DB error so the admin form still renders
     return NextResponse.json({
       ad: {
         id: "singleton",
@@ -43,6 +45,9 @@ export async function GET() {
         logoUrl: "",
         bannerUrl: "",
         combinedAdImage: "",
+        showTitle: false,
+        showButton: false,
+        showDescription: false,
         link: "#",
         updatedAt: new Date().toISOString(),
       },
@@ -52,8 +57,6 @@ export async function GET() {
 }
 
 // PUT /api/admin/affiliate-ads — admin: update the affiliate ad config.
-// Body: { enabled, title, description, buttonText, logoUrl, bannerUrl, combinedAdImage, link }
-// Image URLs are already CDN URLs (uploaded separately via /api/admin/upload-image).
 export async function PUT(req: Request) {
   const guard = await requireAdmin()
   if (guard) return guard
@@ -73,6 +76,9 @@ export async function PUT(req: Request) {
     logoUrl: String(body.logoUrl ?? "").slice(0, 2000) || null,
     bannerUrl: String(body.bannerUrl ?? "").slice(0, 2000) || null,
     combinedAdImage: String(body.combinedAdImage ?? "").slice(0, 2000) || null,
+    showTitle: !!body.showTitle,
+    showButton: !!body.showButton,
+    showDescription: !!body.showDescription,
     link: String(body.link ?? "#").slice(0, 2000) || "#",
   }
 
@@ -92,6 +98,9 @@ export async function PUT(req: Request) {
         logoUrl: row.logoUrl ?? "",
         bannerUrl: row.bannerUrl ?? "",
         combinedAdImage: row.combinedAdImage ?? "",
+        showTitle: row.showTitle,
+        showButton: row.showButton,
+        showDescription: row.showDescription,
         link: row.link,
         updatedAt: row.updatedAt.toISOString(),
       },

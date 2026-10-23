@@ -400,6 +400,17 @@ model AffiliateAd {
   // full-width image (logo + banner split is hidden). Useful for ready-made ad
   // creatives. When null, falls back to logo + banner split layout.
   combinedAdImage String?
+  // ─── Text overlay toggles (for combined image mode) ───
+  // When Combined Image Mode is active, these 3 toggles control whether the
+  // text fields show OVER the image or are hidden.
+  //   showTitle=true → Ad Title overlays on top of the image
+  //   showButton=true → Download button overlays on the image
+  //   showDescription=true → Description overlays on the image
+  // When all 3 are OFF → only the image shows (clean ad creative).
+  // In split layout mode (no combined image), these toggles are ignored.
+  showTitle       Boolean  @default(false)
+  showButton      Boolean  @default(false)
+  showDescription Boolean  @default(false)
   link        String   @default("#") // affiliate link (opens in new tab)
   updatedAt   DateTime @updatedAt
 }

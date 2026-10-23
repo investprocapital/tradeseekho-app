@@ -1743,6 +1743,9 @@ function AffiliateAdsTab() {
     logoUrl: "",
     bannerUrl: "",
     combinedAdImage: "",
+    showTitle: false,
+    showButton: false,
+    showDescription: false,
     link: "https://www.mexc.com",
   })
   const [loaded, setLoaded] = useState(false)
@@ -1764,6 +1767,9 @@ function AffiliateAdsTab() {
       logoUrl: a.logoUrl,
       bannerUrl: a.bannerUrl,
       combinedAdImage: a.combinedAdImage,
+      showTitle: a.showTitle,
+      showButton: a.showButton,
+      showDescription: a.showDescription,
       link: a.link,
     })
     setLoaded(true)
@@ -1859,9 +1865,24 @@ function AffiliateAdsTab() {
               )}
             </div>
             {form.combinedAdImage ? (
-              // ─── Combined Image Mode: full-width single image ───
+              // ─── Combined Image Mode: full-width single image + optional text overlay ───
               <div className="relative block overflow-hidden rounded-2xl border border-border bg-white dark:bg-zinc-900">
                 <img src={form.combinedAdImage} alt="" className="block h-auto w-full object-contain" style={{ maxHeight: "160px" }} />
+                {(form.showTitle || form.showButton || form.showDescription) && (
+                  <div className="pointer-events-none absolute inset-0 flex flex-col justify-between p-3">
+                    <div className="space-y-1">
+                      {form.showTitle && form.title && (
+                        <span className="inline-block rounded bg-black/60 px-2 py-0.5 text-sm font-extrabold text-white">{form.title}</span>
+                      )}
+                      {form.showDescription && form.description && (
+                        <p className="line-clamp-2 max-w-[70%] rounded bg-black/50 px-2 py-0.5 text-[10px] font-medium leading-snug text-white">{form.description}</p>
+                      )}
+                    </div>
+                    {form.showButton && form.buttonText && (
+                      <span className="inline-flex w-fit items-center gap-1 rounded-lg bg-red-500 px-3 py-1 text-[11px] font-bold text-white">{form.buttonText}</span>
+                    )}
+                  </div>
+                )}
                 <span className="pointer-events-none absolute bottom-1.5 right-1.5 rounded bg-black/55 px-1.5 py-0.5 text-[9px] font-bold uppercase text-white">AD</span>
               </div>
             ) : (
@@ -1900,20 +1921,44 @@ function AffiliateAdsTab() {
             )}
           </div>
 
-          {/* ─── Text Fields ─── */}
+          {/* ─── Text Fields (with ON/OFF toggles for combined image mode) ───
+              The toggles only matter when Combined Image Mode is active.
+              When ON → the text overlays on top of the combined image.
+              When OFF → the text is hidden (only image shows). */}
           <div className="grid gap-3 sm:grid-cols-2">
+            {/* Ad Title + toggle */}
             <div className="space-y-1">
-              <label className="text-[11px] font-bold uppercase tracking-wide text-muted-foreground">Ad Title</label>
+              <div className="flex items-center justify-between">
+                <label className="text-[11px] font-bold uppercase tracking-wide text-muted-foreground">Ad Title</label>
+                <div className="flex items-center gap-1.5">
+                  <span className="text-[9px] font-bold text-muted-foreground">SHOW</span>
+                  <Switch checked={form.showTitle} onCheckedChange={(v) => upd("showTitle", v)} className="scale-75" />
+                </div>
+              </div>
               <Input value={form.title} onChange={(e) => upd("title", e.target.value)} className="h-9" placeholder="e.g. Mexc" maxLength={100} />
             </div>
+            {/* Button Text + toggle */}
             <div className="space-y-1">
-              <label className="text-[11px] font-bold uppercase tracking-wide text-muted-foreground">Button Text</label>
+              <div className="flex items-center justify-between">
+                <label className="text-[11px] font-bold uppercase tracking-wide text-muted-foreground">Button Text</label>
+                <div className="flex items-center gap-1.5">
+                  <span className="text-[9px] font-bold text-muted-foreground">SHOW</span>
+                  <Switch checked={form.showButton} onCheckedChange={(v) => upd("showButton", v)} className="scale-75" />
+                </div>
+              </div>
               <Input value={form.buttonText} onChange={(e) => upd("buttonText", e.target.value)} className="h-9" placeholder="e.g. Download" maxLength={30} />
             </div>
           </div>
 
+          {/* Ad Description + toggle */}
           <div className="space-y-1">
-            <label className="text-[11px] font-bold uppercase tracking-wide text-muted-foreground">Ad Description</label>
+            <div className="flex items-center justify-between">
+              <label className="text-[11px] font-bold uppercase tracking-wide text-muted-foreground">Ad Description</label>
+              <div className="flex items-center gap-1.5">
+                <span className="text-[9px] font-bold text-muted-foreground">SHOW</span>
+                <Switch checked={form.showDescription} onCheckedChange={(v) => upd("showDescription", v)} className="scale-75" />
+              </div>
+            </div>
             <Textarea
               value={form.description}
               onChange={(e) => upd("description", e.target.value)}
@@ -1921,7 +1966,14 @@ function AffiliateAdsTab() {
               placeholder="e.g. Make your first deposit and Futures trade to unlock rewards"
               maxLength={300}
             />
-            <p className="text-right text-[10px] text-muted-foreground">{form.description.length}/300</p>
+            <div className="flex items-center justify-between">
+              {form.combinedAdImage ? (
+                <p className="text-[10px] text-fuchsia-600">ℹ In Combined Image Mode, toggle ON to overlay text on the image</p>
+              ) : (
+                <p className="text-[10px] text-muted-foreground/60">Toggles apply only in Combined Image Mode</p>
+              )}
+              <p className="text-[10px] text-muted-foreground">{form.description.length}/300</p>
+            </div>
           </div>
 
           <div className="space-y-1">
