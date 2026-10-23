@@ -427,6 +427,7 @@ export interface AffiliateAdData {
   buttonText: string
   logoUrl: string
   bannerUrl: string
+  combinedAdImage: string
   link: string
   updatedAt: string
 }

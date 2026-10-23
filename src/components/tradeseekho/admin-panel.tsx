@@ -1742,13 +1742,16 @@ function AffiliateAdsTab() {
     buttonText: "Download",
     logoUrl: "",
     bannerUrl: "",
+    combinedAdImage: "",
     link: "https://www.mexc.com",
   })
   const [loaded, setLoaded] = useState(false)
   const [uploadingLogo, setUploadingLogo] = useState(false)
   const [uploadingBanner, setUploadingBanner] = useState(false)
+  const [uploadingCombined, setUploadingCombined] = useState(false)
   const logoInputRef = useRef<HTMLInputElement>(null)
   const bannerInputRef = useRef<HTMLInputElement>(null)
+  const combinedInputRef = useRef<HTMLInputElement>(null)
 
   // One-time sync from server data → local form state
   if (data?.ad && !loaded) {
@@ -1760,6 +1763,7 @@ function AffiliateAdsTab() {
       buttonText: a.buttonText,
       logoUrl: a.logoUrl,
       bannerUrl: a.bannerUrl,
+      combinedAdImage: a.combinedAdImage,
       link: a.link,
     })
     setLoaded(true)
@@ -1769,9 +1773,9 @@ function AffiliateAdsTab() {
     setForm((p) => ({ ...p, [field]: value }))
   }
 
-  // Upload image (logo or banner) via the shared /api/admin/upload-image endpoint.
+  // Upload image (logo, banner, or combined) via the shared /api/admin/upload-image endpoint.
   // Auto-compresses to WebP (max 800px, quality 75) server-side, returns CDN URL.
-  const uploadImage = async (file: File, kind: "logo" | "banner") => {
+  const uploadImage = async (file: File, kind: "logo" | "banner" | "combined") => {
     if (!file.type.startsWith("image/")) {
       toast.error("Please select an image file")
       return
@@ -1780,7 +1784,7 @@ function AffiliateAdsTab() {
       toast.error("Image must be under 5MB")
       return
     }
-    const setLoading = kind === "logo" ? setUploadingLogo : setUploadingBanner
+    const setLoading = kind === "logo" ? setUploadingLogo : kind === "banner" ? setUploadingBanner : setUploadingCombined
     setLoading(true)
     try {
       const fd = new FormData()
@@ -1792,13 +1796,16 @@ function AffiliateAdsTab() {
       }
       if (kind === "logo") {
         upd("logoUrl", json.url)
-      } else {
+      } else if (kind === "banner") {
         upd("bannerUrl", json.url)
+      } else {
+        upd("combinedAdImage", json.url)
       }
       const saved = json.compression
         ? ` (${json.compression.savedPc}% smaller, ${Math.round(json.compression.compressedSize / 1024)}KB)`
         : ""
-      toast.success(`${kind === "logo" ? "Logo" : "Banner"} uploaded${saved}`)
+      const label = kind === "logo" ? "Logo" : kind === "banner" ? "Banner" : "Combined image"
+      toast.success(`${label} uploaded${saved}`)
     } catch (e: any) {
       toast.error(e?.message || "Upload failed")
     } finally {
@@ -1845,37 +1852,52 @@ function AffiliateAdsTab() {
 
           {/* ─── Live Preview ─── */}
           <div className="rounded-xl border border-dashed border-border p-3">
-            <div className="mb-2 text-[11px] font-bold uppercase tracking-wide text-muted-foreground">Live Preview</div>
-            <div className="relative flex overflow-hidden rounded-2xl border border-border bg-white dark:bg-zinc-900">
-              <div className="flex min-w-0 flex-1 flex-col items-center justify-center gap-1 p-3 text-center">
-                {form.logoUrl ? (
-                  <img src={form.logoUrl} alt="" className="h-7 w-auto max-w-[120px] object-contain" />
-                ) : (
-                  <span className="text-lg font-extrabold text-zinc-900 dark:text-white">{form.title || "Brand"}</span>
-                )}
-                {form.logoUrl && form.title && (
-                  <span className="text-sm font-extrabold text-zinc-900 dark:text-white">{form.title}</span>
-                )}
-                {form.description && (
-                  <p className="line-clamp-2 text-[11px] leading-snug text-zinc-500 dark:text-zinc-400">{form.description}</p>
-                )}
-                {form.buttonText && (
-                  <span className="mt-1 inline-block rounded-lg bg-red-500 px-4 py-1.5 text-xs font-bold text-white">
-                    {form.buttonText}
-                  </span>
-                )}
-              </div>
-              <div className="relative w-[42%] shrink-0 overflow-hidden bg-zinc-950">
-                {form.bannerUrl ? (
-                  <img src={form.bannerUrl} alt="" className="absolute inset-0 h-full w-full object-cover" />
-                ) : (
-                  <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-zinc-800 to-zinc-950">
-                    <span className="px-2 text-center text-[10px] font-medium text-zinc-400">Banner Image</span>
-                  </div>
-                )}
-              </div>
-              <span className="pointer-events-none absolute bottom-1.5 right-1.5 rounded bg-black/55 px-1.5 py-0.5 text-[9px] font-bold uppercase text-white">AD</span>
+            <div className="mb-2 flex items-center justify-between">
+              <span className="text-[11px] font-bold uppercase tracking-wide text-muted-foreground">Live Preview</span>
+              {form.combinedAdImage && (
+                <span className="rounded-full bg-fuchsia-500/20 px-2 py-0.5 text-[9px] font-bold text-fuchsia-600">COMBINED IMAGE MODE</span>
+              )}
             </div>
+            {form.combinedAdImage ? (
+              // ─── Combined Image Mode: full-width single image ───
+              <div className="relative block overflow-hidden rounded-2xl border border-border bg-white dark:bg-zinc-900">
+                <img src={form.combinedAdImage} alt="" className="block h-auto w-full object-contain" style={{ maxHeight: "160px" }} />
+                <span className="pointer-events-none absolute bottom-1.5 right-1.5 rounded bg-black/55 px-1.5 py-0.5 text-[9px] font-bold uppercase text-white">AD</span>
+              </div>
+            ) : (
+              // ─── Split Layout: logo + banner ───
+              <div className="relative flex overflow-hidden rounded-2xl border border-border bg-white dark:bg-zinc-900">
+                <div className="flex min-w-0 flex-1 flex-col items-center justify-center gap-1 p-3 text-center">
+                  {form.logoUrl ? (
+                    <img src={form.logoUrl} alt="" className="h-7 w-auto max-w-[120px] object-contain" />
+                  ) : (
+                    <span className="text-lg font-extrabold text-zinc-900 dark:text-white">{form.title || "Brand"}</span>
+                  )}
+                  {form.logoUrl && form.title && (
+                    <span className="text-sm font-extrabold text-zinc-900 dark:text-white">{form.title}</span>
+                  )}
+                  {form.description && (
+                    <p className="line-clamp-2 text-[11px] leading-snug text-zinc-500 dark:text-zinc-400">{form.description}</p>
+                  )}
+                  {form.buttonText && (
+                    <span className="mt-1 inline-block rounded-lg bg-red-500 px-4 py-1.5 text-xs font-bold text-white">
+                      {form.buttonText}
+                    </span>
+                  )}
+                </div>
+                {/* Banner image: object-contain (NOT cut) + padding 5px + center-left position */}
+                <div className="relative w-[42%] shrink-0 overflow-hidden bg-zinc-950 p-[5px]">
+                  {form.bannerUrl ? (
+                    <img src={form.bannerUrl} alt="" className="absolute inset-[5px] h-[calc(100%-10px)] w-[calc(100%-10px)] object-contain" style={{ objectPosition: "center left" }} />
+                  ) : (
+                    <div className="absolute inset-[5px] flex items-center justify-center rounded bg-gradient-to-br from-zinc-800 to-zinc-950">
+                      <span className="px-2 text-center text-[10px] font-medium text-zinc-400">Banner Image</span>
+                    </div>
+                  )}
+                </div>
+                <span className="pointer-events-none absolute bottom-1.5 right-1.5 rounded bg-black/55 px-1.5 py-0.5 text-[9px] font-bold uppercase text-white">AD</span>
+              </div>
+            )}
           </div>
 
           {/* ─── Text Fields ─── */}
@@ -1969,7 +1991,7 @@ function AffiliateAdsTab() {
               <div className="rounded-xl border border-border p-3 space-y-2">
                 {form.bannerUrl ? (
                   <div className="relative">
-                    <img src={form.bannerUrl} alt="Banner" className="mx-auto h-16 w-full object-cover rounded" />
+                    <img src={form.bannerUrl} alt="Banner" className="mx-auto h-16 w-full object-contain rounded bg-zinc-950" />
                     <button
                       onClick={() => upd("bannerUrl", "")}
                       className="absolute right-0 top-0 rounded-full bg-destructive/90 p-1 text-destructive-foreground"
@@ -2007,6 +2029,61 @@ function AffiliateAdsTab() {
                   )}
                 </Button>
               </div>
+            </div>
+          </div>
+
+          {/* ─── Combined Image Upload (single full-width image mode) ─── */}
+          <div className="space-y-1.5">
+            <label className="text-[11px] font-bold uppercase tracking-wide text-muted-foreground">
+              Combined Ad Image (Optional · 600×300) — single full-width image
+            </label>
+            <div className="rounded-xl border-2 border-dashed border-fuchsia-500/30 bg-fuchsia-500/5 p-3 space-y-2">
+              {form.combinedAdImage ? (
+                <div className="relative">
+                  <img src={form.combinedAdImage} alt="Combined ad" className="mx-auto h-24 w-full object-contain rounded bg-white" />
+                  <button
+                    onClick={() => upd("combinedAdImage", "")}
+                    className="absolute right-0 top-0 rounded-full bg-destructive/90 p-1 text-destructive-foreground"
+                    aria-label="Remove combined image"
+                  >
+                    <X className="h-3 w-3" />
+                  </button>
+                </div>
+              ) : (
+                <div className="flex h-20 items-center justify-center text-[11px] text-muted-foreground">
+                  Upload a 600×300 image to show a single full-width ad (hides logo + banner split)
+                </div>
+              )}
+              <input
+                ref={combinedInputRef}
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={(e) => {
+                  const f = e.target.files?.[0]
+                  if (f) uploadImage(f, "combined")
+                  e.target.value = ""
+                }}
+              />
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="w-full gap-1.5 border-fuchsia-500/50 text-fuchsia-600 hover:bg-fuchsia-500/10"
+                disabled={uploadingCombined}
+                onClick={() => combinedInputRef.current?.click()}
+              >
+                {uploadingCombined ? (
+                  <><Save className="h-3.5 w-3.5 animate-pulse" /> Uploading...</>
+                ) : (
+                  <><Upload className="h-3.5 w-3.5" /> Upload Combined Image (600×300)</>
+                )}
+              </Button>
+              {form.combinedAdImage && (
+                <p className="text-center text-[10px] font-bold text-fuchsia-600">
+                  ✓ Combined image mode is ACTIVE — logo + banner split is hidden
+                </p>
+              )}
             </div>
           </div>
 

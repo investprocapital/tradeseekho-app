@@ -25,6 +25,7 @@ export async function GET() {
         buttonText: row.buttonText,
         logoUrl: row.logoUrl ?? "",
         bannerUrl: row.bannerUrl ?? "",
+        combinedAdImage: row.combinedAdImage ?? "",
         link: row.link,
         updatedAt: row.updatedAt.toISOString(),
       },
@@ -41,6 +42,7 @@ export async function GET() {
         buttonText: "Download",
         logoUrl: "",
         bannerUrl: "",
+        combinedAdImage: "",
         link: "#",
         updatedAt: new Date().toISOString(),
       },
@@ -50,7 +52,7 @@ export async function GET() {
 }
 
 // PUT /api/admin/affiliate-ads — admin: update the affiliate ad config.
-// Body: { enabled, title, description, buttonText, logoUrl, bannerUrl, link }
+// Body: { enabled, title, description, buttonText, logoUrl, bannerUrl, combinedAdImage, link }
 // Image URLs are already CDN URLs (uploaded separately via /api/admin/upload-image).
 export async function PUT(req: Request) {
   const guard = await requireAdmin()
@@ -70,6 +72,7 @@ export async function PUT(req: Request) {
     buttonText: String(body.buttonText ?? "Download").slice(0, 30),
     logoUrl: String(body.logoUrl ?? "").slice(0, 2000) || null,
     bannerUrl: String(body.bannerUrl ?? "").slice(0, 2000) || null,
+    combinedAdImage: String(body.combinedAdImage ?? "").slice(0, 2000) || null,
     link: String(body.link ?? "#").slice(0, 2000) || "#",
   }
 
@@ -88,6 +91,7 @@ export async function PUT(req: Request) {
         buttonText: row.buttonText,
         logoUrl: row.logoUrl ?? "",
         bannerUrl: row.bannerUrl ?? "",
+        combinedAdImage: row.combinedAdImage ?? "",
         link: row.link,
         updatedAt: row.updatedAt.toISOString(),
       },

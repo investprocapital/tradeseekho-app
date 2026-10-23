@@ -22,6 +22,7 @@ export async function GET() {
         buttonText: row.buttonText,
         logoUrl: row.logoUrl ?? "",
         bannerUrl: row.bannerUrl ?? "",
+        combinedAdImage: row.combinedAdImage ?? "",
         link: row.link,
       },
     })
