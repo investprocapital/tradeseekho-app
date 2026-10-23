@@ -26,6 +26,7 @@ export async function GET() {
       googleLoginEnabled: s.googleLoginEnabled,
       priceAlertsEnabled: s.priceAlertsEnabled,
       reviewsEnabled: s.reviewsEnabled,
+      brokerAdsEnabled: s.brokerAdsEnabled,
     })
   } catch (e: any) {
     console.error("[admin/ads] DB unreachable:", e?.message)
@@ -44,6 +45,7 @@ export async function GET() {
       googleLoginEnabled: true,
       priceAlertsEnabled: true,
       reviewsEnabled: true,
+      brokerAdsEnabled: true,
     })
   }
 }
@@ -98,6 +100,7 @@ export async function PUT(req: Request) {
   // Price Alerts ON/OFF
   if ("priceAlertsEnabled" in body) data.priceAlertsEnabled = !!body.priceAlertsEnabled
   if ("reviewsEnabled" in body) data.reviewsEnabled = !!body.reviewsEnabled
+  if ("brokerAdsEnabled" in body) data.brokerAdsEnabled = !!body.brokerAdsEnabled
 
   const updated = await db.adSettings.upsert({
     where: { id: "singleton" },
@@ -119,5 +122,6 @@ export async function PUT(req: Request) {
     googleLoginEnabled: updated.googleLoginEnabled,
     priceAlertsEnabled: updated.priceAlertsEnabled,
     reviewsEnabled: updated.reviewsEnabled,
+    brokerAdsEnabled: updated.brokerAdsEnabled,
   })
 }

@@ -34,6 +34,8 @@ export function BrokerAdBanner({ fixed = false }: { fixed?: boolean }) {
     staleTime: 60_000,
   })
 
+  // When the global brokerAdsEnabled toggle is OFF, the API returns an empty
+  // array → ads.length === 0 → component returns null (hidden).
   const ads = (data?.ads ?? []).filter((a) => a.enabled)
   const [currentIdx, setCurrentIdx] = useState(0)
 
@@ -46,6 +48,7 @@ export function BrokerAdBanner({ fixed = false }: { fixed?: boolean }) {
     return () => clearInterval(interval)
   }, [ads.length])
 
+  // Hidden when no ads (global toggle OFF or all individual ads disabled)
   if (ads.length === 0) return null
 
   const ad = ads[currentIdx] ?? ads[0]

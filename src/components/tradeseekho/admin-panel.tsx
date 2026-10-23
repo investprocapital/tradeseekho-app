@@ -1238,6 +1238,7 @@ type AdminAdsForm = {
   googleLoginEnabled?: boolean
   priceAlertsEnabled?: boolean
   reviewsEnabled?: boolean
+  brokerAdsEnabled?: boolean
 }
 
 /* ---------------- Pro Requests ---------------- */
@@ -1655,6 +1656,10 @@ function PaymentSettingsTab() {
 function BrokerAdsTab() {
   const { data, isLoading } = useBrokerAds()
   const save = useSaveBrokerAds()
+  // Fetch AdSettings (for the global brokerAdsEnabled toggle)
+  const { data: adsSettings } = useAdminAds()
+  const saveAds = useSaveAds()
+  const qc = useQueryClient()
 
   const [ads, setAds] = useState<Array<{
     id?: string; slot: number; name: string; text: string; btnText: string; link: string; enabled: boolean
@@ -1679,7 +1684,22 @@ function BrokerAdsTab() {
     }
   }
 
+  // Toggle the global brokerAdsEnabled flag (in AdSettings, not BrokerAd).
+  // When OFF, the public API returns empty array → BrokerAdBanner hides.
+  const onToggleGlobal = async (v: boolean) => {
+    if (!adsSettings) return
+    try {
+      await saveAds.mutateAsync({ ...adsSettings, brokerAdsEnabled: v })
+      qc.invalidateQueries({ queryKey: ["broker-ads"] })
+      toast.success(`Broker ads ${v ? "enabled" : "disabled"} globally`)
+    } catch {
+      toast.error("Failed to toggle. Try again.")
+    }
+  }
+
   if (isLoading) return <p className="py-6 text-center text-sm text-muted-foreground">Loading...</p>
+
+  const globalEnabled = adsSettings?.brokerAdsEnabled ?? true
 
   return (
     <div className="space-y-4">
@@ -1689,7 +1709,24 @@ function BrokerAdsTab() {
           <CardDescription>Manage rotating broker ads shown on homepage. Ads auto-rotate every 10 seconds.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          {ads.map((ad, i) => (
+          {/* ─── Global ON/OFF Toggle ───
+              When OFF, the entire broker ads section is hidden on the home page.
+              The public API returns empty array (no DB fetch) → zero bandwidth. */}
+          <div className="flex items-center justify-between rounded-xl border-2 border-border bg-muted/30 p-3">
+            <div>
+              <div className="text-sm font-bold">Show Broker Ads (Global)</div>
+              <div className="text-[11px] text-muted-foreground">Main switch — turn OFF to hide all broker ads on the home page</div>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className={`text-[11px] font-bold ${globalEnabled ? "text-emerald-600" : "text-muted-foreground"}`}>
+                {globalEnabled ? "ON" : "OFF"}
+              </span>
+              <Switch checked={globalEnabled} onCheckedChange={onToggleGlobal} disabled={saveAds.isPending} />
+            </div>
+          </div>
+
+          {/* Individual ad slots — only show when global toggle is ON */}
+          {globalEnabled && ads.map((ad, i) => (
             <div key={ad.slot} className="rounded-xl border border-border p-4 space-y-3">
               <div className="flex items-center justify-between">
                 <span className="text-sm font-bold">Ad Slot {ad.slot}</span>
@@ -1720,10 +1757,18 @@ function BrokerAdsTab() {
               </div>
             </div>
           ))}
-          <Button className="h-10 w-full gap-2 bg-brand font-bold text-brand-foreground hover:bg-brand/90" onClick={onSave} disabled={save.isPending}>
-            {save.isPending ? <Save className="h-4 w-4 animate-pulse" /> : <Save className="h-4 w-4" />}
-            Save Broker Ads
-          </Button>
+          {globalEnabled && (
+            <Button className="h-10 w-full gap-2 bg-brand font-bold text-brand-foreground hover:bg-brand/90" onClick={onSave} disabled={save.isPending}>
+              {save.isPending ? <Save className="h-4 w-4 animate-pulse" /> : <Save className="h-4 w-4" />}
+              Save Broker Ads
+            </Button>
+          )}
+          {!globalEnabled && (
+            <div className="rounded-xl border border-dashed border-amber-500/40 bg-amber-500/5 p-4 text-center">
+              <p className="text-sm font-bold text-amber-600">⚠ Broker Ads are hidden globally</p>
+              <p className="text-[11px] text-muted-foreground mt-1">Turn ON the toggle above to edit individual ad slots</p>
+            </div>
+          )}
         </CardContent>
       </Card>
     </div>

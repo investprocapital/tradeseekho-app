@@ -232,6 +232,10 @@ model AdSettings {
   priceAlertsEnabled   Boolean  @default(true)
   // Reviews section ON/OFF — admin can show/hide "What Students Say" on home
   reviewsEnabled       Boolean  @default(true)
+  // Broker Ads banner ON/OFF — global toggle to hide the entire broker ads
+  // section on the home page (all 3 rotating ads). When OFF, the BrokerAdBanner
+  // component returns null + the public API returns empty array (no DB fetch).
+  brokerAdsEnabled     Boolean  @default(true)
   updatedAt            DateTime @updatedAt
 }
 
