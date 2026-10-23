@@ -1,0 +1,660 @@
+     1→"use client"
+     2→
+     3→import { useRef, useState, useCallback } from "react"
+     4→import { useQuery } from "@tanstack/react-query"
+     5→import { useSession } from "next-auth/react"
+     6→import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog"
+     7→import { Button } from "@/components/ui/button"
+     8→import { Input } from "@/components/ui/input"
+     9→import { Label } from "@/components/ui/label"
+    10→import { Textarea } from "@/components/ui/textarea"
+    11→import { Badge } from "@/components/ui/badge"
+    12→import { Separator } from "@/components/ui/separator"
+    13→import { Crown, Copy, Upload, Loader2, AlertCircle, CheckCircle2, Clock, Smartphone, Image as ImageIcon, CreditCard, Globe, Coins, Share2, Download, RotateCcw } from "lucide-react"
+    14→import { useStore, useT } from "@/lib/store"
+    15→import { useProMe, useSubmitProRequest } from "./use-data"
+    16→import { toast } from "sonner"
+    17→import { QRCodeSVG } from "qrcode.react"
+    18→import QRCode from "qrcode"
+    19→
+    20→interface ProSettings {
+    21→  usdPrice: number
+    22→  pkrRate: number
+    23→  pkrPrice: number
+    24→  jazzcashNumber: string
+    25→  easypaisaNumber: string
+    26→  cardEnabled: boolean
+    27→  cardInstructions: string
+    28→  sadapayEnabled: boolean
+    29→  sadapayName: string
+    30→  sadapayNumber: string
+    31→  sadapayIban: string
+    32→  usdtEnabled: boolean
+    33→  usdtAddress: string
+    34→  bep20Enabled: boolean
+    35→  bep20Address: string
+    36→  payoneerEnabled: boolean
+    37→  payoneerEmail: string
+    38→  payoneerInstructions: string
+    39→}
+    40→
+    41→async function fetchProSettings(): Promise<ProSettings> {
+    42→  const res = await fetch("/api/pro/settings")
+    43→  if (!res.ok) throw new Error("failed")
+    44→  return res.json()
+    45→}
+    46→
+    47→type Method = "JazzCash" | "Easypaisa" | "Card" | "SadaPay" | "USDT" | "USDT_BEP20" | "Payoneer"
+    48→
+    49→export function ProDialog() {
+    50→  const open = useStore((s) => s.proOpen)
+    51→  const setOpen = useStore((s) => s.setProOpen)
+    52→  const proPlan = useStore((s) => s.proPlan) // which plan client is buying (from store context)
+    53→  const setLoginOpen = useStore((s) => s.setLoginOpen)
+    54→  const t = useT()
+    55→  const lang = useStore((s) => s.lang)
+    56→  const rtlFont = lang === "ur" ? "font-urdu" : lang === "ar" ? "font-arabic" : ""
+    57→  const { data: session } = useSession()
+    58→  const { data: proMe, isLoading } = useProMe()
+    59→  const submit = useSubmitProRequest()
+    60→  const { data: settings } = useQuery<ProSettings>({
+    61→    queryKey: ["pro-settings"],
+    62→    queryFn: fetchProSettings,
+    63→    staleTime: 60_000,
+    64→  })
+    65→
+    66→  const [method, setMethod] = useState<Method>("JazzCash")
+    67→  const [amount, setAmount] = useState("")
+    68→  const [note, setNote] = useState("")
+    69→  const [file, setFile] = useState<File | null>(null)
+    70→  const [filePreview, setFilePreview] = useState<string | null>(null)
+    71→  const [err, setErr] = useState<string | null>(null)
+    72→  const [sharing, setSharing] = useState(false)
+    73→  const fileRef = useRef<HTMLInputElement>(null)
+    74→
+    75→  const isPro = proMe?.proStatus === "active"
+    76→  const isPending = proMe?.proStatus === "pending"
+    77→  // Check if user already has the specific plan they're trying to buy
+    78→  const currentPlans = proMe?.proPlans ?? ""
+    79→  const alreadyHasThisPlan = proPlan ? currentPlans.includes(proPlan) : false
+    80→
+    81→  const usdPrice = settings?.usdPrice ?? 5
+    82→  const pkrRate = settings?.pkrRate ?? 280
+    83→  const pkrPrice = settings?.pkrPrice ?? Math.round(usdPrice * pkrRate)
+    84→  const displayAmount = amount || String(pkrPrice)
+    85→
+    86→  const methods: { id: Method; label: string; color: string; accent: string; icon: any; subtitle?: string }[] = [
+    87→    { id: "JazzCash", label: "JazzCash", color: "#ED1C24", accent: "bg-[#ED1C24]", icon: Smartphone },
+    88→    { id: "Easypaisa", label: "Easypaisa", color: "#00B14F", accent: "bg-[#00B14F]", icon: Smartphone },
+    89→  ]
+    90→  if (settings?.cardEnabled !== false) {
+    91→    methods.push({ id: "Card", label: "Visa / Debit Card", color: "#1A1F71", accent: "bg-[#1A1F71]", icon: CreditCard })
+    92→  }
+    93→  if (settings?.sadapayEnabled !== false) {
+    94→    methods.push({ id: "SadaPay", label: "SadaPay", color: "#6C2BD9", accent: "bg-[#6C2BD9]", icon: Globe, subtitle: "For International / Worldwide Clients" })
+    95→  }
+    96→  if (settings?.usdtEnabled !== false) {
+    97→    methods.push({ id: "USDT", label: "USDT TRC20 (Binance)", color: "#26A17B", accent: "bg-[#26A17B]", icon: Coins, subtitle: "Crypto · Tron Network" })
+    98→  }
+    99→  if (settings?.bep20Enabled !== false) {
+   100→    methods.push({ id: "USDT_BEP20", label: "USDT BEP20 (BSC) · NEW", color: "#F3BA2F", accent: "bg-[#F3BA2F]", icon: Coins, subtitle: "Crypto · BNB Smart Chain" })
+   101→  }
+   102→  if (settings?.payoneerEnabled !== false && settings?.payoneerEmail) {
+   103→    methods.push({ id: "Payoneer", label: "Payoneer · NEW", color: "#FF4800", accent: "bg-[#FF4800]", icon: Coins, subtitle: "Email Transfer" })
+   104→  }
+   105→
+   106→  const currentNumber = method === "JazzCash" ? settings?.jazzcashNumber : method === "Easypaisa" ? settings?.easypaisaNumber : ""
+   107→
+   108→  // Resolve which crypto address/network to show based on method
+   109→  const cryptoCtx = method === "USDT"
+   110→    ? { address: settings?.usdtAddress || "", network: "TRC20 / Tron", color: "#26A17B", sectionTitle: t("pro.usdtSectionTitle"), warning: t("pro.usdtWarning"), shareLabel: "TradeSeekho PK · USDT TRC20" }
+   111→    : method === "USDT_BEP20"
+   112→    ? { address: settings?.bep20Address || "0xaa889030e6e69ef3eb55a2e94f1226628a8a19c3", network: t("pro.bep20Network"), color: "#F3BA2F", sectionTitle: t("pro.bep20SectionTitle"), warning: t("pro.bep20Warning"), shareLabel: "TradeSeekho PK · USDT BEP20 (BSC)" }
+   113→    : method === "Payoneer"
+   114→    ? { address: settings?.payoneerEmail || "", network: "Payoneer Email Transfer", color: "#FF4800", sectionTitle: "Payoneer · Email Transfer", warning: "⚠ Only send to this Payoneer Email. After sending, upload screenshot and Payoneer Transaction ID is mandatory.", shareLabel: "TradeSeekho PK · Payoneer" }
+   115→    : null
+   116→
+   117→  const onFile = (e: React.ChangeEvent<HTMLInputElement>) => {
+   118→    const f = e.target.files?.[0]
+   119→    if (!f) return
+   120→    if (!f.type.startsWith("image/")) { setErr("Please select an image file."); return }
+   121→    if (f.size > 4 * 1024 * 1024) { setErr("Max 4MB."); return }
+   122→    setFile(f)
+   123→    setFilePreview(URL.createObjectURL(f))
+   124→    setErr(null)
+   125→  }
+   126→
+   127→  const onSubmit = async (e: React.FormEvent) => {
+   128→    e.preventDefault()
+   129→    setErr(null)
+   130→    if (!session?.user) {
+   131→      setOpen(false)
+   132→      setLoginOpen(true)
+   133→      return
+   134→    }
+   135→    if (method !== "Card" && !file) { setErr("Please upload a payment screenshot."); return }
+   136→    const isCrypto = method === "USDT" || method === "USDT_BEP20"
+   137→    const isPayoneer = method === "Payoneer"
+   138→    const needsTxId = isCrypto || isPayoneer
+   139→    if (needsTxId && !note.trim()) {
+   140→      setErr(isPayoneer
+   141→        ? "Please enter your Payoneer Transaction ID."
+   142→        : "Please paste your Transaction Hash / TxID for the crypto payment.")
+   143→      return
+   144→    }
+   145→    try {
+   146→      // For crypto/Payoneer: send txHash SEPARATELY from note (so admin can verify)
+   147→      const txHash = needsTxId ? note.trim() : undefined
+   148→      // planType: from store context (which page client came from)
+   149→      // alerts = Price Alerts page, lessons = locked lesson, signals = signals page
+   150→      const planType = proPlan || "alerts" // default to alerts if not set
+   151→      await submit.mutateAsync({ method, amount: Number(displayAmount) || 0, note: needsTxId ? "" : note, txHash, planType, file })
+   152→      toast.success("Payment submitted!", { description: "We'll review and activate Pro within 24h." })
+   153→      setFile(null); setFilePreview(null); setNote("")
+   154→    } catch (e2: any) {
+   155→      const msg = e2?.message || ""
+   156→      const code = (e2 as any)?.code || ""
+   157→      if (code === "already_has_plan" || msg.includes("already_has_plan")) setErr(`You already have the ${proPlan || "this"} plan. Buy a different plan.`)
+   158→      else if (code === "already_pro" || msg.includes("already_pro")) setErr("You're already Pro.")
+   159→      else if (code === "unauthorized" || msg.includes("unauthorized")) setErr("Please sign in first.")
+   160→      else if (code === "txid_required" || msg.includes("txid_required")) setErr("Transaction Hash / TxID is required for crypto payments.")
+   161→      else if (code === "txid_invalid" || msg.includes("txid_invalid")) setErr("Invalid Tx Hash format. Please paste the full Transaction Hash.")
+   162→      else if (code === "bad_method" || msg.includes("bad_method")) setErr("Invalid payment method. Please refresh and try again.")
+   163→      else if (code === "bad_plan" || msg.includes("bad_plan")) setErr("Invalid plan type. Please refresh and try again.")
+   164→      else if (code === "no_file" || msg.includes("no_file")) setErr("Please upload a payment screenshot.")
+   165→      else if (code === "not_image" || msg.includes("not_image")) setErr("Please select an image file (JPG/PNG).")
+   166→      else if (code === "too_large" || msg.includes("too_large")) setErr("Image too large. Max 5MB.")
+   167→      else setErr("Submission failed. Try again.")
+   168→    }
+   169→  }
+   170→
+   171→  const copy = (text: string) => {
+   172→    if (!text) return
+   173→    navigator.clipboard?.writeText(text)
+   174→    toast.success("Copied: " + text)
+   175→  }
+   176→
+   177→  // Save & Share: generate QR PNG, then try Web Share API with files; fallback to download.
+   178→  const saveAndShare = useCallback(async () => {
+   179→    if (!cryptoCtx?.address) return
+   180→    setSharing(true)
+   181→    try {
+   182→      const dataUrl = await QRCode.toDataURL(cryptoCtx.address, {
+   183→        errorCorrectionLevel: "M",
+   184→        margin: 2,
+   185→        width: 480,
+   186→        color: { dark: "#0b0f17", light: "#ffffff" },
+   187→      })
+   188→      const shareText = `${cryptoCtx.shareLabel}\nNetwork: ${cryptoCtx.network}\nAddress: ${cryptoCtx.address}\n\nSend only via the ${cryptoCtx.network} network.`
+   189→      // Try Web Share API with file
+   190→      if (typeof navigator !== "undefined" && (navigator as any).canShare) {
+   191→        try {
+   192→          const resp = await fetch(dataUrl)
+   193→          const blob = await resp.blob()
+   194→          const file = new File([blob], "tradeseekho-deposit-qr.png", { type: "image/png" })
+   195→          if ((navigator as any).canShare({ files: [file] })) {
+   196→            await (navigator as any).share({ files: [file], title: cryptoCtx.shareLabel, text: shareText })
+   197→            setSharing(false)
+   198→            return
+   199→          }
+   200→        } catch {
+   201→          // fall through to download
+   202→        }
+   203→      }
+   204→      // Fallback: download the PNG + copy address
+   205→      const a = document.createElement("a")
+   206→      a.href = dataUrl
+   207→      a.download = "tradeseekho-deposit-qr.png"
+   208→      document.body.appendChild(a)
+   209→      a.click()
+   210→      document.body.removeChild(a)
+   211→      navigator.clipboard?.writeText(cryptoCtx.address)
+   212→      toast.success("QR image saved. Address copied to clipboard.")
+   213→    } catch (e) {
+   214→      toast.error("Could not generate QR image.")
+   215→    } finally {
+   216→      setSharing(false)
+   217→    }
+   218→  }, [cryptoCtx])
+   219→
+   220→  return (
+   221→    <Dialog open={open} onOpenChange={(v) => !submit.isPending && setOpen(v)}>
+   222→      <DialogContent className="max-h-[92vh] max-w-md overflow-y-auto p-0">
+   223→        <DialogHeader className="border-b border-border bg-gradient-to-br from-gold/15 to-brand-muted/30 p-5">
+   224→          <DialogTitle className="flex items-center gap-2 text-xl font-extrabold">
+   225→            <Crown className="h-5 w-5 text-gold" /> TradeSeekho PK Pro
+   226→            {proPlan && (
+   227→              <Badge className={
+   228→                proPlan === "alerts" ? "bg-amber-500/15 text-amber-600"
+   229→                : proPlan === "lessons" ? "bg-blue-500/15 text-blue-500"
+   230→                : proPlan === "signals" ? "bg-purple-500/15 text-purple-500"
+   231→                : "bg-muted text-muted-foreground"
+   232→              }>
+   233→                {proPlan === "alerts" ? "Alerts Plan" : proPlan === "lessons" ? "Lessons Plan" : proPlan === "signals" ? "Signals Plan" : proPlan}
+   234→              </Badge>
+   235→            )}
+   236→            {/* Reset button — clears form (method, file, note, error) */}
+   237→            <button
+   238→              type="button"
+   239→              onClick={() => {
+   240→                setMethod("JazzCash")
+   241→                setFile(null); setFilePreview(null)
+   242→                setNote(""); setErr(null)
+   243→                toast.success("Form reset")
+   244→              }}
+   245→              className="ml-auto flex items-center gap-1 rounded-lg border border-border bg-card px-2 py-1 text-[10px] font-bold text-muted-foreground transition hover:bg-muted"
+   246→              title="Reset form"
+   247→            >
+   248→              <RotateCcw className="h-3 w-3" /> Reset
+   249→            </button>
+   250→          </DialogTitle>
+   251→          <DialogDescription>
+   252→            Unlock all lessons, ad-free experience & certificates.
+   253→          </DialogDescription>
+   254→        </DialogHeader>
+   255→
+   256→        <div className="p-5">
+   257→          {/* Already has this specific plan */}
+   258→          {isPro && alreadyHasThisPlan ? (
+   259→            <div className="flex flex-col items-center gap-3 py-8 text-center">
+   260→              <span className="inline-flex h-16 w-16 items-center justify-center rounded-full bg-gold/20">
+   261→                <CheckCircle2 className="h-8 w-8 text-gold" />
+   262→              </span>
+   263→              <h3 className="text-lg font-extrabold text-foreground">
+   264→                {proPlan === "alerts" ? "Alerts Plan Active! 🎉" : proPlan === "lessons" ? "Lessons Plan Active! 🎉" : proPlan === "signals" ? "Signals Plan Active! 🎉" : "Plan Active! 🎉"}
+   265→              </h3>
+   266→              <p className="text-sm text-muted-foreground">
+   267→                You already have this plan. Your current plans: {currentPlans.split(",").join(", ")}
+   268→              </p>
+   269→              <p className="text-xs text-muted-foreground">Buy another plan if you want to unlock more features.</p>
+   270→            </div>
+   271→          ) : isPro && !alreadyHasThisPlan ? (
+   272→            /* Has SOME pro plan but not THIS one — show info banner + NORMAL form
+   273→               (same form as non-Pro users, with all payment details including
+   274→               crypto address + QR code). The banner tells them what they already
+   275→               have and what they're buying. */
+   276→            <form onSubmit={onSubmit} className="space-y-4">
+   277→              {/* Info banner: shows current plans + what they're buying */}
+   278→              <div className="flex items-start gap-2 rounded-lg border border-blue-500/40 bg-blue-500/10 p-3 text-xs">
+   279→                <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-blue-500" />
+   280→                <span>You have: <b>{currentPlans.split(",").join(", ")}</b>. Buy the <b>{proPlan}</b> plan to unlock more features.</span>
+   281→              </div>
+   282→              {/* Sign-in gate */}
+   283→              {!session?.user && (
+   284→                <div className="flex items-start gap-2 rounded-lg border border-gold/40 bg-gold/10 p-3 text-xs">
+   285→                  <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-gold" />
+   286→                  <span>Please <button type="button" className="font-bold text-gold underline" onClick={() => { setOpen(false); setLoginOpen(true) }}>sign in</button> first so we can link your payment to your account.</span>
+   287→                </div>
+   288→              )}
+   289→              {/* Price */}
+   290→              <div className="rounded-xl border border-border bg-card p-3 text-center">
+   291→                <div className="text-3xl font-extrabold text-foreground">${usdPrice}<span className="text-sm font-medium text-muted-foreground"> USD</span></div>
+   292→                <div className="mt-1 text-sm font-bold text-brand">≈ Rs {pkrPrice} PKR</div>
+   293→                <p className="mt-1 text-[11px] text-muted-foreground">One-time payment • Lifetime access • No auto-renewal</p>
+   294→              </div>
+   295→              {/* Method selection */}
+   296→              <div>
+   297→                <Label className="mb-2 block text-xs font-bold uppercase tracking-wide text-muted-foreground">1. Choose payment method</Label>
+   298→                <div className={`grid gap-2 ${methods.length > 2 ? "grid-cols-1" : "grid-cols-2"}`}>
+   299→                  {methods.map((m) => {
+   300→                    const Icon = m.icon
+   301→                    return (
+   302→                      <button key={m.id} type="button" onClick={() => setMethod(m.id)}
+   303→                        className={`flex items-center gap-2 rounded-xl border-2 p-3 text-start transition ${method === m.id ? "border-brand bg-brand-muted/40" : "border-border hover:bg-muted/40"}`}>
+   304→                        <span className={`inline-flex h-8 w-8 items-center justify-center rounded-lg text-white ${m.accent}`}><Icon className="h-4 w-4" /></span>
+   305→                        <div><div className="text-sm font-bold">{m.label}</div>{m.subtitle ? <div className="text-[9px] text-muted-foreground">{m.subtitle}</div> : <div className="text-[10px] text-muted-foreground">Tap to select</div>}</div>
+   306→                      </button>
+   307→                    )
+   308→                  })}
+   309→                </div>
+   310→              </div>
+   311→              {/* Payment details: Card / SadaPay / Crypto (with QR + address) / JazzCash / Easypaisa */}
+   312→              {method === "Card" ? (
+   313→                <div className="rounded-xl border border-dashed border-border bg-muted/30 p-3">
+   314→                  <div className="flex items-start gap-2">
+   315→                    <CreditCard className="mt-0.5 h-5 w-5 shrink-0 text-[#1A1F71]" />
+   316→                    <div className="flex-1">
+   317→                      <div className="text-[11px] uppercase tracking-wide text-muted-foreground">Card Payment</div>
+   318→                      <div className="text-sm font-bold text-foreground">{settings?.cardInstructions || "Contact admin on WhatsApp for card payment link"}</div>
+   319→                      <div className="mt-1 text-[10px] text-muted-foreground">Pay ${usdPrice} USD via secure card link</div>
+   320→                    </div>
+   321→                  </div>
+   322→                </div>
+   323→              ) : method === "SadaPay" ? (
+   324→                <div className="rounded-xl border border-dashed border-[#6C2BD9]/40 bg-[#6C2BD9]/5 p-3">
+   325→                  <div className="flex items-start gap-2">
+   326→                    <Globe className="mt-0.5 h-5 w-5 shrink-0 text-[#6C2BD9]" />
+   327→                    <div className="flex-1">
+   328→                      <div className="text-[11px] uppercase tracking-wide text-muted-foreground">SadaPay · International</div>
+   329→                      <div className="text-sm font-bold text-foreground">{settings?.sadapayName || "TradeSeekho PK"}</div>
+   330→                      <div className="mt-1.5 space-y-1">
+   331→                        <div className="flex items-center justify-between"><span className="text-[10px] text-muted-foreground">Number:</span><span className="font-mono text-xs font-bold text-foreground">{settings?.sadapayNumber || "03XX-XXXXXXX"}</span></div>
+   332→                        <div className="flex items-center justify-between"><span className="text-[10px] text-muted-foreground">IBAN:</span><span className="font-mono text-xs font-bold text-foreground">{settings?.sadapayIban || "PK36SAPK0000000000000000"}</span></div>
+   333→                      </div>
+   334→                      <div className="mt-2 flex justify-end"><Button type="button" size="sm" variant="outline" className="gap-1.5" onClick={() => copy(settings?.sadapayNumber || "")}><Copy className="h-3.5 w-3.5" /> Copy Number</Button></div>
+   335→                      <div className="mt-1 text-[10px] text-muted-foreground">Send ${usdPrice} USD or Rs {pkrPrice} PKR</div>
+   336→                    </div>
+   337→                  </div>
+   338→                </div>
+   339→              ) : cryptoCtx ? (
+   340→                <div className="rounded-xl border border-dashed p-3" style={{ borderColor: `${cryptoCtx.color}66`, backgroundColor: `${cryptoCtx.color}0D` }}>
+   341→                  <div className="flex items-start gap-2">
+   342→                    <Coins className="mt-0.5 h-5 w-5 shrink-0" style={{ color: cryptoCtx.color }} />
+   343→                    <div className="flex-1">
+   344→                      <div className={`text-[11px] uppercase tracking-wide text-muted-foreground ${rtlFont}`}>{cryptoCtx.sectionTitle}</div>
+   345→                      {/* QR + address block */}
+   346→                      <div className="mt-2 flex flex-col items-center gap-3 sm:flex-row sm:items-start">
+   347→                        <div className="rounded-lg border-2 border-border bg-white p-2 shadow-sm">
+   348→                          {cryptoCtx.address ? (
+   349→                            <QRCodeSVG value={cryptoCtx.address} size={120} level="M" marginSize={1} fgColor="#0b0f17" bgColor="#ffffff" />
+   350→                          ) : (
+   351→                            <div className="flex h-[120px] w-[120px] items-center justify-center text-[10px] text-muted-foreground">No address</div>
+   352→                          )}
+   353→                        </div>
+   354→                        <div className="flex-1 space-y-1.5 self-stretch">
+   355→                          <div className="space-y-0.5">
+   356→                            <div className={`text-[10px] text-muted-foreground ${rtlFont}`}>{t("pro.address")}</div>
+   357→                            <div className="break-all font-mono text-[11px] font-bold text-foreground">{cryptoCtx.address || "—"}</div>
+   358→                          </div>
+   359→                          <div className="flex items-center justify-between">
+   360→                            <span className={`text-[10px] text-muted-foreground ${rtlFont}`}>{t("pro.network")}</span>
+   361→                            <span className="text-xs font-bold" style={{ color: cryptoCtx.color }}>{cryptoCtx.network}</span>
+   362→                          </div>
+   363→                          <div className="flex items-center justify-between">
+   364→                            <span className={`text-[10px] text-muted-foreground ${rtlFont}`}>{t("pro.amount")}</span>
+   365→                            <span className="text-xs font-bold text-foreground">${usdPrice} USDT</span>
+   366→                          </div>
+   367→                        </div>
+   368→                      </div>
+   369→                      {/* Action buttons: Copy + Save & Share */}
+   370→                      <div className="mt-3 flex flex-wrap gap-2">
+   371→                        <Button type="button" size="sm" variant="outline" className="gap-1.5" onClick={() => copy(cryptoCtx.address)} disabled={!cryptoCtx.address}><Copy className="h-3.5 w-3.5" /> {t("pro.copyAddress")}</Button>
+   372→                        <Button type="button" size="sm" variant="secondary" className="gap-1.5" onClick={saveAndShare} disabled={sharing || !cryptoCtx.address}>{sharing ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Share2 className="h-3.5 w-3.5" />}{t("pro.saveShareAddress")}</Button>
+   373→                      </div>
+   374→                      {/* Network-specific warning */}
+   375→                      <div className={`mt-2 rounded-lg bg-red-500/10 p-2 text-[10px] font-bold leading-relaxed text-destructive ${rtlFont}`}>{cryptoCtx.warning}</div>
+   376→                    </div>
+   377→                  </div>
+   378→                </div>
+   379→              ) : (
+   380→                <div className="rounded-xl border border-dashed border-border bg-muted/30 p-3">
+   381→                  <div className="flex items-center justify-between">
+   382→                    <div>
+   383→                      <div className="text-[11px] uppercase tracking-wide text-muted-foreground">Send Rs {displayAmount} to</div>
+   384→                      <div className="font-mono text-base font-bold text-foreground">{currentNumber}</div>
+   385→                      <div className="text-[10px] text-muted-foreground">{method} • TradeSeekho PK</div>
+   386→                    </div>
+   387→                    <Button type="button" size="sm" variant="outline" className="gap-1.5" onClick={() => copy(currentNumber || "")}><Copy className="h-3.5 w-3.5" /> Copy</Button>
+   388→                  </div>
+   389→                </div>
+   390→              )}
+   391→              <Separator />
+   392→              {/* Screenshot upload (not required for Card method) */}
+   393→              {method !== "Card" && (
+   394→                <div>
+   395→                  <Label className={`mb-2 block text-xs font-bold uppercase tracking-wide text-muted-foreground ${rtlFont}`}>2. {t("pro.uploadScreenshot")}</Label>
+   396→                  <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={onFile} />
+   397→                  {filePreview ? (
+   398→                    <div className="relative overflow-hidden rounded-xl border border-border">
+   399→                      <img src={filePreview} alt="screenshot" className="h-40 w-full object-cover" />
+   400→                      <button type="button" onClick={() => { setFile(null); setFilePreview(null) }} className="absolute right-2 top-2 rounded-full bg-foreground/80 px-2 py-0.5 text-xs font-bold text-background">Change</button>
+   401→                    </div>
+   402→                  ) : (
+   403→                    <button type="button" onClick={() => fileRef.current?.click()} className="flex w-full flex-col items-center gap-2 rounded-xl border-2 border-dashed border-border bg-muted/30 py-6 text-center transition hover:border-brand/50 hover:bg-muted/50">
+   404→                      <ImageIcon className="h-6 w-6 text-muted-foreground" />
+   405→                      <span className={`text-sm font-bold ${rtlFont}`}>{t("pro.tapToUpload")}</span>
+   406→                      <span className="text-[10px] text-muted-foreground">JPG/PNG • max 4MB</span>
+   407→                    </button>
+   408→                  )}
+   409→                </div>
+   410→              )}
+   411→              {/* Note / TxID */}
+   412→              <div className="space-y-1.5">
+   413→                <Label htmlFor="note" className={rtlFont}>
+   414→                  {method === "Payoneer" ? "Payoneer Transaction ID" : t("pro.txIdNote")}
+   415→                  {(method === "USDT" || method === "USDT_BEP20" || method === "Payoneer") && <span className="font-bold text-destructive">{t("pro.txIdRequired")}</span>}
+   416→                </Label>
+   417→                <Textarea id="note" value={note} onChange={(e) => setNote(e.target.value)} rows={2}
+   418→                  placeholder={method === "Payoneer" ? "Enter your Payoneer Transaction ID here (required)" : (method === "USDT" || method === "USDT_BEP20") ? t("pro.txIdPlaceholderUsdt") : t("pro.txIdPlaceholderOther")}
+   419→                  className="text-sm" />
+   420→              </div>
+   421→              {err && <p className="flex items-center gap-1.5 text-xs font-semibold text-destructive"><AlertCircle className="h-3.5 w-3.5" /> {err}</p>}
+   422→              <Button type="submit" className="h-12 w-full gap-2 bg-brand font-bold text-brand-foreground hover:bg-brand/90" disabled={submit.isPending}>
+   423→                {submit.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />} Submit for approval
+   424→              </Button>
+   425→              <p className="text-center text-[10px] text-muted-foreground">Pro activates after admin approves your payment (usually within 24h).</p>
+   426→            </form>
+   427→          ) : isPending ? (
+   428→            <div className="flex flex-col items-center gap-3 py-8 text-center">
+   429→              <span className="inline-flex h-16 w-16 items-center justify-center rounded-full bg-gold/15">
+   430→                <Clock className="h-8 w-8 text-gold" />
+   431→              </span>
+   432→              <h3 className="text-lg font-extrabold text-foreground">Payment under review ⏳</h3>
+   433→              <p className="text-sm text-muted-foreground">
+   434→                Your {proMe?.latestRequest?.method} payment screenshot is being reviewed. Pro activates within 24h of approval.
+   435→              </p>
+   436→              {proMe?.latestRequest?.reviewerNote && (
+   437→                <p className="rounded-lg bg-muted/60 p-2 text-xs text-muted-foreground">Admin: {proMe.latestRequest.reviewerNote}</p>
+   438→              )}
+   439→            </div>
+   440→          ) : (
+   441→            <form onSubmit={onSubmit} className="space-y-4">
+   442→              {/* Sign-in gate */}
+   443→              {!session?.user && (
+   444→                <div className="flex items-start gap-2 rounded-lg border border-gold/40 bg-gold/10 p-3 text-xs">
+   445→                  <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-gold" />
+   446→                  <span>Please <button type="button" className="font-bold text-gold underline" onClick={() => { setOpen(false); setLoginOpen(true) }}>sign in</button> first so we can link your payment to your account.</span>
+   447→                </div>
+   448→              )}
+   449→
+   450→              {/* Price */}
+   451→              <div className="rounded-xl border border-border bg-card p-3 text-center">
+   452→                <div className="text-3xl font-extrabold text-foreground">${usdPrice}<span className="text-sm font-medium text-muted-foreground"> USD</span></div>
+   453→                <div className="mt-1 text-sm font-bold text-brand">≈ Rs {pkrPrice} PKR</div>
+   454→                <p className="mt-1 text-[11px] text-muted-foreground">One-time payment • Lifetime access • No auto-renewal</p>
+   455→              </div>
+   456→
+   457→              {/* Method selection */}
+   458→              <div>
+   459→                <Label className="mb-2 block text-xs font-bold uppercase tracking-wide text-muted-foreground">1. Choose payment method</Label>
+   460→                <div className={`grid gap-2 ${methods.length > 2 ? "grid-cols-1" : "grid-cols-2"}`}>
+   461→                  {methods.map((m) => {
+   462→                    const Icon = m.icon
+   463→                    return (
+   464→                      <button
+   465→                        key={m.id}
+   466→                        type="button"
+   467→                        onClick={() => setMethod(m.id)}
+   468→                        className={`flex items-center gap-2 rounded-xl border-2 p-3 text-start transition ${method === m.id ? "border-brand bg-brand-muted/40" : "border-border hover:bg-muted/40"}`}
+   469→                      >
+   470→                        <span className={`inline-flex h-8 w-8 items-center justify-center rounded-lg text-white ${m.accent}`}>
+   471→                          <Icon className="h-4 w-4" />
+   472→                        </span>
+   473→                        <div>
+   474→                          <div className="text-sm font-bold">{m.label}</div>
+   475→                          {m.subtitle ? <div className="text-[9px] text-muted-foreground">{m.subtitle}</div> : <div className="text-[10px] text-muted-foreground">Tap to select</div>}
+   476→                        </div>
+   477→                      </button>
+   478→                    )
+   479→                  })}
+   480→                </div>
+   481→              </div>
+   482→
+   483→              {/* Payment details: Card / SadaPay / JazzCash / Easypaisa */}
+   484→              {method === "Card" ? (
+   485→                <div className="rounded-xl border border-dashed border-border bg-muted/30 p-3">
+   486→                  <div className="flex items-start gap-2">
+   487→                    <CreditCard className="mt-0.5 h-5 w-5 shrink-0 text-[#1A1F71]" />
+   488→                    <div className="flex-1">
+   489→                      <div className="text-[11px] uppercase tracking-wide text-muted-foreground">Card Payment</div>
+   490→                      <div className="text-sm font-bold text-foreground">{settings?.cardInstructions || "Contact admin on WhatsApp for card payment link"}</div>
+   491→                      <div className="mt-1 text-[10px] text-muted-foreground">Pay ${usdPrice} USD via secure card link</div>
+   492→                    </div>
+   493→                  </div>
+   494→                </div>
+   495→              ) : method === "SadaPay" ? (
+   496→                <div className="rounded-xl border border-dashed border-[#6C2BD9]/40 bg-[#6C2BD9]/5 p-3">
+   497→                  <div className="flex items-start gap-2">
+   498→                    <Globe className="mt-0.5 h-5 w-5 shrink-0 text-[#6C2BD9]" />
+   499→                    <div className="flex-1">
+   500→                      <div className="text-[11px] uppercase tracking-wide text-muted-foreground">SadaPay · International</div>
+   501→                      <div className="text-sm font-bold text-foreground">{settings?.sadapayName || "TradeSeekho PK"}</div>
+   502→                      <div className="mt-1.5 space-y-1">
+   503→                        <div className="flex items-center justify-between">
+   504→                          <span className="text-[10px] text-muted-foreground">Number:</span>
+   505→                          <span className="font-mono text-xs font-bold text-foreground">{settings?.sadapayNumber || "03XX-XXXXXXX"}</span>
+   506→                        </div>
+   507→                        <div className="flex items-center justify-between">
+   508→                          <span className="text-[10px] text-muted-foreground">IBAN:</span>
+   509→                          <span className="font-mono text-xs font-bold text-foreground">{settings?.sadapayIban || "PK36SAPK0000000000000000"}</span>
+   510→                        </div>
+   511→                      </div>
+   512→                      <div className="mt-2 flex justify-end">
+   513→                        <Button type="button" size="sm" variant="outline" className="gap-1.5" onClick={() => copy(settings?.sadapayNumber || "")}>
+   514→                          <Copy className="h-3.5 w-3.5" /> Copy Number
+   515→                        </Button>
+   516→                      </div>
+   517→                      <div className="mt-1 text-[10px] text-muted-foreground">Send ${usdPrice} USD or Rs {pkrPrice} PKR</div>
+   518→                    </div>
+   519→                  </div>
+   520→                </div>
+   521→              ) : cryptoCtx ? (
+   522→                <div className="rounded-xl border border-dashed p-3" style={{ borderColor: `${cryptoCtx.color}66`, backgroundColor: `${cryptoCtx.color}0D` }}>
+   523→                  <div className="flex items-start gap-2">
+   524→                    <Coins className="mt-0.5 h-5 w-5 shrink-0" style={{ color: cryptoCtx.color }} />
+   525→                    <div className="flex-1">
+   526→                      <div className={`text-[11px] uppercase tracking-wide text-muted-foreground ${rtlFont}`}>{cryptoCtx.sectionTitle}</div>
+   527→
+   528→                      {/* QR + address block */}
+   529→                      <div className="mt-2 flex flex-col items-center gap-3 sm:flex-row sm:items-start">
+   530→                        <div className="rounded-lg border-2 border-border bg-white p-2 shadow-sm">
+   531→                          {cryptoCtx.address ? (
+   532→                            <QRCodeSVG
+   533→                              value={cryptoCtx.address}
+   534→                              size={120}
+   535→                              level="M"
+   536→                              marginSize={1}
+   537→                              fgColor="#0b0f17"
+   538→                              bgColor="#ffffff"
+   539→                            />
+   540→                          ) : (
+   541→                            <div className="flex h-[120px] w-[120px] items-center justify-center text-[10px] text-muted-foreground">No address</div>
+   542→                          )}
+   543→                        </div>
+   544→                        <div className="flex-1 space-y-1.5 self-stretch">
+   545→                          <div className="space-y-0.5">
+   546→                            <div className={`text-[10px] text-muted-foreground ${rtlFont}`}>{t("pro.address")}</div>
+   547→                            <div className="break-all font-mono text-[11px] font-bold text-foreground">{cryptoCtx.address || "—"}</div>
+   548→                          </div>
+   549→                          <div className="flex items-center justify-between">
+   550→                            <span className={`text-[10px] text-muted-foreground ${rtlFont}`}>{t("pro.network")}</span>
+   551→                            <span className="text-xs font-bold" style={{ color: cryptoCtx.color }}>{cryptoCtx.network}</span>
+   552→                          </div>
+   553→                          <div className="flex items-center justify-between">
+   554→                            <span className={`text-[10px] text-muted-foreground ${rtlFont}`}>{t("pro.amount")}</span>
+   555→                            <span className="text-xs font-bold text-foreground">${usdPrice} USDT</span>
+   556→                          </div>
+   557→                        </div>
+   558→                      </div>
+   559→
+   560→                      {/* Action buttons: Copy + Save & Share */}
+   561→                      <div className="mt-3 flex flex-wrap gap-2">
+   562→                        <Button
+   563→                          type="button"
+   564→                          size="sm"
+   565→                          variant="outline"
+   566→                          className="gap-1.5"
+   567→                          onClick={() => copy(cryptoCtx.address)}
+   568→                          disabled={!cryptoCtx.address}
+   569→                        >
+   570→                          <Copy className="h-3.5 w-3.5" /> {t("pro.copyAddress")}
+   571→                        </Button>
+   572→                        <Button
+   573→                          type="button"
+   574→                          size="sm"
+   575→                          variant="secondary"
+   576→                          className="gap-1.5"
+   577→                          onClick={saveAndShare}
+   578→                          disabled={sharing || !cryptoCtx.address}
+   579→                        >
+   580→                          {sharing ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Share2 className="h-3.5 w-3.5" />}
+   581→                          {t("pro.saveShareAddress")}
+   582→                        </Button>
+   583→                      </div>
+   584→
+   585→                      {/* Network-specific warning */}
+   586→                      <div className={`mt-2 rounded-lg bg-red-500/10 p-2 text-[10px] font-bold leading-relaxed text-destructive ${rtlFont}`}>
+   587→                        {cryptoCtx.warning}
+   588→                      </div>
+   589→                    </div>
+   590→                  </div>
+   591→                </div>
+   592→              ) : (
+   593→                <div className="rounded-xl border border-dashed border-border bg-muted/30 p-3">
+   594→                  <div className="flex items-center justify-between">
+   595→                    <div>
+   596→                      <div className="text-[11px] uppercase tracking-wide text-muted-foreground">Send Rs {displayAmount} to</div>
+   597→                      <div className="font-mono text-base font-bold text-foreground">{currentNumber}</div>
+   598→                      <div className="text-[10px] text-muted-foreground">{method} • TradeSeekho PK</div>
+   599→                    </div>
+   600→                    <Button type="button" size="sm" variant="outline" className="gap-1.5" onClick={() => copy(currentNumber || "")}>
+   601→                      <Copy className="h-3.5 w-3.5" /> Copy
+   602→                    </Button>
+   603→                  </div>
+   604→                </div>
+   605→              )}
+   606→
+   607→              <Separator />
+   608→
+   609→              {/* Screenshot upload (not required for Card method) */}
+   610→              {method !== "Card" && (
+   611→              <div>
+   612→                <Label className={`mb-2 block text-xs font-bold uppercase tracking-wide text-muted-foreground ${rtlFont}`}>2. {t("pro.uploadScreenshot")}</Label>
+   613→                <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={onFile} />
+   614→                {filePreview ? (
+   615→                  <div className="relative overflow-hidden rounded-xl border border-border">
+   616→                    <img src={filePreview} alt="screenshot" className="h-40 w-full object-cover" />
+   617→                    <button type="button" onClick={() => { setFile(null); setFilePreview(null) }} className="absolute right-2 top-2 rounded-full bg-foreground/80 px-2 py-0.5 text-xs font-bold text-background">Change</button>
+   618→                  </div>
+   619→                ) : (
+   620→                  <button type="button" onClick={() => fileRef.current?.click()} className="flex w-full flex-col items-center gap-2 rounded-xl border-2 border-dashed border-border bg-muted/30 py-6 text-center transition hover:border-brand/50 hover:bg-muted/50">
+   621→                    <ImageIcon className="h-6 w-6 text-muted-foreground" />
+   622→                    <span className={`text-sm font-bold ${rtlFont}`}>{t("pro.tapToUpload")}</span>
+   623→                    <span className="text-[10px] text-muted-foreground">JPG/PNG • max 4MB</span>
+   624→                  </button>
+   625→                )}
+   626→              </div>
+   627→              )}
+   628→
+   629→              {/* Optional note */}
+   630→              <div className="space-y-1.5">
+   631→                <Label htmlFor="note" className={rtlFont}>
+   632→                  {method === "Payoneer" ? "Payoneer Transaction ID" : t("pro.txIdNote")}
+   633→                  {(method === "USDT" || method === "USDT_BEP20" || method === "Payoneer") && <span className="font-bold text-destructive">{t("pro.txIdRequired")}</span>}
+   634→                </Label>
+   635→                <Textarea id="note" value={note} onChange={(e) => setNote(e.target.value)} rows={2}
+   636→                  placeholder={method === "Payoneer" ? "Enter your Payoneer Transaction ID here (required)" : (method === "USDT" || method === "USDT_BEP20") ? t("pro.txIdPlaceholderUsdt") : t("pro.txIdPlaceholderOther")}
+   637→                  className="text-sm" />
+   638→              </div>
+   639→
+   640→              {err && (
+   641→                <p className="flex items-center gap-1.5 text-xs font-semibold text-destructive">
+   642→                  <AlertCircle className="h-3.5 w-3.5" /> {err}
+   643→                </p>
+   644→              )}
+   645→
+   646→              <Button type="submit" className="h-12 w-full gap-2 bg-brand font-bold text-brand-foreground hover:bg-brand/90" disabled={submit.isPending}>
+   647→                {submit.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
+   648→                Submit for approval
+   649→              </Button>
+   650→              <p className="text-center text-[10px] text-muted-foreground">
+   651→                Pro activates after admin approves your payment (usually within 24h).
+   652→              </p>
+   653→            </form>
+   654→          )}
+   655→        </div>
+   656→      </DialogContent>
+   657→    </Dialog>
+   658→  )
+   659→}
+   660→

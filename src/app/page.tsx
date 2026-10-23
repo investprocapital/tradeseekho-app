@@ -432,11 +432,22 @@ function LevelBox({
 }
 
 function LessonRow({ lesson, lang, isPro, onOpen, onPro, seqLocked }: { lesson: LessonListItemDTO; lang: string; isPro: boolean; onOpen: () => void; onPro: () => void; seqLocked?: boolean }) {
-  const proLocked = !lesson.isFree && !isPro
+  // ─── Pro-lock logic (per requirement: Advanced lessons 2+ are locked) ───
+  // 1. `proLocked` = the lesson requires a Pro upgrade to open.
+  //    Two conditions trigger it:
+  //      a) The lesson is marked `isFree=false` in the DB (legacy/admin flag), OR
+  //      b) The lesson is in the "advanced" category AND is NOT the first lesson
+  //         in that category (orderInCategory > 1). This is the NEW rule that
+  //         guarantees Advanced lessons 2,3,4,5... are always locked for non-Pro
+  //         users — regardless of the `isFree` flag in the DB.
+  // 2. `seqLocked` = the previous lesson in the same category hasn't been passed
+  //    yet (sequential unlock — only applies when NOT pro-locked).
+  const isAdvancedLocked = lesson.categorySlug === "advanced" && lesson.orderInCategory > 1
+  const proLocked = (!lesson.isFree || isAdvancedLocked) && !isPro
   const isLocked = proLocked || seqLocked
-  // Show a blurred placeholder title for Pro-locked lessons so the user can't
-  // read the lesson name without upgrading. (Per requirement: blur titles.)
   const titleText = lesson.title[lang] || lesson.title.en
+  // When pro-locked, show a placeholder title (the real title is revealed via
+  // the blur overlay — user can tell a lesson is there but can't read it).
   const blurredTitle = proLocked ? "Locked — Upgrade to Pro to unlock" : titleText
   return (
     <button
@@ -448,28 +459,46 @@ function LessonRow({ lesson, lang, isPro, onOpen, onPro, seqLocked }: { lesson: 
         }
         onOpen()
       }}
-      className={`flex items-center gap-3 rounded-xl border border-border bg-card p-3 text-start transition ${proLocked ? "border-gold/30 opacity-90" : isLocked ? "opacity-60" : "hover:border-brand/50"}`}
+      className={`relative flex items-center gap-3 overflow-hidden rounded-xl border bg-card p-3 text-start transition ${proLocked ? "border-gold/40 hover:border-gold/60" : isLocked ? "border-border opacity-60" : "border-border hover:border-brand/50"}`}
     >
+      {/* Number/lock badge */}
       <span
-        className={`inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-white ${proLocked ? "bg-gold/80" : ""}`}
+        className={`relative z-20 inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-white shadow-sm ${proLocked ? "bg-gold" : ""}`}
         style={proLocked ? {} : { background: lesson.categoryColor || "var(--brand)" }}
       >
         {proLocked ? <Lock className="h-4 w-4" /> : <span className="text-xs font-extrabold">{lesson.orderInCategory}</span>}
       </span>
-      <div className="min-w-0 flex-1">
-        <div className={`truncate text-sm font-bold ${proLocked ? "select-none blur-[3px]" : ""}`}>{blurredTitle}</div>
+
+      {/* Title + metadata — blurred when pro-locked */}
+      <div className="relative z-20 min-w-0 flex-1">
+        <div className={`truncate text-sm font-bold ${proLocked ? "select-none blur-[5px]" : ""}`}>{blurredTitle}</div>
         <div className="text-[11px] text-muted-foreground">
           {lesson.categorySlug} · {lesson.durationMin} min
-          {proLocked && <span className="font-bold text-gold-foreground"> · PRO</span>}
+          {proLocked && <span className="font-bold text-gold-foreground"> · Locked</span>}
           {!proLocked && !lesson.isFree && " · PRO"}
           {seqLocked && " · Locked"}
         </div>
       </div>
+
+      {/* Right-side status icon/badge */}
       {proLocked ? (
-        <span className="inline-flex items-center gap-1 rounded-full bg-gold/20 px-2 py-0.5 text-[10px] font-bold text-gold-foreground">
+        <span className="relative z-20 inline-flex items-center gap-1 rounded-full bg-gold/20 px-2 py-0.5 text-[10px] font-bold text-gold-foreground">
           <Crown className="h-3 w-3" /> PRO
         </span>
-      ) : lesson.passed ? <CheckCircle2 className="h-4 w-4 text-brand" /> : seqLocked ? <Lock className="h-4 w-4 text-muted-foreground" /> : null}
+      ) : lesson.passed ? <CheckCircle2 className="relative z-20 h-4 w-4 text-brand" /> : seqLocked ? <Lock className="relative z-20 h-4 w-4 text-muted-foreground" /> : null}
+
+      {/* ─── Blur overlay (matches the Signals paywall pattern) ───
+          Absolute overlay covering the whole card with backdrop-blur so the
+          lesson title/content is unreadable. Centered 🔒 + PRO badge + hint.
+          Only shown for pro-locked lessons (NOT for seq-locked — those just
+          need the user to complete the previous lesson, no upgrade needed). */}
+      {proLocked && (
+        <div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-1 rounded-xl bg-background/55 backdrop-blur-[2px]">
+          <Lock className="h-4 w-4 text-gold" />
+          <span className="rounded-full bg-gold px-2.5 py-0.5 text-[10px] font-black text-white shadow-sm">PRO</span>
+          <span className="text-[9px] font-bold text-muted-foreground">Tap to unlock</span>
+        </div>
+      )}
     </button>
   )
 }

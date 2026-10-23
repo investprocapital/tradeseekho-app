@@ -1,0 +1,600 @@
+     1→     1→"use client"
+     2→     2→
+     3→     3→import { useEffect, useState, useRef } from "react"
+     4→     4→import { useSession } from "next-auth/react"
+     5→     5→import { useQuery } from "@tanstack/react-query"
+     6→     6→import { motion } from "framer-motion"
+     7→     7→import { Sprout, LineChart, Trophy, CheckCircle2, Award, BookOpen, Crown, ArrowRight, Lock, BarChart3, ChevronRight, Bell } from "lucide-react"
+     8→     8→import { useStore } from "@/lib/store"
+     9→     9→import type { Lang } from "@/lib/i18n"
+    10→    10→import { useLessonsBundle, useProMe, useCurrentUser } from "@/components/tradeseekho/use-data"
+    11→    11→import { useAlertChecker } from "@/components/tradeseekho/use-alert-checker"
+    12→    12→import { Header } from "@/components/tradeseekho/header"
+    13→    13→import { Footer } from "@/components/tradeseekho/footer"
+    14→    14→import { BrokerAdBanner } from "@/components/tradeseekho/broker-ad-banner"
+    15→    15→import { AffiliateAdBanner } from "@/components/tradeseekho/affiliate-ad-banner"
+    16→    16→import { SignalList } from "@/components/tradeseekho/signal-list"
+    17→    17→import { PriceAlertSheet } from "@/components/tradeseekho/price-alert-sheet"
+    18→    18→import { MarketGaugeSheet } from "@/components/tradeseekho/market-gauge-sheet"
+    19→    19→import { BottomNav } from "@/components/tradeseekho/bottom-nav"
+    20→    20→import { LessonReader } from "@/components/tradeseekho/lesson-reader"
+    21→    21→import { BookmarksSheet } from "@/components/tradeseekho/bookmarks-sheet"
+    22→    22→import { CertificateSheet } from "@/components/tradeseekho/certificate-sheet"
+    23→    23→import { LoginDialog } from "@/components/tradeseekho/login-dialog"
+    24→    24→import { LeaderboardSheet } from "@/components/tradeseekho/leaderboard-sheet"
+    25→    25→import { SettingsSheet } from "@/components/tradeseekho/settings-sheet"
+    26→    26→import { NotificationsSheet } from "@/components/tradeseekho/notifications-sheet"
+    27→    27→import { SearchDialog } from "@/components/tradeseekho/search-dialog"
+    28→    28→import { EditProfileDialog } from "@/components/tradeseekho/edit-profile-dialog"
+    29→    29→import { ProDialog } from "@/components/tradeseekho/pro-dialog"
+    30→    30→import { AdminPanel } from "@/components/tradeseekho/admin-panel"
+    31→    31→import { Skeleton } from "@/components/ui/skeleton"
+    32→    32→import { toast } from "sonner"
+    33→    33→import type { CategoryDTO, LessonListItemDTO } from "@/lib/types"
+    34→    34→import type { LucideIcon } from "lucide-react"
+    35→    35→
+    36→    36→const LEVEL_ICONS: Record<string, LucideIcon> = { Sprout, LineChart, Trophy }
+    37→    37→
+    38→    38→export default function Home() {
+    39→    39→  const { data: session, status } = useSession()
+    40→    40→  const setLoginOpen = useStore((s) => s.setLoginOpen)
+    41→    41→  const loginOpen = useStore((s) => s.loginOpen)
+    42→    42→  const activeCategory = useStore((s) => s.activeCategorySlug)
+    43→    43→  const showAdmin = useStore((s) => s.showAdmin)
+    44→    44→  const setShowAdmin = useStore((s) => s.setShowAdmin)
+    45→    45→  const lang = useStore((s) => s.lang)
+    46→    46→  const setLang = useStore((s) => s.setLang)
+    47→    47→  const bottomTab = useStore((s) => s.bottomTab)
+    48→    48→  const openLesson = useStore((s) => s.openLesson)
+    49→    49→  const setBottomTab = useStore((s) => s.setBottomTab)
+    50→    50→  const setActiveCategory = useStore((s) => s.setActiveCategory)
+    51→    51→  const setProOpen = useStore((s) => s.setProOpen)
+    52→    52→  const setProPlan = useStore((s) => s.setProPlan)
+    53→    53→  const { data: proMe } = useProMe()
+    54→    54→  // Check SPECIFIC plans — not just proStatus.
+    55→    55→  // proStatus="active" is set when ANY plan is approved, but each feature
+    56→    56→  // should only unlock if the user has the corresponding plan.
+    57→    57→  const hasLessonsPro = proMe?.proPlans?.includes("lessons") ?? false
+    58→    58→  const hasAlertsPro = proMe?.proPlans?.includes("alerts") ?? false
+    59→    59→  const hasSignalsPro = proMe?.proPlans?.includes("signals") ?? false
+    60→    60→  // For lesson/quiz locking: only "lessons" plan unlocks all lessons
+    61→    61→  const isPro = hasLessonsPro
+    62→    62→
+    63→    63→  // Save email to localStorage when user is authenticated (for auto-fill next login)
+    64→    64→  useEffect(() => {
+    65→    65→    if (status === "authenticated" && session?.user?.email) {
+    66→    66→      try { localStorage.setItem("last_email", session.user.email) } catch {}
+    67→    67→    }
+    68→    68→  }, [status, session])
+    69→    69→  const { data: userData } = useCurrentUser()
+    70→    70→
+    71→    71→  // Auto-apply user's saved preferred language from Supabase on login.
+    72→    72→  // This ensures the language persists across devices — even if localStorage
+    73→    73→  // is cleared, the user's language preference is restored from their profile.
+    74→    74→  useEffect(() => {
+    75→    75→    if (status === "authenticated" && userData?.user?.preferredLang) {
+    76→    76→      const savedLang = userData.user.preferredLang as Lang
+    77→    77→      if (["en", "ur", "hi", "ar"].includes(savedLang) && savedLang !== lang) {
+    78→    78→        setLang(savedLang)
+    79→    79→      }
+    80→    80→    }
+    81→    81→  }, [status, userData, lang, setLang])
+    82→    82→  const { data, isLoading } = useLessonsBundle("all")
+    83→    83→
+    84→    84→  // Global price alert checker — polls every 20s, shows toast when target hit.
+    85→    85→  // Also creates a DB notification (shows in the bell) + browser notification.
+    86→    86→  useAlertChecker()
+    87→    87→
+    88→    88→  // Auth gate: if user is not logged in, show Login dialog automatically.
+    89→    89→  // BUT: don't open if onboarding is still showing (onboarding has its own
+    90→    90→  // "Get Started" button that opens login).
+    91→    91→  const onboardingSeen = useStore((s) => s.onboardingSeen)
+    92→    92→  useEffect(() => {
+    93→    93→    if (status === "unauthenticated" && !loginOpen && onboardingSeen) {
+    94→    94→      setLoginOpen(true)
+    95→    95→    }
+    96→    96→  }, [status, loginOpen, setLoginOpen, onboardingSeen])
+    97→    97→
+    98→    98→  // ROLE-GATED ADMIN PANEL: showAdmin is persisted in localStorage, but it
+    99→    99→  // MUST only be active when the logged-in user's role is actually "admin".
+   100→   100→  // This prevents the admin panel from showing on client dashboards if the
+   101→   101→  // persisted flag is stale (e.g. admin logged out + a client logged in on
+   102→   102→  // the same device, or the admin's role was changed). We auto-CLEAR showAdmin
+   103→   103→  // if the user is not an admin. We do NOT auto-SET it (the admin chooses to
+   104→   104→  // enter via login) so that "Exit Admin" still works.
+   105→   105→  useEffect(() => {
+   106→   106→    if (showAdmin && status === "authenticated") {
+   107→   107→      const role = userData?.user?.role
+   108→   108→      if (role && role !== "admin") {
+   109→   109→        // User is NOT an admin — force-clear the admin panel
+   110→   110→        setShowAdmin(false)
+   111→   111→      }
+   112→   112→    }
+   113→   113→    if (showAdmin && status === "unauthenticated") {
+   114→   114→      // Not logged in at all — force-clear
+   115→   115→      setShowAdmin(false)
+   116→   116→    }
+   117→   117→  }, [showAdmin, status, userData, setShowAdmin])
+   118→   118→
+   119→   119→  const lessons = data?.lessons ?? []
+   120→   120→  const categories = data?.categories ?? []
+   121→   121→  const visibleLessons = activeCategory === "all" ? lessons : lessons.filter((l) => l.categorySlug === activeCategory)
+   122→   122→  const activeCategoryName = categories.find((c) => c.slug === activeCategory)?.name[lang] || categories.find((c) => c.slug === activeCategory)?.name.en || "All Lessons"
+   123→   123→  const completedCount = lessons.filter((l) => l.passed).length
+   124→   124→  const totalLessons = lessons.length
+   125→   125→  // Lessons that have a quiz
+   126→   126→  const quizLessons = lessons.filter((l) => l.hasQuiz)
+   127→   127→
+   128→   128→  return (
+   129→   129→    <div className="flex h-screen flex-col overflow-hidden bg-background">
+   130→   130→      <Header />
+   131→   131→
+   132→   132→      <main className="mx-auto w-full max-w-3xl flex-1 overflow-y-auto overscroll-contain px-3 py-4 sm:px-4" style={{ WebkitOverflowScrolling: "touch", minHeight: 0 }}>
+   133→   133→        {showAdmin ? (
+   134→   134→          <AdminPanel />
+   135→   135→        ) : bottomTab === "home" ? (
+   136→   136→          <>
+   137→   137→            {/* Progress strip */}
+   138→   138→            <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="mb-4 grid grid-cols-3 gap-2">
+   139→   139→              <ProgressMini icon={CheckCircle2} value={`${completedCount}/${totalLessons}`} label={lang === "ur" || lang === "ar" ? "مکمل" : lang === "hi" ? "पूर्ण" : "Passed"} color="var(--brand)" />
+   140→   140→              <ProgressMini icon={Award} value={`${Math.round(totalLessons ? (completedCount / totalLessons) * 100 : 0)}%`} label={lang === "ur" || lang === "ar" ? "پیش رفت" : lang === "hi" ? "प्रगति" : "Progress"} color="var(--gold)" />
+   141→   141→              <ProgressMini icon={BookOpen} value={`${totalLessons}`} label={lang === "ur" || lang === "ar" ? "اسباق" : lang === "hi" ? "पाठ" : "Lessons"} color="#00bfa5" />
+   142→   142→            </motion.div>
+   143→   143→
+   144→   144→            {/* Live Signals */}
+   145→   145→            <SignalList />
+   146→   146→
+   147→   147→            {/* Price Alerts — card below Live Signals */}
+   148→   148→            <PriceAlertCard />
+   149→   149→
+   150→   150→            {/* Market Gauge — card below Price Alerts */}
+   151→   151→            <MarketGaugeCard />
+   152→   152→
+   153→   153→            {/* Choose Your Level */}
+   154→   154→            <section className="mb-4">
+   155→   155→              <h2 className="mb-2 px-1 text-base font-black tracking-tight text-foreground">
+   156→   156→                {lang === "ur" || lang === "ar" ? "اپنا لیول منتخب کریں" : lang === "hi" ? "अपना स्तर चुनें" : "Choose Your Level"}
+   157→   157→              </h2>
+   158→   158→              {isLoading ? (
+   159→   159→                <div className="grid grid-cols-2 gap-2.5">
+   160→   160→                  <Skeleton className="h-28 rounded-2xl" /><Skeleton className="h-28 rounded-2xl" />
+   161→   161→                </div>
+   162→   162→              ) : categories.length >= 3 ? (
+   163→   163→                <>
+   164→   164→                  {/* Row 1: Beginner + Intermediate side-by-side (50/50) */}
+   165→   165→                  <div className="grid grid-cols-2 gap-2.5">
+   166→   166→                    {categories.slice(0, 2).map((c, i) => (
+   167→   167→                      <LevelBox key={c.id} category={c} index={i} compact lessons={lessons.filter((l) => l.categoryId === c.id)} onOpen={() => { setActiveCategory(c.slug); setBottomTab("lessons") }} />
+   168→   168→                    ))}
+   169→   169→                  </div>
+   170→   170→                  {/* Row 2: Advanced full width */}
+   171→   171→                  <div className="mt-2.5">
+   172→   172→                    {categories.slice(2).map((c, i) => (
+   173→   173→                      <LevelBox key={c.id} category={c} index={i + 2} lessons={lessons.filter((l) => l.categoryId === c.id)} onOpen={() => { setActiveCategory(c.slug); setBottomTab("lessons") }} />
+   174→   174→                    ))}
+   175→   175→                  </div>
+   176→   176→                </>
+   177→   177→              ) : (
+   178→   178→                <div className="grid grid-cols-2 gap-2.5">
+   179→   179→                  {categories.map((c, i) => (
+   180→   180→                    <LevelBox key={c.id} category={c} index={i} compact lessons={lessons.filter((l) => l.categoryId === c.id)} onOpen={() => { setActiveCategory(c.slug); setBottomTab("lessons") }} />
+   181→   181→                  ))}
+   182→   182→                </div>
+   183→   183→              )}
+   184→   184→            </section>
+   185→   185→          </>
+   186→   186→        ) : bottomTab === "lessons" ? (
+   187→   187→          <>
+   188→   188→            {/* Lessons list */}
+   189→   189→            <section className="mt-2">
+   190→   190→              <div className="mb-2 flex items-center justify-between px-1">
+   191→   191→                <h2 className="text-base font-extrabold tracking-tight text-foreground">
+   192→   192→                  {activeCategory === "all" ? (lang === "ur" || lang === "ar" ? "تمام اسباق" : lang === "hi" ? "सभी पाठ" : "All Lessons") : activeCategoryName}
+   193→   193→                </h2>
+   194→   194→                <button onClick={() => { setBottomTab("home"); setActiveCategory("all") }} className="text-xs font-bold text-brand">← Levels</button>
+   195→   195→              </div>
+   196→   196→              {/* Category filter chips */}
+   197→   197→              <div className="mb-3 flex flex-wrap gap-1.5">
+   198→   198→                <button onClick={() => setActiveCategory("all")} className={`rounded-full px-2.5 py-1 text-[11px] font-bold transition ${activeCategory === "all" ? "bg-brand text-brand-foreground" : "bg-muted text-muted-foreground"}`}>
+   199→   199→                  {lang === "ur" || lang === "ar" ? "سب" : "All"}
+   200→   200→                </button>
+   201→   201→                {categories.map((c) => (
+   202→   202→                  <button key={c.id} onClick={() => setActiveCategory(c.slug)} className={`rounded-full px-2.5 py-1 text-[11px] font-bold transition ${activeCategory === c.slug ? "bg-brand text-brand-foreground" : "bg-muted text-muted-foreground"}`}>
+   203→   203→                    {c.name[lang] || c.name.en}
+   204→   204→                  </button>
+   205→   205→                ))}
+   206→   206→              </div>
+   207→   207→              <div className="grid gap-2.5">
+   208→   208→                {isLoading ? (
+   209→   209→                  <><Skeleton className="h-14 rounded-xl" /><Skeleton className="h-14 rounded-xl" /><Skeleton className="h-14 rounded-xl" /></>
+   210→   210→                ) : visibleLessons.length === 0 ? (
+   211→   211→                  <p className="py-8 text-center text-sm text-muted-foreground">No lessons yet.</p>
+   212→   212→                ) : (
+   213→   213→                  visibleLessons.map((l, i) => (
+   214→   214→                    <LessonRow key={l.id} lesson={l} lang={lang} isPro={isPro} seqLocked={!isPro && i > 0 && !visibleLessons[i - 1].passed} onOpen={() => openLesson(l.id)} onPro={() => { setProPlan("lessons"); setProOpen(true) }} />
+   215→   215→                  ))
+   216→   216→                )}
+   217→   217→              </div>
+   218→   218→              {/* Affiliate ad banner — at bottom of lessons list. Admin-controlled. */}
+   219→   219→              <AffiliateAdBanner />
+   220→   220→            </section>
+   221→   221→          </>
+   222→   222→        ) : bottomTab === "quiz" ? (
+   223→   223→          <>
+   224→   224→            {/* Quiz list — lessons that have quizzes */}
+   225→   225→            <section className="mt-2">
+   226→   226→              <h2 className="mb-2 px-1 text-base font-extrabold tracking-tight text-foreground">
+   227→   227→                {lang === "ur" || lang === "ar" ? "کئز" : lang === "hi" ? "प्रश्नोत्तरी" : "Quizzes"}
+   228→   228→              </h2>
+   229→   229→              <p className="mb-3 px-1 text-xs text-muted-foreground">
+   230→   230→                {lang === "ur" || lang === "ar" ? "کئز دیں اور اگلا سبق کھلیں۔ 3/5 پاس کرنا ضروری ہے۔" : "Take a quiz to unlock the next lesson. Pass 3/5 to continue."}
+   231→   231→              </p>
+   232→   232→              <div className="grid gap-2.5">
+   233→   233→                {isLoading ? (
+   234→   234→                  <><Skeleton className="h-14 rounded-xl" /><Skeleton className="h-14 rounded-xl" /></>
+   235→   235→                ) : quizLessons.length === 0 ? (
+   236→   236→                  <p className="py-8 text-center text-sm text-muted-foreground">No quizzes available yet.</p>
+   237→   237→                ) : (
+   238→   238→                  quizLessons.map((l, i) => {
+   239→   239→                    const lessonIdx = lessons.indexOf(l)
+   240→   240→                    const seqLocked = !isPro && lessonIdx > 0 && !lessons[lessonIdx - 1].passed
+   241→   241→                    return <QuizRow key={l.id} lesson={l} lang={lang} isPro={isPro} seqLocked={seqLocked} onOpen={() => openLesson(l.id)} onPro={() => { setProPlan("lessons"); setProOpen(true) }} />
+   242→   242→                  })
+   243→   243→                )}
+   244→   244→              </div>
+   245→   245→            </section>
+   246→   246→          </>
+   247→   247→        ) : null}
+   248→   248→        {/* Footer removed from dashboard — About Us / Privacy Policy / Contact Us
+   249→   249→            are now in Settings > Support section. Keeps the dashboard clean. */}
+   250→   250→
+   251→   251→        {/* ─── What Students Say — swipeable review cards ─── */}
+   252→   252→        {!showAdmin && <ReviewsSection />}
+   253→   253→
+   254→   254→        {/* Broker Ad Banner — only in client mode (not admin) */}
+   255→   255→        {!showAdmin && (
+   256→   256→          <div className="shrink-0 mb-2 border-t border-border/50 bg-background/95 px-2 py-1.5" style={{ paddingBottom: "max(8px, env(safe-area-inset-bottom))" }}>
+   257→   257→            <BrokerAdBanner fixed />
+   258→   258→          </div>
+   259→   259→        )}
+   260→   260→      </main>
+   261→   261→
+   262→   262→      {/* Bottom Nav — HIDDEN in admin mode. Admin panel has its own tab nav.
+   263→   263→          This prevents the admin from accidentally exiting to client pages. */}
+   264→   264→      {!showAdmin && <BottomNav />}
+   265→   265→
+   266→   266→      {/* Overlays */}
+   267→   267→      <LessonReader />
+   268→   268→      <BookmarksSheet />
+   269→   269→      <CertificateSheet />
+   270→   270→      <PriceAlertSheet />
+   271→   271→      <MarketGaugeSheet />
+   272→   272→      <LoginDialog />
+   273→   273→      <LeaderboardSheet />
+   274→   274→      <SettingsSheet />
+   275→   275→      <NotificationsSheet />
+   276→   276→      <SearchDialog />
+   277→   277→      <EditProfileDialog />
+   278→   278→      <ProDialog />
+   279→   279→    </div>
+   280→   280→  )
+   281→   281→}
+   282→   282→
+   283→   283→// Market Gauge card — shown on home dashboard below Price Alerts.
+   284→   284→// Opens a sheet with searchable TradingView technical analysis gauge.
+   285→   285→function MarketGaugeCard() {
+   286→   286→  const setMarketGaugeOpen = useStore((s) => s.setMarketGaugeOpen)
+   287→   287→  return (
+   288→   288→    <motion.button
+   289→   289→      initial={{ opacity: 0, y: 8 }}
+   290→   290→      animate={{ opacity: 1, y: 0 }}
+   291→   291→      onClick={() => setMarketGaugeOpen(true)}
+   292→   292→      className="mt-2 flex w-full items-center gap-3 rounded-xl border-2 border-sky-500/30 bg-gradient-to-r from-sky-500/5 to-transparent p-3 text-start transition hover:border-sky-500/60 hover:from-sky-500/10 active:scale-[0.99]"
+   293→   293→    >
+   294→   294→      <span className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-sky-500 text-white">
+   295→   295→        <BarChart3 className="h-5 w-5" />
+   296→   296→      </span>
+   297→   297→      <div className="min-w-0 flex-1">
+   298→   298→        <div className="flex items-center gap-1.5">
+   299→   299→          <span className="text-sm font-black text-foreground">Market Gauge</span>
+   300→   300→          <span className="rounded-full bg-sky-500/15 px-1.5 py-0.5 text-[9px] font-bold text-sky-500">
+   301→   301→            📊 Live
+   302→   302→          </span>
+   303→   303→        </div>
+   304→   304→        <div className="mt-0.5 truncate text-[11px] font-bold text-muted-foreground">
+   305→   305→          Strong Buy / Sell — Search any pair (GOLD, BTC, EURUSD)
+   306→   306→        </div>
+   307→   307→      </div>
+   308→   308→      <ChevronRight className="h-5 w-5 shrink-0 text-sky-500" />
+   309→   309→    </motion.button>
+   310→   310→  )
+   311→   311→}
+   312→   312→
+   313→   313→// Price Alert card — shown on home dashboard below Live Signals.
+   314→   314→// Shows a summary of active alerts + opens the Price Alert sheet on click.
+   315→   315→function PriceAlertCard() {
+   316→   316→  const setPriceAlertsOpen = useStore((s) => s.setPriceAlertsOpen)
+   317→   317→  // Fetch ad settings to check if Price Alerts is enabled
+   318→   318→  const { data: adSettings } = useQuery<{ priceAlertsEnabled?: boolean }>({
+   319→   319→    queryKey: ["ad-settings"],
+   320→   320→    queryFn: async () => {
+   321→   321→      const res = await fetch("/api/ads/config", { cache: "no-store" })
+   322→   322→      if (!res.ok) return { priceAlertsEnabled: true }
+   323→   323→      return res.json()
+   324→   324→    },
+   325→   325→    staleTime: 60_000,
+   326→   326→  })
+   327→   327→  // If admin has disabled Price Alerts, hide the card entirely
+   328→   328→  if (adSettings?.priceAlertsEnabled === false) return null
+   329→   329→  return (
+   330→   330→    <motion.button
+   331→   331→      initial={{ opacity: 0, y: 8 }}
+   332→   332→      animate={{ opacity: 1, y: 0 }}
+   333→   333→      onClick={() => setPriceAlertsOpen(true)}
+   334→   334→      className="mt-2 flex w-full items-center gap-3 rounded-xl border-2 border-gold/30 bg-gradient-to-r from-gold/5 to-transparent p-3 text-start transition hover:border-gold/60 hover:from-gold/10 active:scale-[0.99]"
+   335→   335→    >
+   336→   336→      <span className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-gold text-white">
+   337→   337→        <Bell className="h-5 w-5" />
+   338→   338→      </span>
+   339→   339→      <div className="min-w-0 flex-1">
+   340→   340→        <div className="flex items-center gap-1.5">
+   341→   341→          <span className="text-sm font-black text-foreground">Price Alerts</span>
+   342→   342→          <span className="rounded-full bg-gold/15 px-1.5 py-0.5 text-[9px] font-bold text-gold">
+   343→   343→            🔔 Live
+   344→   344→          </span>
+   345→   345→        </div>
+   346→   346→        <div className="mt-0.5 truncate text-[11px] font-bold text-muted-foreground">
+   347→   347→          GOLD · BTC · EURUSD · OIL — tap to set alerts
+   348→   348→        </div>
+   349→   349→      </div>
+   350→   350→      <ChevronRight className="h-5 w-5 shrink-0 text-gold" />
+   351→   351→    </motion.button>
+   352→   352→  )
+   353→   353→}
+   354→   354→
+   355→   355→function ProgressMini({ icon: Icon, value, label, color }: { icon: any; value: string; label: string; color: string }) {
+   356→   356→  return (
+   357→   357→    <div className="flex flex-col items-center rounded-xl border border-border bg-card px-2 py-2">
+   358→   358→      <Icon className="h-4 w-4" style={{ color }} />
+   359→   359→      <span className="mt-0.5 text-sm font-black leading-none">{value}</span>
+   360→   360→      <span className="text-[9px] font-bold uppercase tracking-wide text-muted-foreground">{label}</span>
+   361→   361→    </div>
+   362→   362→  )
+   363→   363→}
+   364→   364→
+   365→   365→function LevelBox({
+   366→   366→  category, index, lessons, onOpen, compact = false,
+   367→   367→}: {
+   368→   368→  category: CategoryDTO; index: number; lessons: { id: string; passed: boolean; orderInCategory: number; title: { en: string; ur: string; hi: string; ar: string } }[]; onOpen: () => void; compact?: boolean
+   369→   369→}) {
+   370→   370→  const lang = useStore((s) => s.lang)
+   371→   371→  const Icon = LEVEL_ICONS[category.icon || ""] || BookOpen
+   372→   372→  const total = lessons.length
+   373→   373→  const done = lessons.filter((l) => l.passed).length
+   374→   374→  const pct = total ? Math.round((done / total) * 100) : 0
+   375→   375→
+   376→   376→  if (compact) {
+   377→   377→    return (
+   378→   378→      <motion.button
+   379→   379→        initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3, delay: index * 0.06 }}
+   380→   380→        onClick={onOpen}
+   381→   381→        className="group relative flex flex-col items-center gap-2 overflow-hidden rounded-2xl border-2 p-3 text-center transition-all hover:-translate-y-0.5"
+   382→   382→        style={{ borderColor: `${category.color || "#00c853"}80`, background: `linear-gradient(135deg, ${category.color || "#00c853"}25, ${category.color || "#00c853"}08)` }}
+   383→   383→      >
+   384→   384→        {/* Colored top accent bar */}
+   385→   385→        <div className="absolute left-0 right-0 top-0 h-1" style={{ background: category.color || "#00c853" }} />
+   386→   386→        <span className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-white shadow" style={{ background: category.color || "#00c853" }}>
+   387→   387→          <Icon className="h-5 w-5" />
+   388→   388→        </span>
+   389→   389→        <div className="w-full">
+   390→   390→          <h3 className={`text-sm font-black leading-tight ${lang === "ur" || lang === "ar" ? "font-urdu" : ""}`}>{category.name[lang] || category.name.en}</h3>
+   391→   391→          <span className="mt-0.5 inline-block rounded-full bg-background/70 px-1.5 py-0.5 text-[9px] font-bold text-muted-foreground">{done}/{total}</span>
+   392→   392→        </div>
+   393→   393→        <div className="h-1 w-full overflow-hidden rounded-full bg-muted">
+   394→   394→          <div className="h-full rounded-full transition-all" style={{ width: `${pct}%`, background: category.color || "var(--brand)" }} />
+   395→   395→        </div>
+   396→   396→        <span className="inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[10px] font-black text-white shadow-sm transition group-hover:scale-105" style={{ background: category.color || "var(--brand)" }}>
+   397→   397→          {done > 0 ? "Continue" : "Start"}
+   398→   398→          <ArrowRight className="h-3 w-3 rtl:rotate-180" />
+   399→   399→        </span>
+   400→   400→      </motion.button>
+   401→   401→    )
+   402→   402→  }
+   403→   403→
+   404→   404→  return (
+   405→   405→    <motion.button
+   406→   406→      initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3, delay: index * 0.06 }}
+   407→   407→      onClick={onOpen}
+   408→   408→      className="group relative flex items-center gap-3 overflow-hidden rounded-2xl border-2 p-3 text-start transition-all hover:-translate-y-0.5"
+   409→   409→      style={{ borderColor: `${category.color || "#00c853"}80`, background: `linear-gradient(135deg, ${category.color || "#00c853"}25, ${category.color || "#00c853"}08)` }}
+   410→   410→    >
+   411→   411→      {/* Colored top accent bar */}
+   412→   412→      <div className="absolute left-0 right-0 top-0 h-1.5" style={{ background: category.color || "#00c853" }} />
+   413→   413→      <span className="inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-xl text-white shadow" style={{ background: category.color || "#00c853" }}>
+   414→   414→        <Icon className="h-6 w-6" />
+   415→   415→      </span>
+   416→   416→      <div className="min-w-0 flex-1">
+   417→   417→        <div className="flex items-center gap-2">
+   418→   418→          <h3 className={`text-base font-black ${lang === "ur" || lang === "ar" ? "font-urdu" : ""}`}>{category.name[lang] || category.name.en}</h3>
+   419→   419→          <span className="rounded-full bg-background/70 px-1.5 py-0.5 text-[10px] font-bold text-muted-foreground">{done}/{total}</span>
+   420→   420→        </div>
+   421→   421→        <p className={`mt-0.5 line-clamp-2 text-xs font-semibold text-muted-foreground ${lang === "ur" || lang === "ar" ? "font-urdu" : ""}`}>{category.description[lang] || category.description.en}</p>
+   422→   422→        <div className="mt-1.5 h-1 w-full overflow-hidden rounded-full bg-muted">
+   423→   423→          <div className="h-full rounded-full transition-all" style={{ width: `${pct}%`, background: category.color || "var(--brand)" }} />
+   424→   424→        </div>
+   425→   425→      </div>
+   426→   426→      <span className="inline-flex shrink-0 items-center gap-1 rounded-full px-2.5 py-1 text-xs font-black text-white shadow-sm transition group-hover:scale-105" style={{ background: category.color || "var(--brand)" }}>
+   427→   427→        {done > 0 ? "Continue" : "Start"}
+   428→   428→        <ArrowRight className="h-3.5 w-3.5 rtl:rotate-180" />
+   429→   429→      </span>
+   430→   430→    </motion.button>
+   431→   431→  )
+   432→   432→}
+   433→   433→
+   434→   434→function LessonRow({ lesson, lang, isPro, onOpen, onPro, seqLocked }: { lesson: LessonListItemDTO; lang: string; isPro: boolean; onOpen: () => void; onPro: () => void; seqLocked?: boolean }) {
+   435→   435→  const proLocked = !lesson.isFree && !isPro
+   436→   436→  const isLocked = proLocked || seqLocked
+   437→   437→  // Show a blurred placeholder title for Pro-locked lessons so the user can't
+   438→   438→  // read the lesson name without upgrading. (Per requirement: blur titles.)
+   439→   439→  const titleText = lesson.title[lang] || lesson.title.en
+   440→   440→  const blurredTitle = proLocked ? "Locked — Upgrade to Pro to unlock" : titleText
+   441→   441→  return (
+   442→   442→    <button
+   443→   443→      onClick={() => {
+   444→   444→        if (proLocked) { onPro(); return }
+   445→   445→        if (seqLocked) {
+   446→   446→          toast(lang === "ur" || lang === "ar" ? "براہ کرم پہلا سبق مکمل کریں" : lang === "hi" ? "कृपया पिछला पाठ पूर्ण करें" : "Please complete the previous lesson first")
+   447→   447→          return
+   448→   448→        }
+   449→   449→        onOpen()
+   450→   450→      }}
+   451→   451→      className={`flex items-center gap-3 rounded-xl border border-border bg-card p-3 text-start transition ${proLocked ? "border-gold/30 opacity-90" : isLocked ? "opacity-60" : "hover:border-brand/50"}`}
+   452→   452→    >
+   453→   453→      <span
+   454→   454→        className={`inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-white ${proLocked ? "bg-gold/80" : ""}`}
+   455→   455→        style={proLocked ? {} : { background: lesson.categoryColor || "var(--brand)" }}
+   456→   456→      >
+   457→   457→        {proLocked ? <Lock className="h-4 w-4" /> : <span className="text-xs font-extrabold">{lesson.orderInCategory}</span>}
+   458→   458→      </span>
+   459→   459→      <div className="min-w-0 flex-1">
+   460→   460→        <div className={`truncate text-sm font-bold ${proLocked ? "select-none blur-[3px]" : ""}`}>{blurredTitle}</div>
+   461→   461→        <div className="text-[11px] text-muted-foreground">
+   462→   462→          {lesson.categorySlug} · {lesson.durationMin} min
+   463→   463→          {proLocked && <span className="font-bold text-gold-foreground"> · PRO</span>}
+   464→   464→          {!proLocked && !lesson.isFree && " · PRO"}
+   465→   465→          {seqLocked && " · Locked"}
+   466→   466→        </div>
+   467→   467→      </div>
+   468→   468→      {proLocked ? (
+   469→   469→        <span className="inline-flex items-center gap-1 rounded-full bg-gold/20 px-2 py-0.5 text-[10px] font-bold text-gold-foreground">
+   470→   470→          <Crown className="h-3 w-3" /> PRO
+   471→   471→        </span>
+   472→   472→      ) : lesson.passed ? <CheckCircle2 className="h-4 w-4 text-brand" /> : seqLocked ? <Lock className="h-4 w-4 text-muted-foreground" /> : null}
+   473→   473→    </button>
+   474→   474→  )
+   475→   475→}
+   476→   476→
+   477→   477→function QuizRow({ lesson, lang, isPro, seqLocked, onOpen, onPro }: { lesson: LessonListItemDTO; lang: string; isPro: boolean; seqLocked?: boolean; onOpen: () => void; onPro: () => void }) {
+   478→   478→  const proLocked = !lesson.isFree && !isPro
+   479→   479→  const isLocked = proLocked || seqLocked
+   480→   480→  return (
+   481→   481→    <button
+   482→   482→      onClick={() => {
+   483→   483→        if (proLocked) { onPro(); return }
+   484→   484→        if (seqLocked) {
+   485→   485→          toast(lang === "ur" || lang === "ar" ? "براہ کرم پہلا سبق مکمل کریں" : lang === "hi" ? "कृपया पिछला पाठ पूर्ण करें" : "Please complete the previous lesson first")
+   486→   486→          return
+   487→   487→        }
+   488→   488→        onOpen()
+   489→   489→      }}
+   490→   490→      className={`flex items-center gap-3 rounded-xl border border-border bg-card p-3 text-start transition ${isLocked ? "opacity-60" : "hover:border-brand/50"}`}
+   491→   491→    >
+   492→   492→      <span className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-white" style={{ background: lesson.categoryColor || "var(--brand)" }}>
+   493→   493→        <BarChart3 className="h-4 w-4" />
+   494→   494→      </span>
+   495→   495→      <div className="min-w-0 flex-1">
+   496→   496→        <div className="truncate text-sm font-bold">{lesson.title[lang] || lesson.title.en}</div>
+   497→   497→        <div className="text-[11px] text-muted-foreground">
+   498→   498→          {lesson.passed ? "✓ Passed" : proLocked ? "PRO" : seqLocked ? "Locked" : "Ready"}
+   499→   499→        </div>
+   500→   500→      </div>
+   501→   501→      {proLocked ? (
+   502→   502→        <span className="inline-flex items-center gap-1 rounded-full bg-gold/20 px-2 py-0.5 text-[10px] font-bold text-gold-foreground">
+   503→   503→          <Crown className="h-3 w-3" /> PRO
+   504→   504→        </span>
+   505→   505→      ) : lesson.passed ? <CheckCircle2 className="h-4 w-4 text-brand" /> : seqLocked ? <Lock className="h-4 w-4 text-muted-foreground" /> : <ChevronRight className="h-4 w-4 text-brand" />}
+   506→   506→    </button>
+   507→   507→  )
+   508→   508→}
+   509→   509→
+   510→   510→/* ─── What Students Say — swipeable dark review cards ─── */
+   511→   511→const REVIEWS = [
+   512→   512→  { stars: 5, text: "Best app for beginners, 4 languages me samjhata hai, bht easy hai", name: "Ahmed", city: "Lahore" },
+   513→   513→  { stars: 5, text: "Live signals are very accurate, daily profit ho raha hai", name: "Ali Raza", city: "Karachi" },
+   514→   514→  { stars: 5, text: "Market Gauge feature is amazing, beginner se pro ban gaya", name: "Usman Khan", city: "Islamabad" },
+   515→   515→  { stars: 5, text: "Trading Seekho ne meri life change kar di, highly recommended", name: "Bilal", city: "Multan" },
+   516→   516→  { stars: 5, text: "Brilliant app! Learned forex in Urdu, now trading confidently in London", name: "James", city: "London, UK" },
+   517→   517→  { stars: 5, text: "हिंदी में समझाता है, बहुत आसान है। मैंने पहले ही प्रॉफिट कमाना शुरू कर दिया", name: "Rajesh", city: "Mumbai, India" },
+   518→   518→  { stars: 5, text: "Best trading education app,Market Gauge is a game changer for me", name: "Abdullah", city: "Dubai, UAE" },
+   519→   519→  { stars: 5, text: "Simple, effective and multilingual. Highly recommended for all traders", name: "Sarah", city: "Manchester, UK" },
+   520→   520→]
+   521→   521→
+   522→   522→function ReviewsSection() {
+   523→   523→  const [reviewIdx, setReviewIdx] = useState(0)
+   524→   524→  const touchStartX = useRef(0)
+   525→   525→
+   526→   526→  // Check if reviews are enabled in admin settings
+   527→   527→  const { data: adSettings } = useQuery<{ reviewsEnabled?: boolean }>({
+   528→   528→    queryKey: ["ad-settings-reviews"],
+   529→   529→    queryFn: async () => {
+   530→   530→      const res = await fetch("/api/ads/config", { cache: "no-store" })
+   531→   531→      if (!res.ok) return { reviewsEnabled: true }
+   532→   532→      return res.json()
+   533→   533→    },
+   534→   534→    staleTime: 60_000,
+   535→   535→  })
+   536→   536→  // If admin has disabled reviews, hide the section entirely
+   537→   537→  if (adSettings?.reviewsEnabled === false) return null
+   538→   538→
+   539→   539→  const onTouchStart = (e: React.TouchEvent) => { touchStartX.current = e.touches[0].clientX }
+   540→   540→  const onTouchEnd = (e: React.TouchEvent) => {
+   541→   541→    const dx = e.changedTouches[0].clientX - touchStartX.current
+   542→   542→    if (dx < -40) setReviewIdx((v) => Math.min(REVIEWS.length - 1, v + 1))
+   543→   543→    if (dx > 40) setReviewIdx((v) => Math.max(0, v - 1))
+   544→   544→  }
+   545→   545→
+   546→   546→  const r = REVIEWS[reviewIdx]
+   547→   547→
+   548→   548→  return (
+   549→   549→    <section className="mb-4">
+   550→   550→      <h2 className="mb-2 px-1 text-base font-black tracking-tight text-foreground">
+   551→   551→        What Students Say
+   552→   552→      </h2>
+   553→   553→      <div
+   554→   554→        className="relative overflow-hidden rounded-2xl border border-border bg-card p-4"
+   555→   555→        onTouchStart={onTouchStart}
+   556→   556→        onTouchEnd={onTouchEnd}
+   557→   557→      >
+   558→   558→        <motion.div
+   559→   559→          key={reviewIdx}
+   560→   560→          initial={{ opacity: 0, x: 20 }}
+   561→   561→          animate={{ opacity: 1, x: 0 }}
+   562→   562→          transition={{ duration: 0.25 }}
+   563→   563→          className="flex flex-col gap-2"
+   564→   564→        >
+   565→   565→          {/* Stars */}
+   566→   566→          <div className="flex gap-0.5">
+   567→   567→            {Array.from({ length: r.stars }).map((_, i) => (
+   568→   568→              <span key={i} className="text-sm text-amber-400">★</span>
+   569→   569→            ))}
+   570→   570→          </div>
+   571→   571→          {/* Review text */}
+   572→   572→          <p className="text-sm leading-relaxed text-foreground">
+   573→   573→            "{r.text}"
+   574→   574→          </p>
+   575→   575→          {/* Name + City */}
+   576→   576→          <div className="flex items-center gap-1.5">
+   577→   577→            <span className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-brand-muted text-xs font-bold text-brand">
+   578→   578→              {r.name.charAt(0)}
+   579→   579→            </span>
+   580→   580→            <span className="text-xs font-bold text-foreground">{r.name}</span>
+   581→   581→            <span className="text-xs text-muted-foreground">· {r.city}</span>
+   582→   582→          </div>
+   583→   583→        </motion.div>
+   584→   584→
+   585→   585→        {/* Dots */}
+   586→   586→        <div className="mt-3 flex items-center gap-1.5">
+   587→   587→          {REVIEWS.map((_, idx) => (
+   588→   588→            <button
+   589→   589→              key={idx}
+   590→   590→              type="button"
+   591→   591→              onClick={() => setReviewIdx(idx)}
+   592→   592→              className={`h-1.5 rounded-full transition-all ${idx === reviewIdx ? "w-6 bg-brand" : "w-1.5 bg-muted-foreground/30"}`}
+   593→   593→            />
+   594→   594→          ))}
+   595→   595→        </div>
+   596→   596→      </div>
+   597→   597→    </section>
+   598→   598→  )
+   599→   599→}
+   600→   600→

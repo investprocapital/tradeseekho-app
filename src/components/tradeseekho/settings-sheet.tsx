@@ -1,10 +1,11 @@
 "use client"
 
+import { useState } from "react"
 import { useTheme } from "next-themes"
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet"
 import { Switch } from "@/components/ui/switch"
 import { Separator } from "@/components/ui/separator"
-import { Bell, Shield, Moon, Sun, User as UserIcon, Award, Bookmark, Languages, Trophy, ChevronRight, BookOpen, Mail, FileText, Info, Check, LogOut, Lock } from "lucide-react"
+import { Bell, Shield, Moon, Sun, User as UserIcon, Award, Bookmark, Languages, Trophy, ChevronRight, BookOpen, Mail, FileText, Info, Check, LogOut, Lock, Trash2, AlertTriangle } from "lucide-react"
 import { useStore } from "@/lib/store"
 import { useCertificates } from "./use-data"
 import { Button } from "@/components/ui/button"
@@ -16,6 +17,10 @@ import { LANG_ORDER, LANGS } from "@/lib/i18n"
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuLabel, DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu"
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription,
+  AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
+} from "@/components/ui/alert-dialog"
 
 export function SettingsSheet() {
   const open = useStore((s) => s.settingsOpen)
@@ -35,6 +40,29 @@ export function SettingsSheet() {
   const lang = useStore((s) => s.lang)
   const setLang = useStore((s) => s.setLang)
   const bookmarksCount = useStore((s) => s.bookmarks.length)
+
+  // ─── Delete Account state (Play Store compliance) ───
+  const [deleteOpen, setDeleteOpen] = useState(false)
+  const [deleting, setDeleting] = useState(false)
+
+  const handleDeleteAccount = async () => {
+    setDeleting(true)
+    try {
+      const res = await fetch("/api/auth/delete-account", { method: "POST" })
+      const json = await res.json().catch(() => ({}))
+      if (!res.ok) {
+        throw new Error(json?.message || json?.error || `HTTP ${res.status}`)
+      }
+      toast.success("Account deleted permanently")
+      setDeleteOpen(false)
+      setOpen(false)
+      // Sign out + redirect to home (shows login)
+      signOut({ callbackUrl: "/", redirect: true })
+    } catch (e: any) {
+      toast.error(e?.message || "Could not delete account. Try again or contact support.")
+      setDeleting(false)
+    }
+  }
 
   return (
     <Sheet open={open} onOpenChange={setOpen}>
@@ -218,12 +246,56 @@ export function SettingsSheet() {
               <Row icon={Shield} label="Analytics" hint="Anonymous usage helps improve the app" />
             </Section>
 
-            {/* LOGOUT — prominent red button at the bottom */}
+            {/* LOGOUT + DELETE ACCOUNT — prominent red buttons at the bottom */}
             {session?.user && (
               <>
                 <Separator className="my-3" />
+                {/* Delete Account — Play Store mandatory destructive action */}
+                <AlertDialog open={deleteOpen} onOpenChange={setDeleteOpen}>
+                  <AlertDialogTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className="h-11 w-full gap-2 border-red-500/50 font-bold text-red-600 hover:bg-red-500/10 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300"
+                    >
+                      <Trash2 className="h-4 w-4" /> Delete Account
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle className="flex items-center gap-2 text-red-600 dark:text-red-400">
+                        <AlertTriangle className="h-5 w-5" /> Delete Account Permanently?
+                      </AlertDialogTitle>
+                      <AlertDialogDescription className="text-sm">
+                        Are you sure? All your data — <b>profile, bookmarks, lesson progress, certificates, price alerts, and comments</b> — will be <b className="text-red-600 dark:text-red-400">permanently deleted</b>. This action <b>cannot be undone</b>.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <div className="rounded-lg bg-red-500/10 p-3 text-xs text-red-700 dark:text-red-300">
+                      <AlertTriangle className="mr-1 inline h-3.5 w-3.5" />
+                      You will be signed out immediately after deletion.
+                    </div>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel disabled={deleting}>Cancel</AlertDialogCancel>
+                      <AlertDialogAction
+                        disabled={deleting}
+                        onClick={(e) => {
+                          e.preventDefault() // prevent auto-close; let handler decide
+                          handleDeleteAccount()
+                        }}
+                        className="gap-2 bg-red-600 font-bold text-white hover:bg-red-700 disabled:opacity-50"
+                      >
+                        {deleting ? (
+                          <><span className="h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white" /> Deleting...</>
+                        ) : (
+                          <><Trash2 className="h-4 w-4" /> Yes, Delete Forever</>
+                        )}
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+
+                {/* Logout */}
                 <Button
-                  className="h-11 w-full gap-2 bg-destructive font-bold text-white hover:bg-destructive/90"
+                  className="mt-2 h-11 w-full gap-2 bg-destructive font-bold text-white hover:bg-destructive/90"
                   onClick={() => {
                     setShowAdmin(false)
                     setOpen(false)

@@ -45,6 +45,20 @@ export async function GET(
     }
   }
 
+  // ─── Advanced-lessons-2+ Pro paywall (server-side enforcement) ───
+  // Per requirement: in the "advanced" category, lessons 2,3,4,... are Pro-locked.
+  // Lesson 1 is free. Non-Pro users cannot open the lesson detail (blocks direct
+  // API access bypassing the client-side blur). Returns 403 so the client can
+  // show the Pro upgrade popup.
+  const orderInCategory = idx + 1
+  const isAdvancedLocked = lesson.category.slug === "advanced" && orderInCategory > 1
+  if (isAdvancedLocked && !pro) {
+    return NextResponse.json(
+      { error: "pro_required", message: "Buy the Lessons Pro plan to unlock Advanced lessons 2+." },
+      { status: 403 },
+    )
+  }
+
   const [prog, bm] = await Promise.all([
     db.progress.findUnique({
       where: { userId_lessonId: { userId, lessonId: lesson.id } },

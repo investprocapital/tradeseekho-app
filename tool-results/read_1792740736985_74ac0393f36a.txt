@@ -1,0 +1,586 @@
+     1→"use client"
+     2→
+     3→import { useState } from "react"
+     4→import { motion, AnimatePresence } from "framer-motion"
+     5→import { TrendingUp, TrendingDown, X, Copy, BarChart3, ChevronRight, CheckCircle2, XCircle, Radio } from "lucide-react"
+     6→import { useQuery } from "@tanstack/react-query"
+     7→import { Badge } from "@/components/ui/badge"
+     8→import { Button } from "@/components/ui/button"
+     9→import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet"
+    10→import { ScrollArea } from "@/components/ui/scroll-area"
+    11→import { toast } from "sonner"
+    12→import { useStore, useT } from "@/lib/store"
+    13→import { pairLabel } from "@/lib/signals"
+    14→import { useProMe } from "./use-data"
+    15→import { CommentSection } from "./comment-section"
+    16→import { SignalBottomAd } from "./signal-bottom-ad"
+    17→import { AffiliateAdBanner } from "./affiliate-ad-banner"
+    18→// NOTE: MarketGauge + MarketGaugeScreen removed from signal-list to reduce
+    19→// DB + TradingView widget calls. Gauge is now only available via the
+    20→// "Market Gauge" button on the home dashboard (MarketGaugeSheet).
+    21→
+    22→interface Signal {
+    23→  id: string
+    24→  symbol: string
+    25→  signalType: string
+    26→  entry: string
+    27→  entry2: string | null
+    28→  stopLoss: string
+    29→  tp1: string | null
+    30→  tp2: string | null
+    31→  tp3: string | null
+    32→  note: string | null
+    33→  screenshot: string
+    34→  // Aliases returned by the API for mobile/Flutter clients that expect
+    35→  // different field names. All point to the same base64 data URL.
+    36→  chart_image_url?: string
+    37→  chart_snapshot_url?: string
+    38→  status: string // active | tp1_hit | tp2_hit | tp3_hit | sl_hit
+    39→  tp1HitAt: string | null
+    40→  tp2HitAt: string | null
+    41→  tp3HitAt: string | null
+    42→  slHitAt: string | null
+    43→  profitUsd: number | null
+    44→  // When true, the client hides Entry/SL/TP values — only shows chart image.
+    45→  hideLevels?: boolean
+    46→  createdAt: string
+    47→}
+    48→
+    49→async function fetchSignals() {
+    50→  const res = await fetch("/api/signals")
+    51→  if (!res.ok) throw new Error("failed")
+    52→  return res.json() as Promise<{ signals: Signal[] }>
+    53→}
+    54→
+    55→// Resolve the chart image URL. Checks all three field names the API returns
+    56→// (screenshot / chart_image_url / chart_snapshot_url) so any client — web or
+    57→// Flutter — gets the captured chart image. Returns "" when none exist.
+    58→function chartImage(s: Signal): string {
+    59→  return s.screenshot || s.chart_image_url || s.chart_snapshot_url || ""
+    60→}
+    61→
+    62→// Client-side status badge (mirrors the admin config).
+    63→const STATUS_BADGE: Record<string, { label: string; cls: string }> = {
+    64→  active: { label: "ACTIVE", cls: "bg-brand text-brand-foreground" },
+    65→  tp1_hit: { label: "TP1 HIT ✅", cls: "bg-emerald-500 text-white" },
+    66→  tp2_hit: { label: "TP2 HIT ✅", cls: "bg-sky-500 text-white" },
+    67→  tp3_hit: { label: "TP3 HIT ✅", cls: "bg-blue-800 text-white" },
+    68→  sl_hit: { label: "SL HIT ❌", cls: "bg-red-600 text-white" },
+    69→}
+    70→
+    71→export function SignalList() {
+    72→  const { data, isLoading } = useQuery({ queryKey: ["signals"], queryFn: fetchSignals, staleTime: 30_000 })
+    73→  const [selected, setSelected] = useState<Signal | null>(null)
+    74→  const [showChart, setShowChart] = useState(false)
+    75→  const signalsOpen = useStore((s) => s.signalsOpen)
+    76→  const setSignalsOpen = useStore((s) => s.setSignalsOpen)
+    77→  const setProOpen = useStore((s) => s.setProOpen)
+    78→  const setProPlan = useStore((s) => s.setProPlan)
+    79→  const t = useT()
+    80→  const lang = useStore((s) => s.lang)
+    81→  const rtlFont = lang === "ur" ? "font-urdu" : lang === "ar" ? "font-arabic" : ""
+    82→
+    83→  // Check if user has "signals" Pro plan (for paywall logic)
+    84→  const { data: proMe } = useProMe()
+    85→  const hasSignalsPro = proMe?.proPlans?.includes("signals") ?? false
+    86→
+    87→  // Fetch ad settings (includes commentsEnabled toggle). When comments are OFF,
+    88→  // the entire comments section is hidden from the signal detail page.
+    89→  const { data: adSettings } = useQuery<{ commentsEnabled?: boolean }>({
+    90→    queryKey: ["ad-settings"],
+    91→    queryFn: async () => {
+    92→      const res = await fetch("/api/admin/ads", { cache: "no-store" })
+    93→      if (!res.ok) return { commentsEnabled: true }
+    94→      return res.json()
+    95→    },
+    96→    staleTime: 60_000,
+    97→  })
+    98→  const commentsEnabled = adSettings?.commentsEnabled ?? true
+    99→
+   100→  const signals = data?.signals ?? []
+   101→
+   102→  const copyTrade = (s: Signal) => {
+   103→    const entryText = s.entry2 ? `Entry Zone: ${s.entry} - ${s.entry2}` : `Entry: ${s.entry}`
+   104→    const text = `${s.signalType} ${pairLabel(s.symbol)}\n${entryText}\nSL: ${s.stopLoss}${s.tp1 ? `\nTP1: ${s.tp1}` : ""}${s.tp2 ? `\nTP2: ${s.tp2}` : ""}${s.tp3 ? `\nTP3: ${s.tp3}` : ""}${s.note ? `\nNote: ${s.note}` : ""}\n\n— TradeSeekho PK`
+   105→    navigator.clipboard?.writeText(text)
+   106→    toast.success("Signal copied!")
+   107→  }
+   108→
+   109→  const shareSignal = (s: Signal) => {
+   110→    const entryText = s.entry2 ? `Entry Zone: ${s.entry} - ${s.entry2}` : `Entry: ${s.entry}`
+   111→    const text = `${s.signalType} ${pairLabel(s.symbol)}\n${entryText}\nSL: ${s.stopLoss}${s.tp1 ? `\nTP1: ${s.tp1}` : ""}${s.tp2 ? `\nTP2: ${s.tp2}` : ""}${s.tp3 ? `\nTP3: ${s.tp3}` : ""}\n\n— TradeSeekho PK\nhttps://tradeseekhopk.vercel.app`
+   112→    window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, "_blank")
+   113→  }
+   114→
+   115→  if (isLoading) return null
+   116→  if (signals.length === 0) return null
+   117→
+   118→  // Summary box content:
+   119→  // - 1 signal → show "PAIR - BUY/SELL" (e.g. "OIL - BUY")
+   120→  // - multiple signals → show "N Active: GOLD, BTC, EURUSD" (max 4 names)
+   121→  const pairNames = signals.map((s) => pairLabel(s.symbol))
+   122→  const summaryText =
+   123→    signals.length === 1
+   124→      ? `${pairNames[0]} - ${signals[0].signalType}`
+   125→      : `${signals.length} Active: ${pairNames.slice(0, 4).join(", ")}${pairNames.length > 4 ? "…" : ""}`
+   126→
+   127→  return (
+   128→    <>
+   129→      <section className="mt-2">
+   130→        {/* Clickable summary box — opens the full signals list in a Sheet.
+   131→            Single signal → "OIL - BUY". Multiple → "3 Active: GOLD, BTC, EURUSD". */}
+   132→        <motion.button
+   133→          initial={{ opacity: 0, y: 8 }}
+   134→          animate={{ opacity: 1, y: 0 }}
+   135→          onClick={() => setSignalsOpen(true)}
+   136→          className="flex w-full items-center gap-3 rounded-xl border-2 border-brand/30 bg-gradient-to-r from-brand/5 to-transparent p-3 text-start transition hover:border-brand/60 hover:from-brand/10 active:scale-[0.99]"
+   137→        >
+   138→          <span className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-brand text-brand-foreground">
+   139→            <Radio className="h-5 w-5 animate-pulse" />
+   140→          </span>
+   141→          <div className="min-w-0 flex-1">
+   142→            <div className="flex items-center gap-1.5">
+   143→              <span className="text-sm font-black text-foreground">Live Signals</span>
+   144→              <span className="rounded-full bg-brand/15 px-1.5 py-0.5 text-[9px] font-bold text-brand">
+   145→                {signals.length} active
+   146→              </span>
+   147→            </div>
+   148→            <div className="mt-0.5 truncate text-[11px] font-black text-muted-foreground">
+   149→              {summaryText}
+   150→            </div>
+   151→          </div>
+   152→          <ChevronRight className="h-5 w-5 shrink-0 text-brand" />
+   153→        </motion.button>
+   154→      </section>
+   155→
+   156→      {/* Full signals list — opens in a right-side Sheet when the summary box
+   157→          is clicked. Shows all active signals as individual cards. */}
+   158→      <Sheet open={signalsOpen} onOpenChange={setSignalsOpen}>
+   159→        <SheetContent side="right" className="flex h-full w-full flex-col gap-0 p-0 sm:max-w-md">
+   160→          <SheetHeader className="border-b border-border p-5">
+   161→            <SheetTitle className="flex items-center gap-2 text-xl font-black">
+   162→              <Radio className="h-5 w-5 text-brand animate-pulse" /> Live Signals
+   163→            </SheetTitle>
+   164→            <SheetDescription>
+   165→              {signals.length} active signal{signals.length !== 1 ? "s" : ""} · tap any to view details
+   166→            </SheetDescription>
+   167→          </SheetHeader>
+   168→          <ScrollArea className="ts-scroll flex-1">
+   169→            <div className="p-4">
+   170→              <div className="grid gap-2.5">
+   171→                {signals.map((s, idx) => {
+   172→                  const badge = STATUS_BADGE[s.status] ?? STATUS_BADGE.active
+   173→                  const isLoss = s.status === "sl_hit"
+   174→                  // PAYWALL: 1st signal free, 2nd+ blurred for non-Pro users
+   175→                  const isLocked = !hasSignalsPro && idx >= 1
+   176→                  return (
+   177→                    <motion.button
+   178→                      key={s.id}
+   179→                      initial={{ opacity: 0, y: 8 }}
+   180→                      animate={{ opacity: 1, y: 0 }}
+   181→                      onClick={() => {
+   182→                        if (isLocked) {
+   183→                          // Open Pro dialog with "signals" plan
+   184→                          setSignalsOpen(false)
+   185→                          setProPlan("signals")
+   186→                          setProOpen(true)
+   187→                        } else {
+   188→                          setSelected(s); setSignalsOpen(false)
+   189→                        }
+   190→                      }}
+   191→                      className={`relative flex items-center gap-3 rounded-xl border bg-card p-3 text-start transition ${
+   192→                        isLocked
+   193→                          ? "border-gold/30 hover:border-gold/60"
+   194→                          : "border-border hover:border-brand/50"
+   195→                      }`}
+   196→                    >
+   197→                      {/* Blur overlay for locked signals */}
+   198→                      {isLocked && (
+   199→                        <div className="absolute inset-0 z-10 rounded-xl bg-background/60 backdrop-blur-sm flex flex-col items-center justify-center gap-1">
+   200→                          <span className="text-2xl">🔒</span>
+   201→                          <span className="rounded-full bg-gold px-3 py-1 text-[10px] font-black text-white">PRO</span>
+   202→                          <span className="text-[10px] font-bold text-muted-foreground">Tap to unlock</span>
+   203→                        </div>
+   204→                      )}
+   205→                      {chartImage(s) ? (
+   206→                        <img src={chartImage(s)} alt="" className="h-12 w-16 shrink-0 rounded-lg object-cover" draggable={false} />
+   207→                      ) : (
+   208→                        <div className="flex h-12 w-16 shrink-0 flex-col justify-center rounded-lg bg-gradient-to-br from-[#0B1B2E] to-[#0A1929] px-1.5">
+   209→                          <span className="text-[8px] font-bold text-white">{pairLabel(s.symbol)}</span>
+   210→                          <span className={`text-[8px] font-bold ${s.signalType === "BUY" ? "text-emerald-400" : "text-red-400"}`}>{s.signalType}</span>
+   211→                          {!s.hideLevels && <span className="text-[7px] text-white/60">{s.entry}</span>}
+   212→                          {s.hideLevels && <span className="text-[7px] text-gold/80">🔒</span>}
+   213→                        </div>
+   214→                      )}
+   215→                      <div className="min-w-0 flex-1">
+   216→                        <div className="flex items-center gap-1.5 flex-wrap">
+   217→                          <span className="text-sm font-bold">{pairLabel(s.symbol)}</span>
+   218→                          <Badge className={s.signalType === "BUY" ? "bg-brand text-brand-foreground text-[9px]" : "bg-destructive text-white text-[9px]"}>
+   219→                            {s.signalType === "BUY" ? <TrendingUp className="mr-0.5 h-2.5 w-2.5" /> : <TrendingDown className="mr-0.5 h-2.5 w-2.5" />}
+   220→                            {s.signalType}
+   221→                          </Badge>
+   222→                          {s.status !== "active" && (
+   223→                            <Badge className={`text-[9px] ${badge.cls}`}>{badge.label}</Badge>
+   224→                          )}
+   225→                          {s.hideLevels && (
+   226→                            <Badge className="text-[9px] bg-gold/20 text-gold-foreground">CHART ONLY</Badge>
+   227→                          )}
+   228→                        </div>
+   229→                        {!s.hideLevels && (
+   230→                          <div className="mt-0.5 text-[11px] text-muted-foreground">
+   231→                            {s.entry2 ? (
+   232→                              <>Entry Zone: <span className="font-bold text-foreground">{s.entry} - {s.entry2}</span></>
+   233→                            ) : (
+   234→                              <>Entry: <span className="font-bold text-foreground">{s.entry}</span></>
+   235→                            )}
+   236→                            {" · "}SL: <span className="font-bold text-destructive">{s.stopLoss}</span>
+   237→                            {s.tp1 && <span>{" · "}TP: <span className="font-bold text-brand">{s.tp1}</span></span>}
+   238→                          </div>
+   239→                        )}
+   240→                        {s.hideLevels && (
+   241→                          <div className={`mt-0.5 text-[11px] text-muted-foreground italic ${rtlFont}`}>
+   242→                            {t("signal.chartOnlyTap")}
+   243→                          </div>
+   244→                        )}
+   245→                        {!s.hideLevels && s.profitUsd !== null && (
+   246→                          <div className={`mt-0.5 text-[10px] font-bold ${s.profitUsd >= 0 ? "text-emerald-500" : "text-destructive"}`}>
+   247→                            {isLoss ? "❌ " : "✅ "}{s.profitUsd >= 0 ? `+$${s.profitUsd}` : `-$${Math.abs(s.profitUsd)}`} {s.profitUsd >= 0 ? "Profit" : "Loss"}
+   248→                          </div>
+   249→                        )}
+   250→                      </div>
+   251→                      <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" />
+   252→                    </motion.button>
+   253→                  )
+   254→                })}
+   255→              </div>
+   256→
+   257→              {/* Bottom banner ad — below all signals.
+   258→                  Premium users see NO ads. Admin can toggle ON/OFF. */}
+   259→              <SignalBottomAd />
+   260→              {/* Affiliate ad banner — custom affiliate ad (admin-controlled). */}
+   261→              <AffiliateAdBanner />
+   262→            </div>
+   263→          </ScrollArea>
+   264→        </SheetContent>
+   265→      </Sheet>
+   266→
+   267→      {/* Signal Detail Modal */}
+   268→      <AnimatePresence>
+   269→        {selected && (
+   270→          <motion.div
+   271→            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+   272→            className="fixed inset-0 z-[200] flex items-end sm:items-center justify-center bg-black/70"
+   273→            onClick={() => { setSelected(null); setShowChart(false) }}
+   274→          >
+   275→            <motion.div
+   276→              initial={{ y: "100%", opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: "100%", opacity: 0 }}
+   277→              transition={{ type: "spring", stiffness: 260, damping: 26 }}
+   278→              className="relative w-full max-w-lg max-h-[90vh] overflow-y-auto rounded-t-3xl sm:rounded-3xl bg-background border border-border"
+   279→              onClick={(e) => e.stopPropagation()}
+   280→            >
+   281→              {/* Header */}
+   282→              <div className="sticky top-0 z-10 flex items-center justify-between border-b border-border bg-background/95 backdrop-blur p-4">
+   283→                <div className="flex items-center gap-2 flex-wrap">
+   284→                  <Badge className={selected.signalType === "BUY" ? "bg-brand text-brand-foreground" : "bg-destructive text-white"}>
+   285→                    {selected.signalType}
+   286→                  </Badge>
+   287→                  <span className="text-lg font-extrabold">{pairLabel(selected.symbol)}</span>
+   288→                  {selected.status !== "active" && (
+   289→                    <Badge className={`text-[10px] ${(STATUS_BADGE[selected.status] ?? STATUS_BADGE.active).cls}`}>
+   290→                      {(STATUS_BADGE[selected.status] ?? STATUS_BADGE.active).label}
+   291→                    </Badge>
+   292→                  )}
+   293→                </div>
+   294→                <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => { setSelected(null); setShowChart(false) }}>
+   295→                  <X className="h-5 w-5" />
+   296→                </Button>
+   297→              </div>
+   298→
+   299→              {/* Chart image — captured screenshot, or a styled fallback card.
+   300→                  When hideLevels is true, the Entry/SL/TP overlay labels on top
+   301→                  of the chart are ALSO hidden (per user requirement). Only the
+   302→                  raw chart image + the admin's drawings (S/R, Trendline) show. */}
+   303→              {chartImage(selected) ? (
+   304→                <div className="relative">
+   305→                  <img src={chartImage(selected)} alt="Chart" className="w-full" draggable={false} />
+   306→                  {/* Entry/SL/TP labels overlay — HIDDEN when hideLevels is true.
+   307→                      Only show when levels are meant to be visible. */}
+   308→                  {!selected.hideLevels && (
+   309→                    <div className="absolute top-2 left-2 flex flex-col gap-1">
+   310→                      <span className="rounded bg-brand/90 px-2 py-0.5 text-[10px] font-bold text-white">
+   311→                        {selected.entry2 ? `Entry Zone: ${selected.entry} - ${selected.entry2}` : `Entry: ${selected.entry}`}
+   312→                      </span>
+   313→                      <span className={`rounded px-2 py-0.5 text-[10px] font-bold text-white ${selected.slHitAt ? "bg-red-600" : "bg-destructive/90"}`}>
+   314→                        SL: {selected.stopLoss} {selected.slHitAt && "❌"}
+   315→                      </span>
+   316→                      {selected.tp1 && (
+   317→                        <span className={`rounded px-2 py-0.5 text-[10px] font-bold text-white ${selected.tp1HitAt ? "bg-emerald-500" : "bg-brand/90"}`}>
+   318→                          TP1: {selected.tp1} {selected.tp1HitAt && "✅"}
+   319→                        </span>
+   320→                      )}
+   321→                      {selected.tp2 && (
+   322→                        <span className={`rounded px-2 py-0.5 text-[10px] font-bold text-white ${selected.tp2HitAt ? "bg-sky-500" : "bg-brand/80"}`}>
+   323→                          TP2: {selected.tp2} {selected.tp2HitAt && "✅"}
+   324→                        </span>
+   325→                      )}
+   326→                      {selected.tp3 && (
+   327→                        <span className={`rounded px-2 py-0.5 text-[10px] font-bold text-white ${selected.tp3HitAt ? "bg-blue-800" : "bg-brand/70"}`}>
+   328→                          TP3: {selected.tp3} {selected.tp3HitAt && "✅"}
+   329→                        </span>
+   330→                      )}
+   331→                    </div>
+   332→                  )}
+   333→                  {/* Watermark: "TradeSeekho PK" diagonally across the chart center.
+   334→                      Low opacity so it doesn't obscure the chart, but visible on
+   335→                      all shared chart images. Pointer-events:none so it doesn't
+   336→                      block chart interaction. */}
+   337→                  <div
+   338→                    className="pointer-events-none absolute inset-0 flex items-center justify-center"
+   339→                    style={{ opacity: 0.12 }}
+   340→                  >
+   341→                    <span
+   342→                      className="select-none text-2xl font-extrabold text-white"
+   343→                      style={{ transform: "rotate(-15deg)" }}
+   344→                    >
+   345→                      TradeSeekho PK
+   346→                    </span>
+   347→                  </div>
+   348→                </div>
+   349→              ) : selected.hideLevels ? (
+   350→                // No chart image + hideLevels=true → show a simple placeholder.
+   351→                <div
+   352→                  className="flex w-full items-center justify-center"
+   353→                  style={{ background: "linear-gradient(180deg,#0B1B2E 0%,#0A1929 100%)", height: 200 }}
+   354→                >
+   355→                  <span className={`text-sm text-white/40 ${rtlFont}`}>🔒 {t("signal.chartOnlyTitle")}</span>
+   356→                </div>
+   357→              ) : (
+   358→                // Fallback: a styled signal-card "chart" built from the levels
+   359→                // so the client never shows an empty dark box.
+   360→                <FallbackSignalCard s={selected} />
+   361→              )}
+   362→
+   363→              {/* Signal details */}
+   364→              <div className="p-4 space-y-3">
+   365→                {/* Entry/SL/TP grid — HIDDEN when hideLevels is true.
+   366→                    Chart image always shows above; only the level values are hidden. */}
+   367→                {selected.hideLevels ? (
+   368→                  <div className="rounded-lg border border-gold/30 bg-gold/5 p-3 text-center">
+   369→                    <div className={`text-sm font-bold text-gold-foreground ${rtlFont}`}>🔒 {t("signal.chartOnlyTitle")}</div>
+   370→                    <div className={`mt-0.5 text-[11px] text-muted-foreground ${rtlFont}`}>
+   371→                      {t("signal.chartOnlyBody")}
+   372→                    </div>
+   373→                  </div>
+   374→                ) : (
+   375→                  <>
+   376→                    <div className="grid grid-cols-2 gap-2">
+   377→                      <div className={`rounded-lg p-2.5 ${selected.entry2 ? "col-span-2 bg-brand/10 ring-1 ring-brand/30" : "bg-muted/40"}`}>
+   378→                        <div className="text-[10px] uppercase text-muted-foreground">{selected.entry2 ? "Entry Zone" : "Entry"}</div>
+   379→                        <div className="text-sm font-bold text-foreground">
+   380→                          {selected.entry2 ? `${selected.entry} - ${selected.entry2}` : selected.entry}
+   381→                        </div>
+   382→                      </div>
+   383→                      <div className={`rounded-lg p-2.5 ${selected.slHitAt ? "bg-red-500/15 ring-1 ring-red-500/40" : "bg-destructive/10"}`}>
+   384→                        <div className="text-[10px] uppercase text-muted-foreground flex items-center gap-1">
+   385→                          Stop Loss {selected.slHitAt && <XCircle className="h-3 w-3 text-destructive" />}
+   386→                        </div>
+   387→                        <div className="text-sm font-bold text-destructive">{selected.stopLoss}</div>
+   388→                      </div>
+   389→                      <div className={`rounded-lg p-2.5 ${selected.tp1HitAt ? "bg-emerald-500/15 ring-1 ring-emerald-500/40" : "bg-brand-muted/40"}`}>
+   390→                        <div className="text-[10px] uppercase text-muted-foreground flex items-center gap-1">
+   391→                          TP1 {selected.tp1HitAt && <CheckCircle2 className="h-3 w-3 text-emerald-500" />}
+   392→                        </div>
+   393→                        <div className="text-sm font-bold text-brand">{selected.tp1 ?? "—"}</div>
+   394→                      </div>
+   395→                      <div className={`rounded-lg p-2.5 ${selected.tp2HitAt ? "bg-sky-500/15 ring-1 ring-sky-500/40" : "bg-brand-muted/40"}`}>
+   396→                        <div className="text-[10px] uppercase text-muted-foreground flex items-center gap-1">
+   397→                          TP2 {selected.tp2HitAt && <CheckCircle2 className="h-3 w-3 text-sky-500" />}
+   398→                        </div>
+   399→                        <div className="text-sm font-bold text-brand">{selected.tp2 ?? "—"}</div>
+   400→                      </div>
+   401→                      <div className={`col-span-2 rounded-lg p-2.5 ${selected.tp3HitAt ? "bg-blue-800/15 ring-1 ring-blue-800/40" : "bg-brand-muted/40"}`}>
+   402→                        <div className="text-[10px] uppercase text-muted-foreground flex items-center gap-1">
+   403→                          TP3 {selected.tp3HitAt && <CheckCircle2 className="h-3 w-3 text-blue-800" />}
+   404→                        </div>
+   405→                        <div className="text-sm font-bold text-brand">{selected.tp3 ?? "—"}</div>
+   406→                      </div>
+   407→                    </div>
+   408→
+   409→                    {/* Profit banner when a hit has occurred */}
+   410→                    {selected.profitUsd !== null && (
+   411→                      <div className={`rounded-lg p-3 text-center ${selected.profitUsd >= 0 ? "bg-emerald-500/10" : "bg-destructive/10"}`}>
+   412→                        <div className={`text-xl font-extrabold ${selected.profitUsd >= 0 ? "text-emerald-500" : "text-destructive"}`}>
+   413→                          {selected.profitUsd >= 0 ? `+$${selected.profitUsd}` : `-$${Math.abs(selected.profitUsd)}`}
+   414→                        </div>
+   415→                        <div className="text-[10px] text-muted-foreground">
+   416→                          {selected.profitUsd >= 0 ? "Realized Profit" : "Realized Loss"}
+   417→                        </div>
+   418→                      </div>
+   419→                    )}
+   420→                  </>
+   421→                )}
+   422→
+   423→                {selected.note && (
+   424→                  <div className="rounded-lg bg-muted/40 p-3 text-sm text-muted-foreground">
+   425→                    {selected.note}
+   426→                  </div>
+   427→                )}
+   428→
+   429→                {/* PRO GUIDE — auto-shown on every signal detail.
+   430→                    Default message saved in admin panel (not per-signal). */}
+   431→                <ProGuideCard />
+   432→
+   433→                {/* Live Chart */}
+   434→                {showChart && (
+   435→                  <div className="overflow-hidden rounded-xl border border-border" style={{ height: "350px" }}>
+   436→                    <iframe
+   437→                      src={`https://s.tradingview.com/widgetembed/?frameElementId=tvchart&symbol=${encodeURIComponent(selected.symbol)}&interval=15&theme=dark&style=1&timezone=Asia%2FKarachi&hidesidetoolbar=0&toolbarbg=f1f3f6&studies=[]&hideideas=1`}
+   438→                      style={{ width: "100%", height: "100%", border: "none" }}
+   439→                      allowFullScreen
+   440→                    />
+   441→                  </div>
+   442→                )}
+   443→
+   444→                {/* Buttons */}
+   445→                <div className="flex gap-2">
+   446→                  <Button
+   447→                    className="flex-1 gap-2 bg-brand font-bold text-brand-foreground hover:bg-brand/90"
+   448→                    onClick={() => setShowChart(!showChart)}
+   449→                  >
+   450→                    <BarChart3 className="h-4 w-4" /> {showChart ? "Hide Chart" : "View Live Chart"}
+   451→                  </Button>
+   452→                  <Button variant="outline" className="gap-2 font-bold" onClick={() => copyTrade(selected)}>
+   453→                    <Copy className="h-4 w-4" /> Copy
+   454→                  </Button>
+   455→                  <Button variant="outline" className="gap-2 font-bold" onClick={() => shareSignal(selected)}>
+   456→                    Share
+   457→                  </Button>
+   458→                </div>
+   459→
+   460→                <p className="text-center text-[10px] text-muted-foreground">
+   461→                  Signal by TradeSeekho PK · {new Date(selected.createdAt).toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" })}
+   462→                </p>
+   463→
+   464→                {/* Comments section — text + image upload, like/report.
+   465→                    HIDDEN entirely when admin has disabled comments globally.
+   466→                    New comments are hidden by default (admin approves). */}
+   467→                {commentsEnabled && <CommentSection signalId={selected.id} />}
+   468→              </div>
+   469→            </motion.div>
+   470→          </motion.div>
+   471→        )}
+   472→      </AnimatePresence>
+   473→    </>
+   474→  )
+   475→}
+   476→
+   477→/**
+   478→ * Fallback "chart" shown in the detail modal when a signal has no captured
+   479→ * screenshot image (chart_image_url was null). Renders a styled signal-card
+   480→ * with the price-level ladder so the client never shows an empty dark box.
+   481→ */
+   482→function FallbackSignalCard({ s }: { s: Signal }) {
+   483→  const isBuy = s.signalType === "BUY"
+   484→  const accent = isBuy ? "#00D09C" : "#FF6B6B"
+   485→  const nums = [
+   486→    { label: "SL", val: parseFloat(s.stopLoss), color: "#FF6B6B", hit: !!s.slHitAt },
+   487→    { label: "ENTRY", val: parseFloat(s.entry), color: "#FFFFFF", hit: false },
+   488→    { label: "TP1", val: s.tp1 ? parseFloat(s.tp1) : NaN, color: "#00D09C", hit: !!s.tp1HitAt },
+   489→    { label: "TP2", val: s.tp2 ? parseFloat(s.tp2) : NaN, color: "#22D3EE", hit: !!s.tp2HitAt },
+   490→    { label: "TP3", val: s.tp3 ? parseFloat(s.tp3) : NaN, color: "#3B82F6", hit: !!s.tp3HitAt },
+   491→  ].filter((n) => Number.isFinite(n.val))
+   492→
+   493→  const min = Math.min(...nums.map((n) => n.val))
+   494→  const max = Math.max(...nums.map((n) => n.val))
+   495→  const range = Math.max(max - min, 1e-6)
+   496→  const pad = range * 0.15
+   497→  const lo = min - pad
+   498→  const hi = max + pad
+   499→  const pct = (v: number) => `${((hi - v) / (hi - lo)) * 100}%`
+   500→
+   501→  return (
+   502→    <div
+   503→      className="relative w-full overflow-hidden"
+   504→      style={{ background: "linear-gradient(180deg,#0B1B2E 0%,#0A1929 100%)" }}
+   505→    >
+   506→      <div style={{ height: 4, background: accent }} />
+   507→      <div className="p-4">
+   508→        {/* Header: pair + BUY/SELL pill */}
+   509→        <div className="flex items-center justify-between">
+   510→          <span className="text-2xl font-extrabold text-white">{pairLabel(s.symbol)}</span>
+   511→          <span
+   512→            className="rounded-full px-3 py-1 text-xs font-bold"
+   513→            style={{ background: accent, color: "#0A1929" }}
+   514→          >
+   515→            {s.signalType}
+   516→          </span>
+   517→        </div>
+   518→        {/* Ladder */}
+   519→        <div className="relative mt-4 mb-2" style={{ height: 200 }}>
+   520→          <div className="absolute left-3 top-0 bottom-0 w-0.5 bg-[#1E3A5F]" />
+   521→          {nums.map((n) => (
+   522→            <div
+   523→              key={n.label}
+   524→              className="absolute flex items-center"
+   525→              style={{ top: pct(n.val), left: 0, right: 0 }}
+   526→            >
+   527→              <div className="h-0.5 flex-1" style={{ background: n.color }} />
+   528→              <div
+   529→                className="ms-auto me-3 rounded px-2 py-0.5 text-[11px] font-bold"
+   530→                style={{ background: n.color, color: "#0A1929" }}
+   531→              >
+   532→                {n.label}: {n.val} {n.hit ? "✅" : ""}
+   533→              </div>
+   534→            </div>
+   535→          ))}
+   536→        </div>
+   537→        <div className="mt-1 text-center text-[10px] text-white/40">
+   538→          TradeSeekho PK · LEARN TRADE GROW
+   539→        </div>
+   540→      </div>
+   541→    </div>
+   542→  )
+   543→}
+   544→
+   545→/**
+   546→ * ProGuideCard — the "HOW TO USE SIGNAL" guide shown auto on every signal
+   547→ * detail. This is the Default Message saved in admin panel — not per-signal.
+   548→ * It teaches users how to manage the trade (Entry, TP1 → Breakeven, Secure 50%,
+   549→ * 1-2% Risk Management).
+   550→ */
+   551→function ProGuideCard() {
+   552→  const t = useT()
+   553→  const lang = useStore((s) => s.lang)
+   554→  const rtlFont = lang === "ur" ? "font-urdu" : lang === "ar" ? "font-arabic" : ""
+   555→  return (
+   556→    <div className={`rounded-xl border border-brand/30 bg-gradient-to-br from-brand/5 to-transparent p-3 ${rtlFont}`}>
+   557→      <div className="mb-2 flex items-center gap-1.5">
+   558→        <span className="text-sm">📈</span>
+   559→        <span className="text-sm font-extrabold text-foreground">{t("pro.guideTitle")}</span>
+   560→      </div>
+   561→      <ol className="space-y-2 text-[11px] leading-relaxed text-muted-foreground">
+   562→        <li className="flex gap-2">
+   563→          <span className="shrink-0 font-extrabold text-brand">{t("pro.guideStep1Label")}</span>
+   564→          <span>{t("pro.guideStep1")}</span>
+   565→        </li>
+   566→        <li className="flex gap-2">
+   567→          <span className="shrink-0 font-extrabold text-brand">{t("pro.guideStep2Label")}</span>
+   568→          <span>{t("pro.guideStep2")}</span>
+   569→        </li>
+   570→        <li className="flex gap-2">
+   571→          <span className="shrink-0 font-extrabold text-brand">{t("pro.guideStep3Label")}</span>
+   572→          <span>{t("pro.guideStep3")}</span>
+   573→        </li>
+   574→      </ol>
+   575→      {/* Golden Rule — high contrast for both dark + light themes.
+   576→          Uses amber background with dark text (works on both themes). */}
+   577→      <div className="mt-2.5 rounded-lg bg-amber-500 p-2 text-[11px] font-bold text-amber-950 dark:text-amber-50">
+   578→        ⭐ {t("pro.guideGoldenRule")}
+   579→      </div>
+   580→      <div className="mt-2 text-center text-[9px] text-muted-foreground">
+   581→        {t("pro.guideFooter")}
+   582→      </div>
+   583→    </div>
+   584→  )
+   585→}
+   586→
