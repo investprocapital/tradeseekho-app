@@ -9,7 +9,8 @@ export function Footer() {
   const { data: ads } = useAdSettings()
   const showBanner = ads?.bannerEnabled ?? true
   const { data: proMe } = useProMe()
-  const isPro = proMe?.proStatus === "active"
+  // Has ANY pro plan (lessons, alerts, or signals)
+  const isPro = proMe?.isProLessons || proMe?.isProAlerts || proMe?.isProSignals || false
   const isPending = proMe?.proStatus === "pending"
 
   if (!showBanner) return null

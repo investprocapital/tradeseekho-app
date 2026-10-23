@@ -82,7 +82,7 @@ export function SignalList() {
 
   // Check if user has "signals" Pro plan (for paywall logic)
   const { data: proMe } = useProMe()
-  const hasSignalsPro = proMe?.proPlans?.includes("signals") ?? false
+  const hasSignalsPro = proMe?.isProSignals ?? false
 
   // Fetch ad settings (includes commentsEnabled toggle). When comments are OFF,
   // the entire comments section is hidden from the signal detail page.

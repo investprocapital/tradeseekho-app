@@ -51,12 +51,12 @@ export default function Home() {
   const setProOpen = useStore((s) => s.setProOpen)
   const setProPlan = useStore((s) => s.setProPlan)
   const { data: proMe } = useProMe()
-  // Check SPECIFIC plans — not just proStatus.
-  // proStatus="active" is set when ANY plan is approved, but each feature
-  // should only unlock if the user has the corresponding plan.
-  const hasLessonsPro = proMe?.proPlans?.includes("lessons") ?? false
-  const hasAlertsPro = proMe?.proPlans?.includes("alerts") ?? false
-  const hasSignalsPro = proMe?.proPlans?.includes("signals") ?? false
+  // ─── Plan-specific Pro checks (use 3 explicit booleans, NOT proStatus) ───
+  // Each feature only unlocks if the user has the corresponding plan boolean.
+  // This prevents the bug where buying ONE plan unlocks ALL features.
+  const hasLessonsPro = proMe?.isProLessons ?? false
+  const hasAlertsPro = proMe?.isProAlerts ?? false
+  const hasSignalsPro = proMe?.isProSignals ?? false
   // For lesson/quiz locking: only "lessons" plan unlocks all lessons
   const isPro = hasLessonsPro
 

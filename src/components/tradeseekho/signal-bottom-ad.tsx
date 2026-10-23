@@ -21,9 +21,9 @@ export function SignalBottomAd() {
   const { data: proMe } = useProMe()
   const setProOpen = useStore((s) => s.setProOpen)
 
-  // Premium users see NO ads
-  const isPro = proMe?.proStatus === "active"
-  if (isPro) return null
+  // Premium (signals plan) users see NO ads on the signals page
+  const hasSignalsPro = proMe?.isProSignals ?? false
+  if (hasSignalsPro) return null
 
   // Admin toggle — if signalBottomAd is OFF, hide
   if (ads?.signalBottomAd === false) return null

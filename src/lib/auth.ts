@@ -176,12 +176,15 @@ export async function getCurrentUserId(): Promise<string> {
 export async function isUserPro(): Promise<boolean> {
   const userId = await getCurrentUserId()
   if (userId === "local-learner") return false
-  const user = await db.user.findUnique({ where: { id: userId }, select: { proStatus: true, proPlans: true, proExpiresAt: true } })
+  const user = await db.user.findUnique({
+    where: { id: userId },
+    select: { proStatus: true, isProLessons: true, isProAlerts: true, isProSignals: true, proExpiresAt: true },
+  })
   if (!user) return false
   if (user.proStatus !== "active") return false
   if (user.proExpiresAt && user.proExpiresAt < new Date()) return false
-  // Has at least one plan
-  return user.proPlans && user.proPlans.length > 0
+  // Has at least one plan boolean set
+  return user.isProLessons || user.isProAlerts || user.isProSignals
 }
 
 /**
@@ -192,13 +195,18 @@ export async function isUserPro(): Promise<boolean> {
 export async function isUserProForPlan(plan: "alerts" | "lessons" | "signals"): Promise<boolean> {
   const userId = await getCurrentUserId()
   if (userId === "local-learner") return false
-  const user = await db.user.findUnique({ where: { id: userId }, select: { proStatus: true, proPlans: true, proExpiresAt: true } })
+  const user = await db.user.findUnique({
+    where: { id: userId },
+    select: { proStatus: true, isProLessons: true, isProAlerts: true, isProSignals: true, proExpiresAt: true },
+  })
   if (!user) return false
   if (user.proStatus !== "active") return false
   if (user.proExpiresAt && user.proExpiresAt < new Date()) return false
-  // Check if the specific plan is in the user's proPlans (comma-separated)
-  const plans = user.proPlans ? user.proPlans.split(",").filter(Boolean) : []
-  return plans.includes(plan)
+  // Check the specific boolean field (PRIMARY source of truth)
+  if (plan === "lessons") return user.isProLessons
+  if (plan === "alerts") return user.isProAlerts
+  if (plan === "signals") return user.isProSignals
+  return false
 }
 
 /** Hash a password with bcrypt (10 rounds). */

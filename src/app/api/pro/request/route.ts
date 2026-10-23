@@ -89,10 +89,17 @@ export async function POST(req: Request) {
 
   // Already has THIS specific plan? Block duplicate purchase.
   // But allow buying a DIFFERENT plan (user can have multiple plans).
-  const u = await db.user.findUnique({ where: { id: userId }, select: { proStatus: true, proPlans: true } })
-  if (u?.proStatus === "active" && u.proPlans) {
-    const existingPlans = u.proPlans.split(",").filter(Boolean)
-    if (existingPlans.includes(planType)) {
+  const u = await db.user.findUnique({
+    where: { id: userId },
+    select: { proStatus: true, isProLessons: true, isProAlerts: true, isProSignals: true },
+  })
+  if (u?.proStatus === "active") {
+    const alreadyHas = planType === "lessons" ? u.isProLessons
+      : planType === "alerts" ? u.isProAlerts
+      : planType === "signals" ? u.isProSignals
+      : planType === "all" ? (u.isProLessons && u.isProAlerts && u.isProSignals)
+      : false
+    if (alreadyHas) {
       return NextResponse.json({ error: "already_has_plan", message: `You already have the ${planType} plan.` }, { status: 400 })
     }
   }

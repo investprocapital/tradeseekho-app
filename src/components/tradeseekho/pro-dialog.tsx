@@ -74,9 +74,16 @@ export function ProDialog() {
 
   const isPro = proMe?.proStatus === "active"
   const isPending = proMe?.proStatus === "pending"
-  // Check if user already has the specific plan they're trying to buy
-  const currentPlans = proMe?.proPlans ?? ""
-  const alreadyHasThisPlan = proPlan ? currentPlans.includes(proPlan) : false
+  // ─── Plan-specific checks (use 3 explicit booleans) ───
+  // Check if user already has the specific plan they're trying to buy.
+  // This prevents showing "Plan Active! 🎉" for the wrong plan.
+  const hasLessonsPro = proMe?.isProLessons ?? false
+  const hasAlertsPro = proMe?.isProAlerts ?? false
+  const hasSignalsPro = proMe?.isProSignals ?? false
+  const alreadyHasThisPlan = proPlan === "lessons" ? hasLessonsPro
+    : proPlan === "alerts" ? hasAlertsPro
+    : proPlan === "signals" ? hasSignalsPro
+    : false
 
   const usdPrice = settings?.usdPrice ?? 5
   const pkrRate = settings?.pkrRate ?? 280

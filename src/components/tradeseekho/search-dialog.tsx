@@ -22,7 +22,7 @@ export function SearchDialog() {
   const setActiveCategory = useStore((s) => s.setActiveCategory)
   const { data } = useLessonsBundle("all")
   const { data: proMe } = useProMe()
-  const isPro = proMe?.proStatus === "active"
+  const isPro = proMe?.isProLessons ?? false
 
   // Debounced search query — 300ms delay after user stops typing
   const [q, setQ] = useState("")

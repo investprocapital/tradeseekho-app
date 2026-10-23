@@ -19,15 +19,15 @@ try {
   const url = process.env.DATABASE_URL || "";
   const isSqlite = url.startsWith("file:");
   const isPostgres = url.startsWith("postgres");
-  const hasSqlite = s.includes('provider = "sqlite"');
-  const hasPostgres = s.includes('provider = "postgresql"');
+  const hasSqlite = s.includes('provider = "sqlite"') || s.includes('provider  = "sqlite"');
+  const hasPostgres = s.includes('provider = "postgresql"') || s.includes('provider  = "postgresql"');
 
   if (isSqlite && hasPostgres) {
-    s = s.replace('provider = "postgresql"', 'provider = "sqlite"');
+    s = s.replace(/provider\s*=\s*"postgresql"/, 'provider = "sqlite"');
     fs.writeFileSync(path, s);
     console.log("✓ [swap-provider] Switched prisma provider → sqlite (local dev: file: URL)");
   } else if (isPostgres && hasSqlite) {
-    s = s.replace('provider = "sqlite"', 'provider = "postgresql"');
+    s = s.replace(/provider\s*=\s*"sqlite"/, 'provider = "postgresql"');
     fs.writeFileSync(path, s);
     console.log("✓ [swap-provider] Switched prisma provider → postgresql (Vercel/Neon)");
   } else if (isPostgres && hasPostgres) {

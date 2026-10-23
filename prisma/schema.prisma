@@ -7,7 +7,7 @@ generator client {
 }
 
 datasource db {
-  provider  = "postgresql"
+  provider = "postgresql"
   url       = env("DATABASE_URL")
   directUrl = env("DIRECT_URL")
 }
@@ -122,6 +122,9 @@ model User {
   role            String     @default("student") // student | admin
   proStatus       String     @default("none") // none | pending | active (manual payment approval)
   proPlans        String     @default("") // comma-separated: "alerts" | "lessons" | "signals" | "alerts,lessons" etc.
+  isProLessons    Boolean    @default(false) // true = all lessons unlocked
+  isProAlerts     Boolean    @default(false) // true = unlimited price alerts
+  isProSignals    Boolean    @default(false) // true = premium signals unlocked
   proExpiresAt    DateTime?  // optional expiry; null = lifetime
   fcmToken        String?    // Firebase Cloud Messaging token (for push notifications when app is closed)
   preferredLang   String?    // en | ur | hi | ar — saved per-user, auto-applied on login
