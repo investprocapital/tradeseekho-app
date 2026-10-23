@@ -12,6 +12,7 @@ import { useAlertChecker } from "@/components/tradeseekho/use-alert-checker"
 import { Header } from "@/components/tradeseekho/header"
 import { Footer } from "@/components/tradeseekho/footer"
 import { BrokerAdBanner } from "@/components/tradeseekho/broker-ad-banner"
+import { AffiliateAdBanner } from "@/components/tradeseekho/affiliate-ad-banner"
 import { SignalList } from "@/components/tradeseekho/signal-list"
 import { PriceAlertSheet } from "@/components/tradeseekho/price-alert-sheet"
 import { MarketGaugeSheet } from "@/components/tradeseekho/market-gauge-sheet"
@@ -214,6 +215,8 @@ export default function Home() {
                   ))
                 )}
               </div>
+              {/* Affiliate ad banner — at bottom of lessons list. Admin-controlled. */}
+              <AffiliateAdBanner />
             </section>
           </>
         ) : bottomTab === "quiz" ? (

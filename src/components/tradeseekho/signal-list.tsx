@@ -14,6 +14,7 @@ import { pairLabel } from "@/lib/signals"
 import { useProMe } from "./use-data"
 import { CommentSection } from "./comment-section"
 import { SignalBottomAd } from "./signal-bottom-ad"
+import { AffiliateAdBanner } from "./affiliate-ad-banner"
 // NOTE: MarketGauge + MarketGaugeScreen removed from signal-list to reduce
 // DB + TradingView widget calls. Gauge is now only available via the
 // "Market Gauge" button on the home dashboard (MarketGaugeSheet).
@@ -256,6 +257,8 @@ export function SignalList() {
               {/* Bottom banner ad — below all signals.
                   Premium users see NO ads. Admin can toggle ON/OFF. */}
               <SignalBottomAd />
+              {/* Affiliate ad banner — custom affiliate ad (admin-controlled). */}
+              <AffiliateAdBanner />
             </div>
           </ScrollArea>
         </SheetContent>

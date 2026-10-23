@@ -378,3 +378,21 @@ model AppStats {
   totalQuizzes   Int     @default(0)
   updatedAt      DateTime @updatedAt
 }
+
+// Custom Affiliate Ad Banner — single configurable banner shown at the bottom
+// of the Lessons page and the Live Signals page. Admin controls everything via
+// the "Affiliate Ads" tab in the admin panel: on/off toggle, title, description,
+// button text, logo image (left), banner image (right), and the affiliate link.
+// Clicking the ad opens the affiliate link in a new tab. Stored as a singleton
+// (id = "singleton") like AppStats — only one ad configuration exists at a time.
+model AffiliateAd {
+  id          String   @id @default("singleton")
+  enabled     Boolean  @default(false) // main on/off switch
+  title       String   @default("Mexc") // e.g. "Mexc", "Binance", "Bybit"
+  description String   @default("Make your first deposit and Futures trade to unlock rewards")
+  buttonText  String   @default("Download") // red CTA button text
+  logoUrl     String?  // left-side brand logo image (CDN URL or base64)
+  bannerUrl   String?  // right-side promotional banner image (CDN URL or base64)
+  link        String   @default("#") // affiliate link (opens in new tab)
+  updatedAt   DateTime @updatedAt
+}

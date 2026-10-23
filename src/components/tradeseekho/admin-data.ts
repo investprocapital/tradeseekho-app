@@ -417,3 +417,42 @@ export function useSavePage() {
     onSuccess: () => qc.invalidateQueries({ queryKey: ["admin-pages"] }),
   })
 }
+
+// ─── Affiliate Ad (single banner, singleton config) ───
+export interface AffiliateAdData {
+  id: string
+  enabled: boolean
+  title: string
+  description: string
+  buttonText: string
+  logoUrl: string
+  bannerUrl: string
+  link: string
+  updatedAt: string
+}
+
+export function useAffiliateAd() {
+  return useQuery<{ ad: AffiliateAdData | null }>({
+    queryKey: ["admin-affiliate-ads"],
+    queryFn: () => j(fetch("/api/admin/affiliate-ads").then((r) => r)),
+  })
+}
+
+export function useSaveAffiliateAd() {
+  const qc = useQueryClient()
+  return useMutation<{ ad: AffiliateAdData }, Error, Omit<AffiliateAdData, "id" | "updatedAt">>({
+    mutationFn: async (data) => {
+      const res = await fetch("/api/admin/affiliate-ads", {
+        method: "PUT",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify(data),
+      })
+      return j(Promise.resolve(res))
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["admin-affiliate-ads"] })
+      // Also invalidate the public-facing cache so the banner updates instantly
+      qc.invalidateQueries({ queryKey: ["affiliate-ad"] })
+    },
+  })
+}

@@ -7,7 +7,7 @@ import {
   Download, Users, BookOpen, BarChart3, Shield, Lock, LogOut, Eye,
   Plus, Pencil, Trash2, Save, Send, Megaphone, Check, ChevronRight, ArrowLeft,
   Crown, X, Upload, CreditCard, Search, TrendingUp, MessageSquare, Copy, ExternalLink,
-  Bell,
+  Bell, Image as ImageIcon, Link2,
 } from "lucide-react"
 import {
   Card, CardContent, CardHeader, CardTitle, CardDescription,
@@ -43,6 +43,7 @@ import {
   useProSettings, useSaveProSettings,
   useBrokerAds, useSaveBrokerAds, useAdminPages, useSavePage,
   useAdminUsers, usePendingProCount,
+  useAffiliateAd, useSaveAffiliateAd,
 } from "./admin-data"
 import { SignalManager } from "./signal-manager"
 import { useQueryClient, useQuery, useMutation } from "@tanstack/react-query"
@@ -138,6 +139,7 @@ export function AdminPanel() {
             { id: "pro", label: "Pro Payments", icon: Crown, color: "bg-amber-500" },
             { id: "ads", label: "Ad Settings", icon: Megaphone, color: "bg-orange-500" },
             { id: "broker-ads", label: "Broker Ads", icon: Megaphone, color: "bg-teal-500" },
+            { id: "affiliate-ads", label: "Affiliate Ads", icon: ImageIcon, color: "bg-fuchsia-500" },
             { id: "payment", label: "Payment Settings", icon: CreditCard, color: "bg-indigo-500" },
             { id: "pages", label: "Pages", icon: BookOpen, color: "bg-rose-500" },
             { id: "comments", label: "Comments", icon: MessageSquare, color: "bg-sky-500" },
@@ -181,6 +183,7 @@ export function AdminPanel() {
         <TabsContent value="quizzes" className="mt-5"><QuizzesTab /></TabsContent>
         <TabsContent value="ads" className="mt-5"><AdsTab /></TabsContent>
         <TabsContent value="broker-ads" className="mt-5"><BrokerAdsTab /></TabsContent>
+        <TabsContent value="affiliate-ads" className="mt-5"><AffiliateAdsTab /></TabsContent>
         <TabsContent value="payment" className="mt-5"><PaymentSettingsTab /></TabsContent>
         <TabsContent value="pages" className="mt-5"><PagesTab /></TabsContent>
         <TabsContent value="signals" className="mt-5"><SignalManager /></TabsContent>
@@ -1720,6 +1723,305 @@ function BrokerAdsTab() {
           <Button className="h-10 w-full gap-2 bg-brand font-bold text-brand-foreground hover:bg-brand/90" onClick={onSave} disabled={save.isPending}>
             {save.isPending ? <Save className="h-4 w-4 animate-pulse" /> : <Save className="h-4 w-4" />}
             Save Broker Ads
+          </Button>
+        </CardContent>
+      </Card>
+    </div>
+  )
+}
+
+/* ---------------- Affiliate Ads ---------------- */
+function AffiliateAdsTab() {
+  const { data, isLoading } = useAffiliateAd()
+  const save = useSaveAffiliateAd()
+
+  const [form, setForm] = useState({
+    enabled: false,
+    title: "Mexc",
+    description: "Make your first deposit and Futures trade to unlock rewards",
+    buttonText: "Download",
+    logoUrl: "",
+    bannerUrl: "",
+    link: "https://www.mexc.com",
+  })
+  const [loaded, setLoaded] = useState(false)
+  const [uploadingLogo, setUploadingLogo] = useState(false)
+  const [uploadingBanner, setUploadingBanner] = useState(false)
+  const logoInputRef = useRef<HTMLInputElement>(null)
+  const bannerInputRef = useRef<HTMLInputElement>(null)
+
+  // One-time sync from server data → local form state
+  if (data?.ad && !loaded) {
+    const a = data.ad
+    setForm({
+      enabled: a.enabled,
+      title: a.title,
+      description: a.description,
+      buttonText: a.buttonText,
+      logoUrl: a.logoUrl,
+      bannerUrl: a.bannerUrl,
+      link: a.link,
+    })
+    setLoaded(true)
+  }
+
+  const upd = (field: string, value: string | boolean) => {
+    setForm((p) => ({ ...p, [field]: value }))
+  }
+
+  // Upload image (logo or banner) via the shared /api/admin/upload-image endpoint.
+  // Auto-compresses to WebP (max 800px, quality 75) server-side, returns CDN URL.
+  const uploadImage = async (file: File, kind: "logo" | "banner") => {
+    if (!file.type.startsWith("image/")) {
+      toast.error("Please select an image file")
+      return
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error("Image must be under 5MB")
+      return
+    }
+    const setLoading = kind === "logo" ? setUploadingLogo : setUploadingBanner
+    setLoading(true)
+    try {
+      const fd = new FormData()
+      fd.append("file", file)
+      const res = await fetch("/api/admin/upload-image", { method: "POST", body: fd })
+      const json = await res.json()
+      if (!res.ok || !json.url) {
+        throw new Error(json?.message || json?.error || "Upload failed")
+      }
+      if (kind === "logo") {
+        upd("logoUrl", json.url)
+      } else {
+        upd("bannerUrl", json.url)
+      }
+      const saved = json.compression
+        ? ` (${json.compression.savedPc}% smaller, ${Math.round(json.compression.compressedSize / 1024)}KB)`
+        : ""
+      toast.success(`${kind === "logo" ? "Logo" : "Banner"} uploaded${saved}`)
+    } catch (e: any) {
+      toast.error(e?.message || "Upload failed")
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const onSave = async () => {
+    try {
+      await save.mutateAsync(form)
+      toast.success("Affiliate ad saved!")
+    } catch (e: any) {
+      toast.error(e?.message || "Failed to save. Try again.")
+    }
+  }
+
+  if (isLoading) return <p className="py-6 text-center text-sm text-muted-foreground">Loading...</p>
+
+  return (
+    <div className="space-y-4">
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <ImageIcon className="h-5 w-5 text-brand" /> Affiliate Ad Banner
+          </CardTitle>
+          <CardDescription>
+            Custom affiliate ad shown at the bottom of the <b>Lessons</b> page and <b>Live Signals</b> page. Clicking the ad opens your affiliate link in a new tab.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {/* ─── Main On/Off Toggle ─── */}
+          <div className="flex items-center justify-between rounded-xl border-2 border-border bg-muted/30 p-3">
+            <div>
+              <div className="text-sm font-bold">Show Affiliate Ad</div>
+              <div className="text-[11px] text-muted-foreground">Main switch — turn ON to show the ad in the app</div>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className={`text-[11px] font-bold ${form.enabled ? "text-emerald-600" : "text-muted-foreground"}`}>
+                {form.enabled ? "ON" : "OFF"}
+              </span>
+              <Switch checked={form.enabled} onCheckedChange={(v) => upd("enabled", v)} />
+            </div>
+          </div>
+
+          {/* ─── Live Preview ─── */}
+          <div className="rounded-xl border border-dashed border-border p-3">
+            <div className="mb-2 text-[11px] font-bold uppercase tracking-wide text-muted-foreground">Live Preview</div>
+            <div className="relative flex overflow-hidden rounded-2xl border border-border bg-white dark:bg-zinc-900">
+              <div className="flex min-w-0 flex-1 flex-col items-center justify-center gap-1 p-3 text-center">
+                {form.logoUrl ? (
+                  <img src={form.logoUrl} alt="" className="h-7 w-auto max-w-[120px] object-contain" />
+                ) : (
+                  <span className="text-lg font-extrabold text-zinc-900 dark:text-white">{form.title || "Brand"}</span>
+                )}
+                {form.logoUrl && form.title && (
+                  <span className="text-sm font-extrabold text-zinc-900 dark:text-white">{form.title}</span>
+                )}
+                {form.description && (
+                  <p className="line-clamp-2 text-[11px] leading-snug text-zinc-500 dark:text-zinc-400">{form.description}</p>
+                )}
+                {form.buttonText && (
+                  <span className="mt-1 inline-block rounded-lg bg-red-500 px-4 py-1.5 text-xs font-bold text-white">
+                    {form.buttonText}
+                  </span>
+                )}
+              </div>
+              <div className="relative w-[42%] shrink-0 overflow-hidden bg-zinc-950">
+                {form.bannerUrl ? (
+                  <img src={form.bannerUrl} alt="" className="absolute inset-0 h-full w-full object-cover" />
+                ) : (
+                  <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-zinc-800 to-zinc-950">
+                    <span className="px-2 text-center text-[10px] font-medium text-zinc-400">Banner Image</span>
+                  </div>
+                )}
+              </div>
+              <span className="pointer-events-none absolute bottom-1.5 right-1.5 rounded bg-black/55 px-1.5 py-0.5 text-[9px] font-bold uppercase text-white">AD</span>
+            </div>
+          </div>
+
+          {/* ─── Text Fields ─── */}
+          <div className="grid gap-3 sm:grid-cols-2">
+            <div className="space-y-1">
+              <label className="text-[11px] font-bold uppercase tracking-wide text-muted-foreground">Ad Title</label>
+              <Input value={form.title} onChange={(e) => upd("title", e.target.value)} className="h-9" placeholder="e.g. Mexc" maxLength={100} />
+            </div>
+            <div className="space-y-1">
+              <label className="text-[11px] font-bold uppercase tracking-wide text-muted-foreground">Button Text</label>
+              <Input value={form.buttonText} onChange={(e) => upd("buttonText", e.target.value)} className="h-9" placeholder="e.g. Download" maxLength={30} />
+            </div>
+          </div>
+
+          <div className="space-y-1">
+            <label className="text-[11px] font-bold uppercase tracking-wide text-muted-foreground">Ad Description</label>
+            <Textarea
+              value={form.description}
+              onChange={(e) => upd("description", e.target.value)}
+              rows={2}
+              placeholder="e.g. Make your first deposit and Futures trade to unlock rewards"
+              maxLength={300}
+            />
+            <p className="text-right text-[10px] text-muted-foreground">{form.description.length}/300</p>
+          </div>
+
+          <div className="space-y-1">
+            <label className="text-[11px] font-bold uppercase tracking-wide text-muted-foreground">Affiliate Link</label>
+            <div className="relative">
+              <Link2 className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                value={form.link}
+                onChange={(e) => upd("link", e.target.value)}
+                className="h-9 pl-8"
+                placeholder="https://www.mexc.com/..."
+              />
+            </div>
+          </div>
+
+          {/* ─── Image Uploads ─── */}
+          <div className="grid gap-3 sm:grid-cols-2">
+            {/* Logo upload */}
+            <div className="space-y-1.5">
+              <label className="text-[11px] font-bold uppercase tracking-wide text-muted-foreground">Brand Logo (Left side)</label>
+              <div className="rounded-xl border border-border p-3 space-y-2">
+                {form.logoUrl ? (
+                  <div className="relative">
+                    <img src={form.logoUrl} alt="Logo" className="mx-auto h-16 w-auto object-contain" />
+                    <button
+                      onClick={() => upd("logoUrl", "")}
+                      className="absolute right-0 top-0 rounded-full bg-destructive/90 p-1 text-destructive-foreground"
+                      aria-label="Remove logo"
+                    >
+                      <X className="h-3 w-3" />
+                    </button>
+                  </div>
+                ) : (
+                  <div className="flex h-16 items-center justify-center text-[11px] text-muted-foreground">No logo uploaded</div>
+                )}
+                <input
+                  ref={logoInputRef}
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={(e) => {
+                    const f = e.target.files?.[0]
+                    if (f) uploadImage(f, "logo")
+                    e.target.value = ""
+                  }}
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="w-full gap-1.5"
+                  disabled={uploadingLogo}
+                  onClick={() => logoInputRef.current?.click()}
+                >
+                  {uploadingLogo ? (
+                    <><Save className="h-3.5 w-3.5 animate-pulse" /> Uploading...</>
+                  ) : (
+                    <><Upload className="h-3.5 w-3.5" /> Upload Logo</>
+                  )}
+                </Button>
+              </div>
+            </div>
+
+            {/* Banner upload */}
+            <div className="space-y-1.5">
+              <label className="text-[11px] font-bold uppercase tracking-wide text-muted-foreground">Banner Image (Right side)</label>
+              <div className="rounded-xl border border-border p-3 space-y-2">
+                {form.bannerUrl ? (
+                  <div className="relative">
+                    <img src={form.bannerUrl} alt="Banner" className="mx-auto h-16 w-full object-cover rounded" />
+                    <button
+                      onClick={() => upd("bannerUrl", "")}
+                      className="absolute right-0 top-0 rounded-full bg-destructive/90 p-1 text-destructive-foreground"
+                      aria-label="Remove banner"
+                    >
+                      <X className="h-3 w-3" />
+                    </button>
+                  </div>
+                ) : (
+                  <div className="flex h-16 items-center justify-center text-[11px] text-muted-foreground">No banner uploaded</div>
+                )}
+                <input
+                  ref={bannerInputRef}
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={(e) => {
+                    const f = e.target.files?.[0]
+                    if (f) uploadImage(f, "banner")
+                    e.target.value = ""
+                  }}
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="w-full gap-1.5"
+                  disabled={uploadingBanner}
+                  onClick={() => bannerInputRef.current?.click()}
+                >
+                  {uploadingBanner ? (
+                    <><Save className="h-3.5 w-3.5 animate-pulse" /> Uploading...</>
+                  ) : (
+                    <><Upload className="h-3.5 w-3.5" /> Upload Banner</>
+                  )}
+                </Button>
+              </div>
+            </div>
+          </div>
+
+          <p className="text-[11px] text-muted-foreground">
+            Images auto-compress to WebP (max 800px, ~80-150KB) on upload. Stored on Vercel Blob CDN.
+          </p>
+
+          {/* ─── Save Button ─── */}
+          <Button
+            className="h-10 w-full gap-2 bg-brand font-bold text-brand-foreground hover:bg-brand/90"
+            onClick={onSave}
+            disabled={save.isPending}
+          >
+            {save.isPending ? <Save className="h-4 w-4 animate-pulse" /> : <Save className="h-4 w-4" />}
+            Save Affiliate Ad
           </Button>
         </CardContent>
       </Card>
