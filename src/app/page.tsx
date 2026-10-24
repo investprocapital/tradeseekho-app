@@ -211,7 +211,7 @@ export default function Home() {
                   <p className="py-8 text-center text-sm text-muted-foreground">No lessons yet.</p>
                 ) : (
                   visibleLessons.map((l, i) => (
-                    <LessonRow key={l.id} lesson={l} lang={lang} isPro={isPro} seqLocked={!isPro && i > 0 && !visibleLessons[i - 1].passed} onOpen={() => openLesson(l.id)} onPro={() => { setProPlan("lessons"); setProOpen(true) }} />
+                    <LessonRow key={l.id} lesson={l} lang={lang} isPro={isPro} seqLocked={!isPro && i > 0 && !visibleLessons[i - 1].passed && l.categorySlug !== "beginner"} onOpen={() => openLesson(l.id)} onPro={() => { setProPlan("lessons"); setProOpen(true) }} />
                   ))
                 )}
               </div>
@@ -237,7 +237,7 @@ export default function Home() {
                 ) : (
                   quizLessons.map((l, i) => {
                     const lessonIdx = lessons.indexOf(l)
-                    const seqLocked = !isPro && lessonIdx > 0 && !lessons[lessonIdx - 1].passed
+                    const seqLocked = !isPro && lessonIdx > 0 && !lessons[lessonIdx - 1].passed && l.categorySlug !== "beginner"
                     return <QuizRow key={l.id} lesson={l} lang={lang} isPro={isPro} seqLocked={seqLocked} onOpen={() => openLesson(l.id)} onPro={() => { setProPlan("lessons"); setProOpen(true) }} />
                   })
                 )}
@@ -432,22 +432,19 @@ function LevelBox({
 }
 
 function LessonRow({ lesson, lang, isPro, onOpen, onPro, seqLocked }: { lesson: LessonListItemDTO; lang: string; isPro: boolean; onOpen: () => void; onPro: () => void; seqLocked?: boolean }) {
-  // ─── Pro-lock logic (per requirement: Advanced lessons 2+ are locked) ───
-  // 1. `proLocked` = the lesson requires a Pro upgrade to open.
-  //    Two conditions trigger it:
-  //      a) The lesson is marked `isFree=false` in the DB (legacy/admin flag), OR
-  //      b) The lesson is in the "advanced" category AND is NOT the first lesson
-  //         in that category (orderInCategory > 1). This is the NEW rule that
-  //         guarantees Advanced lessons 2,3,4,5... are always locked for non-Pro
-  //         users — regardless of the `isFree` flag in the DB.
-  // 2. `seqLocked` = the previous lesson in the same category hasn't been passed
-  //    yet (sequential unlock — only applies when NOT pro-locked).
-  const isAdvancedLocked = lesson.categorySlug === "advanced" && lesson.orderInCategory > 1
-  const proLocked = (!lesson.isFree || isAdvancedLocked) && !isPro
+  // ─── Pro-lock logic (3-level system) ───
+  // 1. Beginner = ALL FREE (never locked, all 12 lessons open)
+  // 2. Intermediate = Lesson 1 free (preview), Lesson 2-10 Pro-locked
+  // 3. Advanced = Lesson 1 free (preview), Lesson 2-21 Pro-locked
+  //
+  // `proLocked` = the lesson requires a Pro upgrade to open.
+  //    Triggered when: category is intermediate/advanced AND orderInCategory > 1
+  // `seqLocked` = the previous lesson hasn't been passed yet (sequential unlock).
+  //    Only applies to beginner (intermediate/advanced use proLocked instead).
+  const isPremiumLocked = (lesson.categorySlug === "intermediate" || lesson.categorySlug === "advanced") && lesson.orderInCategory > 1
+  const proLocked = isPremiumLocked && !isPro
   const isLocked = proLocked || seqLocked
   const titleText = lesson.title[lang] || lesson.title.en
-  // When pro-locked, show a placeholder title (the real title is revealed via
-  // the blur overlay — user can tell a lesson is there but can't read it).
   const blurredTitle = proLocked ? "Locked — Upgrade to Pro to unlock" : titleText
   return (
     <button
@@ -475,7 +472,6 @@ function LessonRow({ lesson, lang, isPro, onOpen, onPro, seqLocked }: { lesson: 
         <div className="text-[11px] text-muted-foreground">
           {lesson.categorySlug} · {lesson.durationMin} min
           {proLocked && <span className="font-bold text-gold-foreground"> · Locked</span>}
-          {!proLocked && !lesson.isFree && " · PRO"}
           {seqLocked && " · Locked"}
         </div>
       </div>
@@ -504,7 +500,10 @@ function LessonRow({ lesson, lang, isPro, onOpen, onPro, seqLocked }: { lesson: 
 }
 
 function QuizRow({ lesson, lang, isPro, seqLocked, onOpen, onPro }: { lesson: LessonListItemDTO; lang: string; isPro: boolean; seqLocked?: boolean; onOpen: () => void; onPro: () => void }) {
-  const proLocked = !lesson.isFree && !isPro
+  // Same 3-level lock logic as LessonRow:
+  // Beginner = all free, Intermediate/Advanced = lesson 1 free, 2+ Pro-locked
+  const isPremiumLocked = (lesson.categorySlug === "intermediate" || lesson.categorySlug === "advanced") && lesson.orderInCategory > 1
+  const proLocked = isPremiumLocked && !isPro
   const isLocked = proLocked || seqLocked
   return (
     <button
