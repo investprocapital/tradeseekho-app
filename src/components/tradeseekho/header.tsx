@@ -26,14 +26,14 @@ export function Header() {
 
   return (
     <header className="shrink-0 z-40 w-full border-b border-border/70 bg-background/85 backdrop-blur supports-[backdrop-filter]:bg-background/70">
-      <div className="mx-auto flex h-12 w-full max-w-3xl items-center gap-1 px-2 sm:gap-2 sm:px-3">
-        {/* Home button (TradeSeekho logo) */}
+      <div className="mx-auto flex h-16 w-full max-w-3xl items-center gap-1 px-2 sm:gap-2 sm:px-4">
+        {/* Home button (TradeSeekho logo) — 48px with 16px margin */}
         <button
           onClick={() => { setShowAdmin(false); setBottomTab("home") }}
-          className="relative shrink-0 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
+          className="relative m-1 shrink-0 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
           aria-label={t("nav.home")}
         >
-          <img src="/tradeseekho-logo.png" alt="TradeSeekho PK" className="h-8 w-8 rounded-lg" />
+          <img src="/tradeseekho-logo.png" alt="TradeSeekho PK" className="h-12 w-12 rounded-lg" />
         </button>
 
         {/* Brand text (desktop only) */}
