@@ -21,12 +21,15 @@ export function QuizContent({ lesson, quiz }: { lesson: LessonDetailDTO; quiz: P
   const openLesson = useStore((s) => s.openLesson)
   const closeQuiz = useStore((s) => s.closeQuiz)
   const setCertOpen = useStore((s) => s.setCertOpen)
+  const setActiveCategory = useStore((s) => s.setActiveCategory)
+  const setBottomTab = useStore((s) => s.setBottomTab)
   const submit = useSubmitQuiz()
 
   const [answers, setAnswers] = useState<Record<string, number>>({})
   const [result, setResult] = useState<QuizSubmitResult | null>(null)
   const [showAd, setShowAd] = useState(false)
   const [showCelebration, setShowCelebration] = useState(false)
+  const [showLevelComplete, setShowLevelComplete] = useState(false)
 
   const total = quiz.questions.length
   const answered = quiz.questions.filter((q) => answers[q.id] !== undefined).length
@@ -67,15 +70,47 @@ export function QuizContent({ lesson, quiz }: { lesson: LessonDetailDTO; quiz: P
     if (result?.nextLessonId) openLesson(result.nextLessonId)
   }
 
+  // When a level is completed (certificate earned) and there's no next lesson
+  // in the same category, show the Level Complete screen instead of just
+  // closing the quiz (which would loop back to the same page).
+  const onGoToNextLevel = () => {
+    setShowLevelComplete(true)
+  }
+
+  // Navigate to the next level's lessons list.
+  // Determines the next level based on the current category:
+  //   beginner → intermediate, intermediate → advanced, advanced → stays
+  const goToNextLevel = () => {
+    const currentSlug = lesson.category.slug
+    const nextSlug = currentSlug === "beginner" ? "intermediate"
+      : currentSlug === "intermediate" ? "advanced"
+      : null
+    closeQuiz()
+    setShowLevelComplete(false)
+    if (nextSlug) {
+      setActiveCategory(nextSlug)
+      setBottomTab("lessons")
+    }
+  }
+
   return (
     <div className="relative flex h-full flex-col">
+      {/* Level Complete screen — shown after CelebrationPopup when a level is finished */}
+      {showLevelComplete && result && (
+        <LevelCompleteScreen
+          certificateSlug={result.certificateSlug || lesson.category.slug}
+          onNext={goToNextLevel}
+        />
+      )}
+
       {/* Celebration popup */}
-      {showCelebration && result && (
+      {showCelebration && result && !showLevelComplete && (
         <CelebrationPopup
           result={result}
           onClose={closeQuiz}
           onNext={onNext}
           onRetry={onRetry}
+          onGoToNextLevel={onGoToNextLevel}
         />
       )}
 
@@ -361,6 +396,7 @@ function CelebrationPopup({
   onClose: () => void
   onNext: () => void
   onRetry: () => void
+  onGoToNextLevel: () => void
 }) {
   const pct = Math.round((result.score / result.total) * 100)
   const isPerfect = result.score === result.total
@@ -495,6 +531,15 @@ function CelebrationPopup({
               >
                 Next Lesson <ArrowRight className="h-4 w-4 rtl:rotate-180" />
               </Button>
+            ) : hasCert ? (
+              // Level completed (certificate earned, no next lesson in this category)
+              // → Show "Continue to Next Level" button that opens the Level Complete screen
+              <Button
+                className="h-12 flex-1 gap-2 bg-brand font-bold text-brand-foreground shadow-lg shadow-brand/40 hover:bg-brand/90"
+                onClick={() => { onGoToNextLevel() }}
+              >
+                Continue to Next Level <ArrowRight className="h-4 w-4 rtl:rotate-180" />
+              </Button>
             ) : (
               <Button
                 className="h-12 flex-1 gap-2 bg-brand font-bold text-brand-foreground shadow-lg shadow-brand/40 hover:bg-brand/90"
@@ -503,6 +548,149 @@ function CelebrationPopup({
                 Continue <ArrowRight className="h-4 w-4 rtl:rotate-180" />
               </Button>
             )}
+          </motion.div>
+        </motion.div>
+      </motion.div>
+    </AnimatePresence>
+  )
+}
+
+/* ─── Level Complete Screen ───
+   Shown after the CelebrationPopup when a user completes all lessons in a
+   level (certificate earned). Shows a congratulatory message + a button to
+   navigate to the next level's lessons list.
+   • beginner → intermediate (Level 2)
+   • intermediate → advanced (Level 3)
+   • advanced → no next level (just close) */
+function LevelCompleteScreen({ certificateSlug, onNext }: { certificateSlug: string; onNext: () => void }) {
+  const lang = useStore((s) => s.lang)
+  const urduFontClass = lang === "ur" ? "font-urdu" : lang === "ar" ? "font-arabic" : ""
+
+  // Determine next level name + number
+  const nextLevel = certificateSlug === "beginner"
+    ? { num: 2, slug: "intermediate", name: { en: "Intermediate", ur: "انٹرمیڈیٹ", hi: "इंटरमीडिएट", ar: "المتوسط" } }
+    : certificateSlug === "intermediate"
+    ? { num: 3, slug: "advanced", name: { en: "Advanced", ur: "ایڈوانسڈ", hi: "एडवांस्ड", ar: "المتقدم" } }
+    : null
+
+  // Multi-language congratulatory text
+  const messages: Record<string, { title: string; body: string; btn: string }> = {
+    en: {
+      title: "Level Complete! 🎉",
+      body: `Congratulations! You completed the ${certificateSlug} level. Now start ${nextLevel ? `Level ${nextLevel.num} - ${nextLevel.name.en}` : "the next level"}.`,
+      btn: nextLevel ? `Go to Level ${nextLevel.num} - ${nextLevel.name.en}` : "Continue",
+    },
+    ur: {
+      title: "لیول مکمل! 🎉",
+      body: nextLevel
+        ? `مبارک ہو! آپ نے ${certificateSlug === "beginner" ? "Beginner" : "Intermediate"} Level مکمل کر لیا - اب Level ${nextLevel.num} ${nextLevel.name.ur} شروع کریں`
+        : `مبارک ہو! آپ نے یہ لیول مکمل کر لیا`,
+      btn: nextLevel ? `Level ${nextLevel.num} - ${nextLevel.name.ur} پر جائیں` : "جاری رکھیں",
+    },
+    hi: {
+      title: "स्तर पूर्ण! 🎉",
+      body: nextLevel
+        ? `बधाई हो! आपने ${certificateSlug === "beginner" ? "Beginner" : "Intermediate"} स्तर पूरा कर लिया - अब स्तर ${nextLevel.num} ${nextLevel.name.hi} शुरू करें`
+        : `बधाई हो! आपने यह स्तर पूरा कर लिया`,
+      btn: nextLevel ? `स्तर ${nextLevel.num} - ${nextLevel.name.hi} पर जाएं` : "जारी रखें",
+    },
+    ar: {
+      title: "اكتمل المستوى! 🎉",
+      body: nextLevel
+        ? `تهانينا! لقد أكملت مستوى ${certificateSlug === "beginner" ? "المبتدئ" : "المتوسط"} - الآن ابدأ المستوى ${nextLevel.num} ${nextLevel.name.ar}`
+        : `تهانينا! لقد أكملت هذا المستوى`,
+      btn: nextLevel ? `اذهب إلى المستوى ${nextLevel.num} - ${nextLevel.name.ar}` : "متابعة",
+    },
+  }
+  const msg = messages[lang] || messages.en
+
+  return (
+    <AnimatePresence>
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        className="fixed inset-0 z-[310] flex items-center justify-center p-4"
+        style={{ backgroundColor: "rgba(0,0,0,0.8)", backdropFilter: "blur(10px)" }}
+      >
+        <motion.div
+          initial={{ scale: 0.7, opacity: 0, y: 30 }}
+          animate={{ scale: 1, opacity: 1, y: 0 }}
+          exit={{ scale: 0.8, opacity: 0 }}
+          transition={{ type: "spring", stiffness: 200, damping: 20 }}
+          className="relative w-full max-w-sm overflow-hidden rounded-3xl border-2 border-gold/40 bg-gradient-to-br from-[#0A1929] via-[#0D1B2A] to-[#050D17] p-6 text-center shadow-2xl"
+        >
+          {/* Decorative confetti */}
+          {Array.from({ length: 8 }).map((_, i) => (
+            <motion.div
+              key={i}
+              initial={{ opacity: 1, y: -20, x: Math.random() * 300 - 150 }}
+              animate={{ opacity: [1, 1, 0], y: [-20, 400], x: Math.random() * 300 - 150, rotate: Math.random() * 360 }}
+              transition={{ duration: 2 + Math.random(), delay: Math.random() * 0.5, repeat: Infinity, repeatDelay: 1 }}
+              className="absolute text-lg"
+              style={{ left: "50%", top: "10%" }}
+            >
+              {["🎉", "⭐", "✨", "🎊", "🌟", "🏆"][i % 6]}
+            </motion.div>
+          ))}
+
+          {/* Trophy icon */}
+          <motion.div
+            initial={{ scale: 0 }}
+            animate={{ scale: 1, rotate: [0, -10, 10, -5, 0] }}
+            transition={{ delay: 0.2, type: "spring", stiffness: 200 }}
+            className="mx-auto mb-4 flex h-20 w-20 items-center justify-center rounded-full bg-gradient-to-br from-gold/30 to-brand/20 shadow-lg"
+          >
+            <Award className="h-10 w-10 text-gold" />
+          </motion.div>
+
+          {/* Title */}
+          <motion.h2
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.3 }}
+            className={`text-xl font-extrabold text-white ${urduFontClass}`}
+          >
+            {msg.title}
+          </motion.h2>
+
+          {/* Body text */}
+          <motion.p
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.4 }}
+            className={`mt-3 text-sm leading-relaxed text-white/70 ${urduFontClass}`}
+            style={lang === "ur" || lang === "ar" ? { lineHeight: 2.2, wordBreak: "break-word", overflowWrap: "break-word" } : undefined}
+          >
+            {msg.body}
+          </motion.p>
+
+          {/* Next level badge */}
+          {nextLevel && (
+            <motion.div
+              initial={{ opacity: 0, scale: 0.8 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ delay: 0.5 }}
+              className="mx-auto mt-4 inline-flex items-center gap-2 rounded-full border-2 border-brand/40 bg-brand/10 px-4 py-2"
+            >
+              <Sparkles className="h-4 w-4 text-brand" />
+              <span className="text-sm font-bold text-brand">Level {nextLevel.num}</span>
+            </motion.div>
+          )}
+
+          {/* Go to next level button */}
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.6 }}
+            className="mt-6"
+          >
+            <Button
+              className="h-12 w-full gap-2 bg-brand font-bold text-brand-foreground shadow-lg shadow-brand/40 hover:bg-brand/90"
+              onClick={onNext}
+            >
+              {msg.btn} <ArrowRight className="h-4 w-4 rtl:rotate-180" />
+            </Button>
           </motion.div>
         </motion.div>
       </motion.div>
