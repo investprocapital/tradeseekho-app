@@ -74,6 +74,7 @@ export function QuizContent({ lesson, quiz }: { lesson: LessonDetailDTO; quiz: P
   // in the same category, show the Level Complete screen instead of just
   // closing the quiz (which would loop back to the same page).
   const onGoToNextLevel = () => {
+    setShowCelebration(false)
     setShowLevelComplete(true)
   }
 
@@ -85,8 +86,15 @@ export function QuizContent({ lesson, quiz }: { lesson: LessonDetailDTO; quiz: P
     const nextSlug = currentSlug === "beginner" ? "intermediate"
       : currentSlug === "intermediate" ? "advanced"
       : null
-    closeQuiz()
+    // Reset all quiz states first
     setShowLevelComplete(false)
+    setShowCelebration(false)
+    setResult(null)
+    setAnswers({})
+    setShowAd(false)
+    // Close the quiz modal
+    closeQuiz()
+    // Navigate to the next level's lessons list
     if (nextSlug) {
       setActiveCategory(nextSlug)
       setBottomTab("lessons")
