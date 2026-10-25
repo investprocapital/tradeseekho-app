@@ -348,3 +348,20 @@ html[lang="ar"] [class*="rounded-lg"] {
 .safe-area-top {
   padding-top: env(safe-area-inset-top);
 }
+
+/* ─── Promotion Slider dots styling ─── */
+.promotion-slider .swiper-pagination {
+  bottom: 2px !important;
+}
+.promotion-slider .swiper-pagination-bullet {
+  width: 8px;
+  height: 8px;
+  background: rgba(255, 255, 255, 0.4);
+  opacity: 1;
+  transition: all 0.2s;
+}
+.promotion-slider .swiper-pagination-bullet-active {
+  background: var(--brand, #00D09C);
+  width: 20px;
+  border-radius: 4px;
+}

@@ -27,8 +27,9 @@ async function fetchBanners(): Promise<{ banners: Banner[] }> {
  * Placed between Gold Price card and Lessons section.
  *
  * Features:
- * - Swiper.js with autoplay (3s), loop, dots indicator
- * - next/image for optimization + lazy loading
+ * - Swiper.js with autoplay (4s), loop, dots indicator
+ * - Simple slide transition (no zoom effect)
+ * - Banner images shown with object-contain (no text cut)
  * - Clickable banners (link URL)
  * - Auto-hides when no active banners
  * - DB-level filter: only active banners fetched (zero bandwidth when empty)
@@ -49,12 +50,13 @@ export function PromotionSlider() {
     <div className="mt-3 px-0">
       <Swiper
         modules={[Autoplay, Pagination]}
-        autoplay={{ delay: 3000, disableOnInteraction: false }}
+        autoplay={{ delay: 4000, disableOnInteraction: false }} // 4 seconds
         loop={banners.length > 1}
-        pagination={{ clickable: true }}
+        pagination={{ clickable: true }} // dots indicator (clickable)
         spaceBetween={8}
         slidesPerView={1}
-        className="promotion-slider !pb-6"
+        speed={600} // smooth slide transition (no zoom)
+        className="promotion-slider !pb-8" // extra bottom padding for dots
       >
         {banners.map((banner) => {
           const isExternal = banner.linkUrl.startsWith("http")
@@ -64,16 +66,19 @@ export function PromotionSlider() {
 
           const content = (
             <div className="relative w-full overflow-hidden rounded-2xl border border-border bg-card">
+              {/* Banner image — object-contain so nothing gets cut.
+                  Fixed height (120px mobile, 160px desktop) keeps it compact. */}
               <img
                 src={banner.imageUrl}
                 alt={banner.title || "Promotion"}
                 className="block w-full"
-                style={{ aspectRatio: "3 / 1", objectFit: "cover" }}
+                style={{ height: "140px", objectFit: "contain" }}
                 loading="lazy"
               />
+              {/* Title overlay — full width, no truncation, bottom-aligned */}
               {banner.title && (
-                <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent p-2">
-                  <p className="truncate text-xs font-bold text-white">{banner.title}</p>
+                <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent px-3 py-2">
+                  <p className="text-xs font-bold leading-tight text-white">{banner.title}</p>
                 </div>
               )}
             </div>
