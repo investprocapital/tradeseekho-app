@@ -259,6 +259,11 @@ export function SignalList() {
               <SignalBottomAd />
               {/* Affiliate ad banner — custom affiliate ad (admin-controlled). */}
               <AffiliateAdBanner />
+              {/* ⚠️ Legal disclaimer — required for Google/YouTube ads + Play Store.
+                  Educational purpose + risk warning. Small font, visible. */}
+              <p className="mt-3 px-1 text-[10px] leading-relaxed text-muted-foreground/70">
+                ⚠️ <b>Disclaimer:</b> This signal is for educational purposes only and not financial advice. Forex and Gold trading involves high risk. Trade at your own risk.
+              </p>
             </div>
           </ScrollArea>
         </SheetContent>

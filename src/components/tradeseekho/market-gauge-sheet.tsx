@@ -35,6 +35,12 @@ export function MarketGaugeSheet() {
               title="Live Market Gauge"
               height={450}
             />
+            {/* ⚠️ Legal disclaimer — required for Google/YouTube ads + Play Store.
+                Educational purpose + technical indicator warning. Small font, visible. */}
+            <p className="mt-4 text-[10px] leading-relaxed text-muted-foreground/70">
+              <b>Disclaimer:</b> Market Gauge is based on technical indicators and market analysis for education only. It is not a guaranteed buy/sell call.<br />
+              <span className="text-muted-foreground/60">Source: Data may include TradingView.</span>
+            </p>
           </div>
         </div>
       </SheetContent>

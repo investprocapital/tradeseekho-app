@@ -1,12 +1,13 @@
 "use client"
 
-import { Shield, Mail, Info, ArrowLeft } from "lucide-react"
+import { Shield, Mail, Info, ArrowLeft, AlertTriangle } from "lucide-react"
 import Link from "next/link"
 
 const ICONS: Record<string, any> = {
   "about-us": Info,
   "privacy-policy": Shield,
   "contact-us": Mail,
+  "legal-disclaimer": AlertTriangle,
 }
 
 export function PageView({ title, content, slug }: { title: string; content: string; slug: string }) {
@@ -43,8 +44,10 @@ export function PageView({ title, content, slug }: { title: string; content: str
 
         {/* Footer */}
         <div className="mt-12 border-t border-border pt-6 text-center">
-          <div className="mb-2 flex items-center justify-center gap-4 text-xs">
+          <div className="mb-2 flex items-center justify-center gap-3 text-xs flex-wrap">
             <Link href="/about-us" className="font-bold text-brand hover:underline">About Us</Link>
+            <span className="text-muted-foreground">|</span>
+            <Link href="/legal-disclaimer" className="font-bold text-brand hover:underline">Legal Disclaimer</Link>
             <span className="text-muted-foreground">|</span>
             <Link href="/privacy-policy" className="font-bold text-brand hover:underline">Privacy Policy</Link>
             <span className="text-muted-foreground">|</span>

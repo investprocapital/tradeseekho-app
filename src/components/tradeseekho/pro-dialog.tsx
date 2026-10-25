@@ -426,6 +426,14 @@ export function ProDialog() {
                   className="text-sm" />
               </div>
               {err && <p className="flex items-center gap-1.5 text-xs font-semibold text-destructive"><AlertCircle className="h-3.5 w-3.5" /> {err}</p>}
+              {/* ⚠️ Legal disclaimer — required for Google/YouTube ads + Play Store.
+                  Educational subscription + no refund policy. Small font, visible. */}
+              <div className="rounded-lg border border-border bg-muted/30 p-2.5">
+                <p className="text-[10px] leading-relaxed text-muted-foreground">
+                  <b>Disclaimer:</b> This is an educational subscription. No profit guarantee. Past performance does not guarantee future results. No refunds after activation.<br />
+                  Payment via JazzCash / Easypaisa is for educational content access only.
+                </p>
+              </div>
               <Button type="submit" className="h-12 w-full gap-2 bg-brand font-bold text-brand-foreground hover:bg-brand/90" disabled={submit.isPending}>
                 {submit.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />} Submit for approval
               </Button>
@@ -649,6 +657,15 @@ export function ProDialog() {
                   <AlertCircle className="h-3.5 w-3.5" /> {err}
                 </p>
               )}
+
+              {/* ⚠️ Legal disclaimer — required for Google/YouTube ads + Play Store.
+                  Educational subscription + no refund policy. Small font, visible. */}
+              <div className="rounded-lg border border-border bg-muted/30 p-2.5">
+                <p className="text-[10px] leading-relaxed text-muted-foreground">
+                  <b>Disclaimer:</b> This is an educational subscription. No profit guarantee. Past performance does not guarantee future results. No refunds after activation.<br />
+                  Payment via JazzCash / Easypaisa is for educational content access only.
+                </p>
+              </div>
 
               <Button type="submit" className="h-12 w-full gap-2 bg-brand font-bold text-brand-foreground hover:bg-brand/90" disabled={submit.isPending}>
                 {submit.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}

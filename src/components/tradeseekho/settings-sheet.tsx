@@ -164,6 +164,7 @@ export function SettingsSheet() {
             {/* SUPPORT */}
             <Section title="Support">
               <Row icon={Info} label="About Us" onClick={() => { setOpen(false); window.open("/about-us", "_self") }} />
+              <Row icon={AlertTriangle} label="Disclaimer & Risk Warning" hint="Legal disclaimer" onClick={() => { setOpen(false); window.open("/legal-disclaimer", "_self") }} />
               <Row icon={FileText} label="Privacy Policy" onClick={() => { setOpen(false); window.open("/privacy-policy", "_self") }} />
               <Row icon={Mail} label="Contact Us" onClick={() => { setOpen(false); window.open("/contact-us", "_self") }} />
             </Section>
