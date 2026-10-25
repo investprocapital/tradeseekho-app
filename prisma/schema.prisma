@@ -7,7 +7,7 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
+  provider = "sqlite"
   url       = env("DATABASE_URL")
   directUrl = env("DIRECT_URL")
 }
@@ -422,4 +422,23 @@ model AffiliateAd {
   showDescription Boolean  @default(false)
   link        String   @default("#") // affiliate link (opens in new tab)
   updatedAt   DateTime @updatedAt
+}
+
+// Promotion Banners — rotating slider on the Home page (between Gold Price
+// card and Lessons section). Admin can add/edit/delete banners from the
+// "Promotion Banners" tab. Each banner has an image, optional title, link URL,
+// active/inactive status, and sort order. Only active banners are fetched by
+// the public API. Images are auto-compressed to WebP (max 150KB) on upload.
+model Promotion {
+  id        String   @id @default(cuid())
+  imageUrl  String   // CDN URL (Vercel Blob) or base64 data URL
+  title     String?  // optional banner title
+  linkUrl   String   @default("#") // click URL (e.g., "/pro" or "https://youtube.com/...")
+  isActive  Boolean  @default(true) // show/hide in slider
+  sortOrder Int      @default(0) // 1,2,3... — lower number appears first
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([isActive])
+  @@index([sortOrder])
 }

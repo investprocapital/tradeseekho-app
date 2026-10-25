@@ -13,6 +13,7 @@ import { Header } from "@/components/tradeseekho/header"
 import { Footer } from "@/components/tradeseekho/footer"
 import { BrokerAdBanner } from "@/components/tradeseekho/broker-ad-banner"
 import { AffiliateAdBanner } from "@/components/tradeseekho/affiliate-ad-banner"
+import { PromotionSlider } from "@/components/tradeseekho/promotion-slider"
 import { SignalList } from "@/components/tradeseekho/signal-list"
 import { PriceAlertSheet } from "@/components/tradeseekho/price-alert-sheet"
 import { MarketGaugeSheet } from "@/components/tradeseekho/market-gauge-sheet"
@@ -149,6 +150,10 @@ export default function Home() {
 
             {/* Market Gauge — card below Price Alerts */}
             <MarketGaugeCard />
+
+            {/* Promotion Slider — rotating banners between Gold Price and Lessons.
+                Auto-hides when no active banners. Admin-controlled from "Promotion Banners" tab. */}
+            <PromotionSlider />
 
             {/* Choose Your Level */}
             <section className="mb-4">

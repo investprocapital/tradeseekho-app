@@ -7,7 +7,7 @@ import {
   Download, Users, BookOpen, BarChart3, Shield, Lock, LogOut, Eye,
   Plus, Pencil, Trash2, Save, Send, Megaphone, Check, ChevronRight, ArrowLeft,
   Crown, X, Upload, CreditCard, Search, TrendingUp, MessageSquare, Copy, ExternalLink,
-  Bell, Image as ImageIcon, Link2,
+  Bell, Image as ImageIcon, Link2, LayoutGrid,
 } from "lucide-react"
 import {
   Card, CardContent, CardHeader, CardTitle, CardDescription,
@@ -140,6 +140,7 @@ export function AdminPanel() {
             { id: "ads", label: "Ad Settings", icon: Megaphone, color: "bg-orange-500" },
             { id: "broker-ads", label: "Broker Ads", icon: Megaphone, color: "bg-teal-500" },
             { id: "affiliate-ads", label: "Affiliate Ads", icon: ImageIcon, color: "bg-fuchsia-500" },
+            { id: "banners", label: "Promo Banners", icon: LayoutGrid, color: "bg-violet-500" },
             { id: "payment", label: "Payment Settings", icon: CreditCard, color: "bg-indigo-500" },
             { id: "pages", label: "Pages", icon: BookOpen, color: "bg-rose-500" },
             { id: "comments", label: "Comments", icon: MessageSquare, color: "bg-sky-500" },
@@ -184,6 +185,7 @@ export function AdminPanel() {
         <TabsContent value="ads" className="mt-5"><AdsTab /></TabsContent>
         <TabsContent value="broker-ads" className="mt-5"><BrokerAdsTab /></TabsContent>
         <TabsContent value="affiliate-ads" className="mt-5"><AffiliateAdsTab /></TabsContent>
+        <TabsContent value="banners" className="mt-5"><PromotionBannersTab /></TabsContent>
         <TabsContent value="payment" className="mt-5"><PaymentSettingsTab /></TabsContent>
         <TabsContent value="pages" className="mt-5"><PagesTab /></TabsContent>
         <TabsContent value="signals" className="mt-5"><SignalManager /></TabsContent>
@@ -2817,6 +2819,241 @@ function NotificationsTab() {
                     >
                       <Trash2 className="h-3.5 w-3.5" />
                     </Button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+    </div>
+  )
+}
+
+/* ---------------- Promotion Banners ---------------- */
+function PromotionBannersTab() {
+  const qc = useQueryClient()
+  const [editing, setEditing] = useState<string | null>(null)
+  const [showForm, setShowForm] = useState(false)
+
+  // Form state
+  const [form, setForm] = useState({ imageUrl: "", title: "", linkUrl: "", isActive: true, sortOrder: 0 })
+  const [uploading, setUploading] = useState(false)
+  const imgInputRef = useRef<HTMLInputElement>(null)
+
+  // List all banners
+  const { data, isLoading } = useQuery({
+    queryKey: ["admin-banners"],
+    queryFn: async () => {
+      const res = await fetch("/api/admin/banners")
+      if (!res.ok) throw new Error("failed")
+      return res.json()
+    },
+  })
+
+  const banners: Array<{ id: string; imageUrl: string; title: string; linkUrl: string; isActive: boolean; sortOrder: number }> = data?.banners ?? []
+
+  // Create/update mutation
+  const saveMutation = useMutation({
+    mutationFn: async () => {
+      if (editing) {
+        const res = await fetch(`/api/admin/banners?id=${editing}`, {
+          method: "PUT",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify(form),
+        })
+        if (!res.ok) throw new Error("failed")
+      } else {
+        const res = await fetch("/api/admin/banners", {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify(form),
+        })
+        if (!res.ok) throw new Error("failed")
+      }
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["admin-banners"] })
+      qc.invalidateQueries({ queryKey: ["promotion-banners"] })
+      toast.success(editing ? "Banner updated!" : "Banner added!")
+      resetForm()
+    },
+    onError: () => toast.error("Failed to save. Try again."),
+  })
+
+  // Delete mutation
+  const deleteMutation = useMutation({
+    mutationFn: async (id: string) => {
+      await fetch(`/api/admin/banners?id=${id}`, { method: "DELETE" })
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["admin-banners"] })
+      qc.invalidateQueries({ queryKey: ["promotion-banners"] })
+      toast.success("Banner deleted")
+    },
+  })
+
+  // Toggle active/inactive
+  const toggleMutation = useMutation({
+    mutationFn: async ({ id, isActive }: { id: string; isActive: boolean }) => {
+      const res = await fetch(`/api/admin/banners?id=${id}`, {
+        method: "PUT",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ isActive }),
+      })
+      if (!res.ok) throw new Error("failed")
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["admin-banners"] })
+      qc.invalidateQueries({ queryKey: ["promotion-banners"] })
+    },
+  })
+
+  // Image upload
+  const uploadImage = async (file: File) => {
+    if (!file.type.startsWith("image/")) { toast.error("Please select an image"); return }
+    if (file.size > 5 * 1024 * 1024) { toast.error("Max 5MB"); return }
+    setUploading(true)
+    try {
+      const fd = new FormData()
+      fd.append("file", file)
+      const res = await fetch("/api/admin/upload-image", { method: "POST", body: fd })
+      const json = await res.json()
+      if (!res.ok || !json.url) throw new Error(json?.error || "Upload failed")
+      setForm((p) => ({ ...p, imageUrl: json.url }))
+      const saved = json.compression ? ` (${json.compression.savedPc}% smaller, ${Math.round(json.compression.compressedSize / 1024)}KB)` : ""
+      toast.success(`Image uploaded${saved}`)
+    } catch (e: any) { toast.error(e?.message || "Upload failed") }
+    finally { setUploading(false) }
+  }
+
+  const resetForm = () => {
+    setForm({ imageUrl: "", title: "", linkUrl: "", isActive: true, sortOrder: 0 })
+    setEditing(null)
+    setShowForm(false)
+  }
+
+  const startEdit = (b: any) => {
+    setForm({ imageUrl: b.imageUrl, title: b.title || "", linkUrl: b.linkUrl, isActive: b.isActive, sortOrder: b.sortOrder })
+    setEditing(b.id)
+    setShowForm(true)
+  }
+
+  const onSave = () => {
+    if (!form.imageUrl) { toast.error("Please upload an image first"); return }
+    saveMutation.mutate()
+  }
+
+  return (
+    <div className="space-y-4">
+      <Card>
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle className="flex items-center gap-2"><LayoutGrid className="h-5 w-5 text-brand" /> Promotion Banners</CardTitle>
+              <CardDescription>Rotating slider on the Home page (between Gold Price and Lessons). Auto-hides when no active banners.</CardDescription>
+            </div>
+            {!showForm && (
+              <Button className="gap-1.5 bg-brand font-bold text-brand-foreground hover:bg-brand/90" onClick={() => { resetForm(); setShowForm(true) }}>
+                <Plus className="h-4 w-4" /> Add Banner
+              </Button>
+            )}
+          </div>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {/* Form (Add/Edit) */}
+          {showForm && (
+            <div className="rounded-xl border-2 border-brand/30 bg-brand-muted/10 p-4 space-y-3">
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-bold">{editing ? "Edit Banner" : "New Banner"}</span>
+                <Button size="sm" variant="ghost" onClick={resetForm}><X className="h-4 w-4" /></Button>
+              </div>
+
+              {/* Image upload */}
+              <div className="space-y-1.5">
+                <label className="text-[11px] font-bold uppercase tracking-wide text-muted-foreground">Banner Image (auto-compress to WebP, max 150KB)</label>
+                <div className="rounded-xl border border-border p-3 space-y-2">
+                  {form.imageUrl ? (
+                    <div className="relative">
+                      <img src={form.imageUrl} alt="Banner" className="mx-auto h-24 w-full rounded object-cover" />
+                      <button onClick={() => setForm((p) => ({ ...p, imageUrl: "" }))} className="absolute right-0 top-0 rounded-full bg-destructive/90 p-1 text-destructive-foreground" aria-label="Remove">
+                        <X className="h-3 w-3" />
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="flex h-20 items-center justify-center text-[11px] text-muted-foreground">No image uploaded</div>
+                  )}
+                  <input ref={imgInputRef} type="file" accept="image/*" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) uploadImage(f); e.target.value = "" }} />
+                  <Button type="button" variant="outline" size="sm" className="w-full gap-1.5" disabled={uploading} onClick={() => imgInputRef.current?.click()}>
+                    {uploading ? <><Save className="h-3.5 w-3.5 animate-pulse" /> Uploading...</> : <><Upload className="h-3.5 w-3.5" /> Upload Image</>}
+                  </Button>
+                </div>
+              </div>
+
+              {/* Title + Link */}
+              <div className="grid gap-3 sm:grid-cols-2">
+                <div className="space-y-1">
+                  <label className="text-[11px] font-bold uppercase tracking-wide text-muted-foreground">Title (optional)</label>
+                  <Input value={form.title} onChange={(e) => setForm((p) => ({ ...p, title: e.target.value }))} className="h-9" placeholder="e.g. Special Offer" maxLength={200} />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-[11px] font-bold uppercase tracking-wide text-muted-foreground">Link URL</label>
+                  <Input value={form.linkUrl} onChange={(e) => setForm((p) => ({ ...p, linkUrl: e.target.value }))} className="h-9" placeholder="/pro or https://..." />
+                </div>
+              </div>
+
+              {/* Sort order + Active toggle */}
+              <div className="grid gap-3 sm:grid-cols-2">
+                <div className="space-y-1">
+                  <label className="text-[11px] font-bold uppercase tracking-wide text-muted-foreground">Sort Order (1,2,3...)</label>
+                  <Input type="number" value={form.sortOrder} onChange={(e) => setForm((p) => ({ ...p, sortOrder: Number(e.target.value) }))} className="h-9" placeholder="0" />
+                </div>
+                <div className="flex items-center justify-between rounded-lg border border-border p-2.5">
+                  <span className="text-sm font-bold">Active (show in slider)</span>
+                  <Switch checked={form.isActive} onCheckedChange={(v) => setForm((p) => ({ ...p, isActive: v }))} />
+                </div>
+              </div>
+
+              <Button className="h-10 w-full gap-2 bg-brand font-bold text-brand-foreground hover:bg-brand/90" onClick={onSave} disabled={saveMutation.isPending}>
+                {saveMutation.isPending ? <Save className="h-4 w-4 animate-pulse" /> : <Save className="h-4 w-4" />}
+                {editing ? "Update Banner" : "Add Banner"}
+              </Button>
+            </div>
+          )}
+
+          {/* Banner list */}
+          {isLoading ? (
+            <p className="text-sm text-muted-foreground">Loading...</p>
+          ) : banners.length === 0 ? (
+            <div className="rounded-xl border border-dashed border-border p-8 text-center">
+              <LayoutGrid className="mx-auto h-8 w-8 text-muted-foreground/50" />
+              <p className="mt-2 text-sm text-muted-foreground">No banners yet. Click "Add Banner" to create your first one.</p>
+            </div>
+          ) : (
+            <div className="space-y-2">
+              {banners.map((b) => (
+                <div key={b.id} className={`rounded-xl border p-3 ${b.isActive ? "border-brand/30 bg-brand-muted/5" : "border-border opacity-60"}`}>
+                  <div className="flex items-center gap-3">
+                    <img src={b.imageUrl} alt={b.title || "Banner"} className="h-12 w-20 shrink-0 rounded object-cover" />
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-2">
+                        <span className="truncate text-sm font-bold">{b.title || "Untitled Banner"}</span>
+                        <span className={`rounded-full px-1.5 py-0.5 text-[9px] font-bold ${b.isActive ? "bg-emerald-500/20 text-emerald-600" : "bg-muted text-muted-foreground"}`}>
+                          {b.isActive ? "ACTIVE" : "INACTIVE"}
+                        </span>
+                        <span className="text-[10px] text-muted-foreground">Order: {b.sortOrder}</span>
+                      </div>
+                      <div className="truncate text-[11px] text-muted-foreground">{b.linkUrl}</div>
+                    </div>
+                    <div className="flex shrink-0 gap-1">
+                      <Switch checked={b.isActive} onCheckedChange={(v) => toggleMutation.mutate({ id: b.id, isActive: v })} />
+                      <Button size="sm" variant="ghost" className="gap-1" onClick={() => startEdit(b)}>
+                        <Pencil className="h-3.5 w-3.5" />
+                      </Button>
+                      <Button size="sm" variant="ghost" className="gap-1 text-destructive" onClick={() => { if (confirm("Delete this banner?")) deleteMutation.mutate(b.id) }}>
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </Button>
+                    </div>
                   </div>
                 </div>
               ))}
