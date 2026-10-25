@@ -84,18 +84,25 @@ export function SignalList() {
   const { data: proMe } = useProMe()
   const hasSignalsPro = proMe?.isProSignals ?? false
 
-  // Fetch ad settings (includes commentsEnabled toggle). When comments are OFF,
-  // the entire comments section is hidden from the signal detail page.
-  const { data: adSettings } = useQuery<{ commentsEnabled?: boolean }>({
+  // Fetch ad settings (includes commentsEnabled + signalsEnabled toggle).
+  // When signalsEnabled is OFF, the entire SignalList component returns null
+  // (hidden from home page — no signals fetched, no sheet opens).
+  const { data: adSettings } = useQuery<{ commentsEnabled?: boolean; signalsEnabled?: boolean }>({
     queryKey: ["ad-settings"],
     queryFn: async () => {
       const res = await fetch("/api/admin/ads", { cache: "no-store" })
-      if (!res.ok) return { commentsEnabled: true }
+      if (!res.ok) return { commentsEnabled: true, signalsEnabled: true }
       return res.json()
     },
     staleTime: 60_000,
   })
   const commentsEnabled = adSettings?.commentsEnabled ?? true
+
+  // ─── Global signals toggle ───
+  // When admin disables the Signals section (Ad Settings → "Signals Section"
+  // toggle OFF), this component returns null — the "Live Signals" card on home
+  // is hidden, the signals sheet doesn't open, and no signal data is fetched.
+  if (adSettings?.signalsEnabled === false) return null
 
   const signals = data?.signals ?? []
 

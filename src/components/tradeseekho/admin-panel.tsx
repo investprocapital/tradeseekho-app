@@ -1211,6 +1211,22 @@ function AdsTab() {
               onCheckedChange={(v) => setForm((f) => f && ({ ...f, reviewsEnabled: v }))}
             />
           </div>
+
+          {/* Signals Section ON/OFF — global toggle to hide the entire Live Signals section.
+              When OFF: home page "Live Signals" card hidden, signals sheet doesn't open,
+              public API returns empty array (no DB fetch — zero bandwidth). */}
+          <div className="flex items-center justify-between rounded-lg border border-purple-500/30 bg-purple-500/5 p-3">
+            <div>
+              <div className="text-sm font-bold">Signals Section (Live Signals)</div>
+              <div className="text-[11px] text-muted-foreground">
+                Show/hide the entire Live Signals section on the home page. When OFF, no signal data is fetched from the database.
+              </div>
+            </div>
+            <Switch
+              checked={form.signalsEnabled ?? true}
+              onCheckedChange={(v) => setForm((f) => f && ({ ...f, signalsEnabled: v }))}
+            />
+          </div>
         </CardContent>
       </Card>
 
@@ -1239,6 +1255,7 @@ type AdminAdsForm = {
   priceAlertsEnabled?: boolean
   reviewsEnabled?: boolean
   brokerAdsEnabled?: boolean
+  signalsEnabled?: boolean
 }
 
 /* ---------------- Pro Requests ---------------- */

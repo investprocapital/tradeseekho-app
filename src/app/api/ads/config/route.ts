@@ -48,5 +48,6 @@ export async function GET(req: Request) {
     googleLoginEnabled: s.googleLoginEnabled,
     priceAlertsEnabled: s.priceAlertsEnabled,
     reviewsEnabled: s.reviewsEnabled,
+    signalsEnabled: s.signalsEnabled,
   })
 }
