@@ -203,7 +203,7 @@ export function QuizContent({ lesson, quiz }: { lesson: LessonDetailDTO; quiz: P
       {/* Body */}
       <div className="flex-1 overflow-y-auto overscroll-contain p-5" style={{ WebkitOverflowScrolling: "touch", minHeight: 0 }}>
         {result ? (
-          <QuizResults quiz={quiz} result={result} urduFont={urduFont} userAnswers={quiz.questions.map((q) => answers[q.id] ?? -1)} />
+          <QuizResults quiz={quiz} result={result} urduFont={urduFont} userAnswers={quiz.questions.map((q) => answers[q.id] ?? -1)} onRetry={onRetry} onNext={onNext} onGoToNextLevel={onGoToNextLevel} closeQuiz={closeQuiz} />
         ) : (
           <div className="space-y-6">
             {quiz.questions.map((q, i) => (
@@ -275,6 +275,11 @@ export function QuizContent({ lesson, quiz }: { lesson: LessonDetailDTO; quiz: P
                 <Button className="h-11 flex-1 gap-2 bg-brand font-bold text-brand-foreground hover:bg-brand/90" onClick={onNext}>
                   {t("action.nextLesson")} <ArrowRight className="h-4 w-4 rtl:rotate-180" />
                 </Button>
+              ) : result.certificateId ? (
+                // Level completed (certificate earned, no next lesson) → go to next level
+                <Button className="h-11 flex-1 gap-2 bg-brand font-bold text-brand-foreground hover:bg-brand/90" onClick={onGoToNextLevel}>
+                  Continue to Next Level <ArrowRight className="h-4 w-4 rtl:rotate-180" />
+                </Button>
               ) : (
                 <Button className="h-11 flex-1 font-bold" variant="secondary" onClick={closeQuiz}>
                   {t("action.close")}
@@ -325,12 +330,16 @@ function ScoreBanner({ result, urduFont }: { result: QuizSubmitResult; urduFont:
 }
 
 function QuizResults({
-  quiz, result, urduFont, userAnswers,
+  quiz, result, urduFont, userAnswers, onRetry, onNext, onGoToNextLevel, closeQuiz,
 }: {
   quiz: PublicQuizDTO
   result: QuizSubmitResult
   urduFont: boolean
   userAnswers: number[]
+  onRetry: () => void
+  onNext: () => void
+  onGoToNextLevel: () => void
+  closeQuiz: () => void
 }) {
   const t = useT()
   const pick = usePick()
