@@ -30,7 +30,9 @@ export async function GET(req: Request) {
       take: 20, // max 20 banners — keeps payload small
     }))
 
-    return NextResponse.json({ banners })
+    const res = NextResponse.json({ banners })
+    res.headers.set("Cache-Control", "public, s-maxage=600, stale-while-revalidate=1200")
+    return res
   } catch (e: any) {
     console.error("[banners GET]", e?.message)
     return NextResponse.json({ banners: [] })

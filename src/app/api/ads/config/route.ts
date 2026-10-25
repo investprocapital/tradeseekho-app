@@ -36,7 +36,7 @@ export async function GET(req: Request) {
     }
   }
 
-  return NextResponse.json({
+  const res = NextResponse.json({
     network,
     isNativeApp,
     admobEnabled: s.admobEnabled,
@@ -52,4 +52,6 @@ export async function GET(req: Request) {
     reviewsEnabled: s.reviewsEnabled,
     signalsEnabled: s.signalsEnabled,
   })
+  res.headers.set("Cache-Control", "public, s-maxage=300, stale-while-revalidate=600")
+  return res
 }
