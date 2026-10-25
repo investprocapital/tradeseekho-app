@@ -237,7 +237,7 @@ export function usePendingProCount(enabled = true) {
   return useQuery<{ pending: number }>({
     queryKey: ["admin-pro", "pending-count"],
     queryFn: () => j(fetch("/api/admin/pro/pending-count").then((r) => r)),
-    refetchInterval: enabled ? 30_000 : false,
+    refetchInterval: enabled ? 120_000 : false, // 2 min (was 30s)
     // Don't retry forever — if DB is cold-starting, just show 0
     retry: 1,
     enabled,

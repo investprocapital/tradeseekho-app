@@ -36,6 +36,8 @@ export function useLessonsBundle(category: string | "all") {
   return useQuery<LessonsBundle>({
     queryKey: ["lessons", category],
     queryFn: () => j(fetch(`/api/lessons?category=${encodeURIComponent(category)}`).then((r) => r)),
+    staleTime: 5 * 60 * 1000, // 5 min cache (was 0 = always refetch)
+    refetchOnWindowFocus: false, // don't refetch when tab regains focus
   })
 }
 
@@ -44,6 +46,8 @@ export function useLessonDetail(id: string | null) {
     enabled: !!id,
     queryKey: ["lesson", id],
     queryFn: () => j(fetch(`/api/lessons/${id}`).then((r) => r)),
+    staleTime: 5 * 60 * 1000, // 5 min cache
+    refetchOnWindowFocus: false,
   })
 }
 

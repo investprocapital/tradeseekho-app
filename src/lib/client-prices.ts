@@ -135,11 +135,13 @@ function initBinanceWebSocket() {
 
 /**
  * Initialize Yahoo Finance polling via server proxy.
+ * Polls every 60 seconds (was 30s — reduced to save Vercel bandwidth).
+ * Each API call = bandwidth. 60s is a good balance between freshness + cost.
  */
 function initYahooPolling() {
   if (yahooInterval) return
   fetchYahooPrices()
-  yahooInterval = setInterval(fetchYahooPrices, 30_000)
+  yahooInterval = setInterval(fetchYahooPrices, 60_000) // 60s (was 30s)
 }
 
 function ensureInitialized() {

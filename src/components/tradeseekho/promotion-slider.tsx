@@ -17,7 +17,7 @@ interface Banner {
 }
 
 async function fetchBanners(): Promise<{ banners: Banner[] }> {
-  const res = await fetch("/api/banners?active=true", { cache: "no-store" })
+  const res = await fetch("/api/banners?active=true")
   if (!res.ok) return { banners: [] }
   return res.json()
 }
@@ -33,12 +33,15 @@ async function fetchBanners(): Promise<{ banners: Banner[] }> {
  * - Clickable banners (link URL)
  * - Auto-hides when no active banners
  * - DB-level filter: only active banners fetched (zero bandwidth when empty)
+ * - 10 min client cache (staleTime) — prevents re-fetching on every navigation
  */
 export function PromotionSlider() {
   const { data } = useQuery({
     queryKey: ["promotion-banners"],
     queryFn: fetchBanners,
-    staleTime: 5 * 60 * 1000, // cache 5 min
+    staleTime: 10 * 60 * 1000, // 10 min cache (was 5 min)
+    refetchOnWindowFocus: false, // don't re-fetch when tab regains focus
+    refetchOnMount: false, // don't re-fetch when component remounts
   })
 
   const banners = data?.banners ?? []

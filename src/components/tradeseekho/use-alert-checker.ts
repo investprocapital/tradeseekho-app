@@ -43,9 +43,9 @@ export function useAlertChecker() {
       if (!res.ok) return { alerts: [] }
       return res.json()
     },
-    refetchInterval: 30_000,
+    refetchInterval: 120_000, // 2 min (was 30s — reduced to save bandwidth)
     refetchOnWindowFocus: false,
-    staleTime: 0,
+    staleTime: 60_000, // 1 min stale (was 0)
   })
 
   // Mutation: mark alert as triggered (also creates DB notification)
