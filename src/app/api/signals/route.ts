@@ -4,7 +4,7 @@ import { withDbRetry } from "@/lib/db-retry"
 
 // Edge cache 60s — signals don't change every second, 1 min cache is fine.
 export const revalidate = 60
-export const dynamic = "force-dynamic"
+
 
 // GET /api/signals — public: list signals that are still "in play".
 export async function GET() {

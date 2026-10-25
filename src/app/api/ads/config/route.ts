@@ -3,7 +3,7 @@ import { db } from "@/lib/db"
 
 // Edge cache 5 min — ad settings rarely change.
 export const revalidate = 300
-export const dynamic = "force-dynamic"
+
 
 // GET /api/ads/config — returns which ad network to use based on User-Agent
 // AdMob = native app (APK/Play Store) | AdSense = web (PC/Mobile Browser/iPhone)

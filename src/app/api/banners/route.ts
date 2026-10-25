@@ -4,7 +4,7 @@ import { withDbRetry } from "@/lib/db-retry"
 
 // Edge cache 10 min — banners rarely change, long cache is safe.
 export const revalidate = 600
-export const dynamic = "force-dynamic"
+
 
 // GET /api/banners?active=true — public: returns active promotion banners
 // for the home page slider. Only fetches isActive=true banners (DB-level filter

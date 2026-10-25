@@ -7,7 +7,7 @@ import { NextResponse } from "next/server"
 // by ~97% (was 12 calls/min → now 1 call/30s).
 // stale-while-revalidate=60: serve stale data up to 60s while fetching fresh.
 export const revalidate = 30
-export const dynamic = "force-dynamic"
+
 
 // Yahoo Finance ticker map
 const YAHOO_TICKERS: Record<string, string> = {

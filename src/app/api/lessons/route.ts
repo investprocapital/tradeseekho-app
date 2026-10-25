@@ -9,7 +9,7 @@ import type { CategoryDTO, LessonListItemDTO } from "@/lib/types"
 // This reduces Fast Origin Transfer significantly — 51KB response is cached
 // at edge, served to all users without hitting the origin serverless function.
 export const revalidate = 300
-export const dynamic = "force-dynamic"
+
 
 // Retry wrapper — Neon free tier sleeps after inactivity. First connection
 // attempt fails; retry after a short delay gives Neon time to wake up.
