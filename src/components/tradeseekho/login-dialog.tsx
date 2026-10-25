@@ -44,6 +44,7 @@ export function LoginDialog() {
   const [err, setErr] = useState<string | null>(null)
   const [resetLink, setResetLink] = useState("")
   const [newPw, setNewPw] = useState("") // new password for forgot-password flow
+  const [showNewPw, setShowNewPw] = useState(false) // eye toggle for new password
 
   // When login dialog opens with a specific view (e.g. "set-password" from Settings),
   // set the internal view state accordingly.
@@ -428,17 +429,20 @@ export function LoginDialog() {
                   </p>
 
                   <div className="mt-6 w-full space-y-3">
-                    {/* New password input */}
+                    {/* New password input with eye toggle */}
                     <div className="flex items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-3">
                       <Lock className="h-4 w-4 text-white/40" />
                       <input
-                        type="password"
+                        type={showNewPw ? "text" : "password"}
                         value={newPw}
                         onChange={(e) => setNewPw(e.target.value)}
                         placeholder="New password (min 6 chars)"
                         className="h-12 w-full bg-transparent text-sm text-white placeholder:text-white/30 focus:outline-none"
                         minLength={6}
                       />
+                      <button type="button" onClick={() => setShowNewPw(!showNewPw)} className="shrink-0 text-white/40 hover:text-white/70">
+                        {showNewPw ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                      </button>
                     </div>
 
                     {err && <p className="flex items-center gap-1.5 text-xs font-semibold text-red-400"><AlertCircle className="h-3.5 w-3.5" /> {err}</p>}
