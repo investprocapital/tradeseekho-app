@@ -6,10 +6,10 @@ import { signIn } from "next-auth/react"
 import { useQuery } from "@tanstack/react-query"
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog"
 import { useStore } from "@/lib/store"
-import { Mail, Lock, User, Loader2, AlertCircle, ArrowLeft, ArrowRight, Eye, EyeOff, GraduationCap, BarChart3, TrendingUp, Moon, Sun } from "lucide-react"
+import { Mail, Lock, User, Loader2, AlertCircle, ArrowLeft, ArrowRight, Eye, EyeOff, GraduationCap, BarChart3, TrendingUp, Moon, Sun, CheckCircle2 } from "lucide-react"
 import { useTheme } from "next-themes"
 
-type View = "landing" | "signin" | "signup" | "forgot" | "forgot-sent" | "set-password"
+type View = "landing" | "signin" | "signup" | "forgot" | "forgot-sent" | "forgot-done" | "set-password"
 
 // Fetch ad settings (includes googleLoginEnabled toggle)
 async function fetchLoginSettings() {
@@ -43,6 +43,7 @@ export function LoginDialog() {
   const [busy, setBusy] = useState(false)
   const [err, setErr] = useState<string | null>(null)
   const [resetLink, setResetLink] = useState("")
+  const [newPw, setNewPw] = useState("") // new password for forgot-password flow
 
   // When login dialog opens with a specific view (e.g. "set-password" from Settings),
   // set the internal view state accordingly.
@@ -247,6 +248,12 @@ export function LoginDialog() {
                     Don't have an account? <button onClick={() => { setView("signup"); setErr(null) }} className="font-bold text-[#00D09C] hover:underline">Sign Up</button>
                   </p>
 
+                  {/* Forgot Password link — always visible on landing view too
+                      so users can easily find it without going through Sign In form */}
+                  <button type="button" onClick={() => { setView("forgot"); setErr(null) }} className="mt-3 text-xs font-semibold text-[#00D09C] hover:underline">
+                    Forgot Password?
+                  </button>
+
                   {/* Girl illustration — NOW a proper transparent PNG (no white box).
                       The old image had a solid white background creating a visible
                       rectangular box. New image is clean: only girl + laptop +
@@ -404,29 +411,92 @@ export function LoginDialog() {
                 </motion.div>
               )}
 
-              {/* Forgot Password Sent — success message with reset link */}
+              {/* Forgot Password Sent — enter new password directly (no separate page needed) */}
               {view === "forgot-sent" && (
+                <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="flex flex-col items-center text-center">
+                  <button onClick={() => { setView("landing"); setErr(null); setResetLink(""); setNewPw(""); }} className="mb-4 flex items-center gap-1.5 self-start text-sm font-semibold text-white/60 hover:text-white">
+                    <ArrowLeft className="h-4 w-4" /> Back
+                  </button>
+                  <span className="text-xl font-extrabold"><span className="text-white">TradeSeekho</span> <span className="text-[#00D09C]">PK</span></span>
+                  <div className="mt-6 flex h-16 w-16 items-center justify-center rounded-full bg-[#00D09C]/20">
+                    <Lock className="h-8 w-8 text-[#00D09C]" />
+                  </div>
+                  <h2 className="mt-4 text-2xl font-extrabold text-white">Reset Password</h2>
+                  <p className="mt-2 text-sm text-white/50">
+                    Enter your new password for<br />
+                    <span className="font-bold text-white">{email}</span>
+                  </p>
+
+                  <div className="mt-6 w-full space-y-3">
+                    {/* New password input */}
+                    <div className="flex items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-3">
+                      <Lock className="h-4 w-4 text-white/40" />
+                      <input
+                        type="password"
+                        value={newPw}
+                        onChange={(e) => setNewPw(e.target.value)}
+                        placeholder="New password (min 6 chars)"
+                        className="h-12 w-full bg-transparent text-sm text-white placeholder:text-white/30 focus:outline-none"
+                        minLength={6}
+                      />
+                    </div>
+
+                    {err && <p className="flex items-center gap-1.5 text-xs font-semibold text-red-400"><AlertCircle className="h-3.5 w-3.5" /> {err}</p>}
+
+                    {/* Reset button — calls reset-password API with the token from resetLink */}
+                    <button
+                      onClick={async () => {
+                        if (newPw.length < 6) { setErr("Password must be at least 6 characters"); return }
+                        // Extract token from resetLink
+                        const token = resetLink.split("token=")[1] || ""
+                        if (!token) { setErr("Reset token missing — please try again"); return }
+                        setBusy(true); setErr(null)
+                        try {
+                          const res = await fetch("/api/auth/reset-password", {
+                            method: "POST",
+                            headers: { "content-type": "application/json" },
+                            body: JSON.stringify({ token, newPassword: newPw }),
+                          })
+                          const j = await res.json()
+                          if (!res.ok) { setErr(j.error || "Reset failed"); setBusy(false); return }
+                          // Success — go to success view
+                          setErr(null)
+                          setView("forgot-done")
+                          setBusy(false)
+                        } catch { setErr("Network error"); setBusy(false) }
+                      }}
+                      disabled={busy}
+                      className="flex h-12 w-full items-center justify-center gap-2 rounded-xl text-sm font-bold text-white transition active:scale-[0.98] disabled:opacity-50"
+                      style={{ background: "linear-gradient(135deg, #00D09C 0%, #0072FF 100%)", boxShadow: "0 4px 20px rgba(0, 208, 156, 0.25)" }}
+                    >
+                      {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <>Reset Password <ArrowRight className="h-4 w-4" /></>}
+                    </button>
+                  </div>
+
+                  <p className="mt-3 text-xs text-white/30">
+                    Reset link expires in 1 hour.
+                  </p>
+                </motion.div>
+              )}
+
+              {/* Forgot Password Done — success message */}
+              {view === "forgot-done" && (
                 <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="flex flex-col items-center text-center">
                   <span className="mt-2 text-xl font-extrabold"><span className="text-white">TradeSeekho</span> <span className="text-[#00D09C]">PK</span></span>
                   <div className="mt-8 flex h-16 w-16 items-center justify-center rounded-full bg-[#00D09C]/20">
-                    <Mail className="h-8 w-8 text-[#00D09C]" />
+                    <CheckCircle2 className="h-8 w-8 text-[#00D09C]" />
                   </div>
-                  <h2 className="mt-4 text-2xl font-extrabold text-white">Reset Link Ready</h2>
+                  <h2 className="mt-4 text-2xl font-extrabold text-white">Password Reset! ✅</h2>
                   <p className="mt-2 text-sm text-white/50">
-                    Reset link generated for<br />
-                    <span className="font-bold text-white">{email}</span>
+                    Your password has been changed successfully.<br />
+                    You can now login with your new password.
                   </p>
-                  {resetLink && (
-                    <a href={resetLink} className="mt-4 flex h-12 w-full items-center justify-center gap-2 rounded-xl text-sm font-bold text-white"
-                      style={{ background: "linear-gradient(135deg, #00D09C 0%, #0072FF 100%)" }}>
-                      Click Here to Reset Password <ArrowRight className="h-4 w-4" />
-                    </a>
-                  )}
-                  <p className="mt-3 text-xs text-white/30">
-                    Link expires in 1 hour. Click the button above to set your new password.
-                  </p>
-                  <button onClick={() => { setView("landing"); setEmail(""); setResetLink(""); }} className="mt-4 text-sm font-semibold text-white/60 hover:text-white">
-                    Back to Login
+                  <button
+                    onClick={() => { setView("signin"); setEmail(""); setNewPw(""); setResetLink(""); setErr(null) }}
+                    className="mt-6 flex h-12 w-full items-center justify-center gap-2 rounded-xl text-sm font-bold text-white"
+                    style={{ background: "linear-gradient(135deg, #00D09C 0%, #0072FF 100%)" }}
+                  >
+                    Login Now <ArrowRight className="h-4 w-4" />
                   </button>
                 </motion.div>
               )}
