@@ -2,6 +2,8 @@ import { NextResponse } from "next/server"
 import { db } from "@/lib/db"
 import { withDbRetry } from "@/lib/db-retry"
 
+// Edge cache 5 min — broker ads rarely change.
+export const revalidate = 300
 export const dynamic = "force-dynamic"
 
 // GET /api/ads/broker — public: returns all enabled broker ads (for rotating banners)

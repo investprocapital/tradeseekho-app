@@ -2,6 +2,8 @@ import { NextResponse } from "next/server"
 import { db } from "@/lib/db"
 import { withDbRetry } from "@/lib/db-retry"
 
+// Edge cache 5 min — affiliate ad config rarely changes.
+export const revalidate = 300
 export const dynamic = "force-dynamic"
 
 // GET /api/ads/affiliate — public: returns the active affiliate ad banner.

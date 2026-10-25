@@ -3,6 +3,12 @@ import { db } from "@/lib/db"
 import { getCurrentUserId, isUserProForPlan } from "@/lib/auth"
 import type { CategoryDTO, LessonListItemDTO } from "@/lib/types"
 
+// ─── EDGE CACHING ───
+// Cache lesson list at Vercel edge for 5 minutes (s-maxage=300).
+// Lessons change rarely (admin adds/edits), so 5 min cache is safe.
+// This reduces Fast Origin Transfer significantly — 51KB response is cached
+// at edge, served to all users without hitting the origin serverless function.
+export const revalidate = 300
 export const dynamic = "force-dynamic"
 
 // Retry wrapper — Neon free tier sleeps after inactivity. First connection
@@ -96,10 +102,10 @@ export async function GET(req: Request) {
       order: c.order,
     }))
 
-    return NextResponse.json({ categories: catDto, lessons: dto })
+    const res = NextResponse.json({ categories: catDto, lessons: dto })
+    res.headers.set("Cache-Control", "public, s-maxage=300, stale-while-revalidate=600")
+    return res
   } catch (e: any) {
-    // DB unreachable (Neon sleeping/suspended) — return empty so the app
-    // still loads. The dashboard will show "No lessons" instead of crashing.
     console.error("[lessons] DB unreachable:", e?.message)
     return NextResponse.json({ categories: [], lessons: [], dbError: true })
   }
