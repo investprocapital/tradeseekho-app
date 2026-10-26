@@ -1,6 +1,7 @@
 "use client"
 
 import { Shield, Mail, Info, ArrowLeft, AlertTriangle } from "lucide-react"
+import { useRouter } from "next/navigation"
 import Link from "next/link"
 
 const ICONS: Record<string, any> = {
@@ -11,17 +12,32 @@ const ICONS: Record<string, any> = {
 }
 
 export function PageView({ title, content, slug }: { title: string; content: string; slug: string }) {
+  const router = useRouter()
   const Icon = ICONS[slug] || Info
   const paragraphs = content.split("\n").filter((p) => p.trim())
+
+  // Use router.back() so the user returns to the exact page they came from
+  // (Settings sheet on the home page), not a full reload of "/".
+  const goBack = () => {
+    // Check if there's history to go back to
+    if (window.history.length > 1) {
+      router.back()
+    } else {
+      router.push("/")
+    }
+  }
 
   return (
     <div className="min-h-screen bg-background">
       {/* Simple header */}
       <header className="sticky top-0 z-10 border-b border-border bg-background/95 backdrop-blur">
         <div className="mx-auto flex h-14 max-w-2xl items-center gap-3 px-4">
-          <Link href="/" className="flex items-center gap-2 text-sm font-bold text-muted-foreground hover:text-foreground">
+          <button
+            onClick={goBack}
+            className="flex items-center gap-2 text-sm font-bold text-muted-foreground hover:text-foreground transition"
+          >
             <ArrowLeft className="h-4 w-4" /> Back
-          </Link>
+          </button>
         </div>
       </header>
 
