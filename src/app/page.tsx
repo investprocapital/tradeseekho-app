@@ -138,8 +138,19 @@ export default function Home() {
   const activeCategoryName = categories.find((c) => c.slug === activeCategory)?.name[lang] || categories.find((c) => c.slug === activeCategory)?.name.en || "All Lessons"
   const completedCount = lessons.filter((l) => l.passed).length
   const totalLessons = lessons.length
-  // Lessons that have a quiz
-  const quizLessons = lessons.filter((l) => l.hasQuiz)
+  // Lessons that have a quiz — ONLY show quizzes for UNLOCKED lessons.
+  // Locked lessons (Intermediate/Advanced lesson 2+ for non-Pro users) are
+  // excluded from the quiz list so users can't access quizzes for lessons
+  // they haven't unlocked yet. Same lock logic as LessonRow.
+  const quizLessons = lessons.filter((l) => {
+    if (!l.hasQuiz) return false
+    // Beginner = all free
+    if (l.categorySlug === "beginner") return true
+    // Intermediate/Advanced = lesson 1 free, 2+ Pro-locked
+    const isPremiumLocked = (l.categorySlug === "intermediate" || l.categorySlug === "advanced") && l.orderInCategory > 1
+    if (isPremiumLocked && !isPro) return false
+    return true
+  })
 
   return (
     <div className="flex h-screen flex-col overflow-hidden bg-background">

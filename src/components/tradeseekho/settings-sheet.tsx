@@ -9,6 +9,7 @@ import { Separator } from "@/components/ui/separator"
 import { Bell, Shield, Moon, Sun, User as UserIcon, Award, Bookmark, Languages, Trophy, ChevronRight, BookOpen, Mail, FileText, Info, Check, LogOut, Lock, Trash2, AlertTriangle } from "lucide-react"
 import { useStore } from "@/lib/store"
 import { useCertificates } from "./use-data"
+import { useAdSettings } from "./use-data"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Copy, Download } from "lucide-react"
@@ -39,6 +40,8 @@ export function SettingsSheet() {
   const { theme, setTheme } = useTheme()
   const { data: certData } = useCertificates()
   const certs = certData?.certificates ?? []
+  const { data: ads } = useAdSettings()
+  const priceAlertsEnabled = ads?.priceAlertsEnabled ?? true
   const lang = useStore((s) => s.lang)
   const setLang = useStore((s) => s.setLang)
   const bookmarksCount = useStore((s) => s.bookmarks.length)
@@ -155,11 +158,13 @@ export function SettingsSheet() {
 
             <Separator className="my-3" />
 
-            {/* TRADING TOOLS */}
-            <Section title="Trading Tools">
-              <Row icon={Bell} label="Price Alerts" hint="Set price notifications"
-                onClick={() => { setOpen(false); setPriceAlertsOpen(true) }} />
-            </Section>
+            {/* TRADING TOOLS — Price Alerts only shows if admin has enabled it */}
+            {priceAlertsEnabled && (
+              <Section title="Trading Tools">
+                <Row icon={Bell} label="Price Alerts" hint="Set price notifications"
+                  onClick={() => { setOpen(false); setPriceAlertsOpen(true) }} />
+              </Section>
+            )}
 
             <Separator className="my-3" />
 
