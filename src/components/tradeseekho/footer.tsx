@@ -27,7 +27,7 @@ export function Footer() {
           <a href="/contact-us" className="font-bold text-brand hover:underline">Contact Us</a>
         </div>
         <p className="text-[9px] text-muted-foreground">
-          © {new Date().getFullYear()} TradeSeekho PK · Made in Pakistan · Serving Worldwide
+          © {new Date().getFullYear()} TradeSeekho PK · Made in Pakistan · Serving India, UAE & Worldwide
         </p>
         <p className="mt-0.5 text-[9px] text-muted-foreground">
           Email: <a href="mailto:tradeseekhopk@gmail.com" className="text-brand hover:underline">tradeseekhopk@gmail.com</a>

@@ -54,7 +54,7 @@ export function PageView({ title, content, slug }: { title: string; content: str
             <Link href="/contact-us" className="font-bold text-brand hover:underline">Contact Us</Link>
           </div>
           <p className="text-[11px] text-muted-foreground">
-            © {new Date().getFullYear()} TradeSeekho PK · Made in Pakistan · Serving Worldwide
+            © {new Date().getFullYear()} TradeSeekho PK · Made in Pakistan · Serving India, UAE & Worldwide
           </p>
           <p className="mt-1 text-[11px] text-muted-foreground">
             Email: <a href="mailto:tradeseekhopk@gmail.com" className="text-brand hover:underline">tradeseekhopk@gmail.com</a>
