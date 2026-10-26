@@ -16,15 +16,12 @@ export function PageView({ title, content, slug }: { title: string; content: str
   const Icon = ICONS[slug] || Info
   const paragraphs = content.split("\n").filter((p) => p.trim())
 
-  // Use router.back() so the user returns to the exact page they came from
-  // (Settings sheet on the home page), not a full reload of "/".
+  // Navigate back to home page AND reopen the Settings sheet.
+  // We use sessionStorage as a signal — the home page checks this on mount
+  // and reopens the Settings sheet if set.
   const goBack = () => {
-    // Check if there's history to go back to
-    if (window.history.length > 1) {
-      router.back()
-    } else {
-      router.push("/")
-    }
+    try { sessionStorage.setItem("reopen-settings", "1") } catch {}
+    router.push("/")
   }
 
   return (
@@ -36,7 +33,7 @@ export function PageView({ title, content, slug }: { title: string; content: str
             onClick={goBack}
             className="flex items-center gap-2 text-sm font-bold text-muted-foreground hover:text-foreground transition"
           >
-            <ArrowLeft className="h-4 w-4" /> Back
+            <ArrowLeft className="h-4 w-4" /> Back to Settings
           </button>
         </div>
       </header>

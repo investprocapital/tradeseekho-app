@@ -51,6 +51,7 @@ export default function Home() {
   const setActiveCategory = useStore((s) => s.setActiveCategory)
   const setProOpen = useStore((s) => s.setProOpen)
   const setProPlan = useStore((s) => s.setProPlan)
+  const setSettingsOpen = useStore((s) => s.setSettingsOpen)
   const { data: proMe } = useProMe()
   // ─── Plan-specific Pro checks (use 3 explicit booleans, NOT proStatus) ───
   // Each feature only unlocks if the user has the corresponding plan boolean.
@@ -68,6 +69,20 @@ export default function Home() {
     }
   }, [status, session])
   const { data: userData } = useCurrentUser()
+
+  // ─── Reopen Settings sheet when returning from a legal page ───
+  // Legal pages (About Us, Privacy, Disclaimer, Contact) set a sessionStorage
+  // flag before navigating back. On mount, we check this flag and reopen the
+  // Settings sheet so the user returns to exactly where they were.
+  useEffect(() => {
+    try {
+      if (sessionStorage.getItem("reopen-settings") === "1") {
+        sessionStorage.removeItem("reopen-settings")
+        // Small delay to ensure the home page has rendered
+        setTimeout(() => setSettingsOpen(true), 100)
+      }
+    } catch {}
+  }, [setSettingsOpen])
 
   // Auto-apply user's saved preferred language from Supabase on login.
   // This ensures the language persists across devices — even if localStorage
