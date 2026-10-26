@@ -576,8 +576,8 @@ export function LoginDialog() {
                       Set Password
                     </button>
                   </div>
-                  <button onClick={() => { setView("landing"); setPassword(""); setErr(null) }} className="mt-4 text-sm font-semibold text-white/60 hover:text-white">
-                    Back
+                  <button onClick={() => { setLoginOpen(false); setPassword(""); setErr(null); reset() }} className="mt-4 text-sm font-semibold text-white/60 hover:text-white">
+                    Back to Settings
                   </button>
                 </motion.div>
               )}
