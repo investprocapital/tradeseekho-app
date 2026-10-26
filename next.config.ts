@@ -7,12 +7,10 @@ const nextConfig: NextConfig = {
   },
   reactStrictMode: false,
   images: {
-    // Allow next/image to load from Vercel Blob CDN + data URLs (base64 fallback)
-    remotePatterns: [
-      { protocol: "https", hostname: "**.public.blob.vercel-storage.com" },
-      { protocol: "https", hostname: "vercel-storage.com" },
-    ],
-    // Allow base64 data URLs (used when Vercel Blob is not configured)
+    // Disable Next.js image optimization — saves Vercel bandwidth (no origin
+    // processing for images). Images are served as-is from static/public folder
+    // or Vercel Blob CDN. We use <img> tags with loading="lazy" instead.
+    unoptimized: true,
     dangerouslyAllowSVG: true,
   },
   // ─── Cache static assets to reduce Vercel bandwidth ───
