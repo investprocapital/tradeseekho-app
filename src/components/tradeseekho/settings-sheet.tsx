@@ -25,7 +25,6 @@ import {
 
 export function SettingsSheet() {
   const router = useRouter()
-  const push = router.push.bind(router)
   const open = useStore((s) => s.settingsOpen)
   const setOpen = useStore((s) => s.setSettingsOpen)
   const setEditProfileOpen = useStore((s) => s.setEditProfileOpen)
@@ -166,10 +165,10 @@ export function SettingsSheet() {
 
             {/* SUPPORT */}
             <Section title="Support">
-              <Row icon={Info} label="About Us" onClick={() => { setOpen(false); push("/about-us") }} />
-              <Row icon={AlertTriangle} label="Disclaimer & Risk Warning" hint="Legal disclaimer" onClick={() => { setOpen(false); push("/legal-disclaimer") }} />
-              <Row icon={FileText} label="Privacy Policy" onClick={() => { setOpen(false); push("/privacy-policy") }} />
-              <Row icon={Mail} label="Contact Us" onClick={() => { setOpen(false); push("/contact-us") }} />
+              <Row icon={Info} label="About Us" onClick={() => { setOpen(false); router.replace("/about-us") }} />
+              <Row icon={AlertTriangle} label="Disclaimer & Risk Warning" hint="Legal disclaimer" onClick={() => { setOpen(false); router.replace("/legal-disclaimer") }} />
+              <Row icon={FileText} label="Privacy Policy" onClick={() => { setOpen(false); router.replace("/privacy-policy") }} />
+              <Row icon={Mail} label="Contact Us" onClick={() => { setOpen(false); router.replace("/contact-us") }} />
             </Section>
 
             <Separator className="my-3" />

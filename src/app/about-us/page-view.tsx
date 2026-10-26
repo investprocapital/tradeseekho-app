@@ -17,11 +17,11 @@ export function PageView({ title, content, slug }: { title: string; content: str
   const paragraphs = content.split("\n").filter((p) => p.trim())
 
   // Navigate back to home page AND reopen the Settings sheet.
-  // We use sessionStorage as a signal — the home page checks this on mount
-  // and reopens the Settings sheet if set.
+  // Use router.replace so the legal page is NOT in the history stack.
+  // This prevents the back-button loop (About → Login → Set Password → etc.)
   const goBack = () => {
     try { sessionStorage.setItem("reopen-settings", "1") } catch {}
-    router.push("/")
+    router.replace("/")
   }
 
   return (

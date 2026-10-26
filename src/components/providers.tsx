@@ -7,6 +7,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
 import { useStore } from "@/lib/store"
 import { Splash } from "@/components/tradeseekho/splash"
 import { Onboarding } from "@/components/tradeseekho/onboarding"
+import { BackButtonHandler } from "@/components/tradeseekho/back-button-handler"
 
 function LangDirSync() {
   const lang = useStore((s) => s.lang)
@@ -53,6 +54,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
       >
         <QueryClientProvider client={qc}>
           <LangDirSync />
+          <BackButtonHandler />
           {showSplash && <Splash onDone={() => setShowSplash(false)} />}
           <Onboarding />
           {children}
