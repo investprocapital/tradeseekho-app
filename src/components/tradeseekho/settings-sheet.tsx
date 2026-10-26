@@ -2,6 +2,7 @@
 
 import { useState } from "react"
 import { useTheme } from "next-themes"
+import { useRouter } from "next/navigation"
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet"
 import { Switch } from "@/components/ui/switch"
 import { Separator } from "@/components/ui/separator"
@@ -23,6 +24,8 @@ import {
 } from "@/components/ui/alert-dialog"
 
 export function SettingsSheet() {
+  const router = useRouter()
+  const push = router.push.bind(router)
   const open = useStore((s) => s.settingsOpen)
   const setOpen = useStore((s) => s.setSettingsOpen)
   const setEditProfileOpen = useStore((s) => s.setEditProfileOpen)
@@ -163,10 +166,10 @@ export function SettingsSheet() {
 
             {/* SUPPORT */}
             <Section title="Support">
-              <Row icon={Info} label="About Us" onClick={() => { setOpen(false); window.open("/about-us", "_self") }} />
-              <Row icon={AlertTriangle} label="Disclaimer & Risk Warning" hint="Legal disclaimer" onClick={() => { setOpen(false); window.open("/legal-disclaimer", "_self") }} />
-              <Row icon={FileText} label="Privacy Policy" onClick={() => { setOpen(false); window.open("/privacy-policy", "_self") }} />
-              <Row icon={Mail} label="Contact Us" onClick={() => { setOpen(false); window.open("/contact-us", "_self") }} />
+              <Row icon={Info} label="About Us" onClick={() => { setOpen(false); push("/about-us") }} />
+              <Row icon={AlertTriangle} label="Disclaimer & Risk Warning" hint="Legal disclaimer" onClick={() => { setOpen(false); push("/legal-disclaimer") }} />
+              <Row icon={FileText} label="Privacy Policy" onClick={() => { setOpen(false); push("/privacy-policy") }} />
+              <Row icon={Mail} label="Contact Us" onClick={() => { setOpen(false); push("/contact-us") }} />
             </Section>
 
             <Separator className="my-3" />
