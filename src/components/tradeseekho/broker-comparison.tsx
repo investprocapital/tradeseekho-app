@@ -1,12 +1,29 @@
 "use client"
 
+import { useState, useEffect } from "react"
+import { useQuery } from "@tanstack/react-query"
 import { Swiper, SwiperSlide } from "swiper/react"
 import { Autoplay, Pagination } from "swiper/modules"
-import { Star, Shield, ArrowDown, ExternalLink } from "lucide-react"
+import { Star, Shield, ExternalLink } from "lucide-react"
 import Link from "next/link"
 
 import "swiper/css"
 import "swiper/css/pagination"
+
+interface BrokerLinks {
+  xmLink: string
+  exnessLink: string
+  icmarketsLink: string
+  fbsLink: string
+  octafxLink: string
+  pepperstoneLink: string
+}
+
+async function fetchBrokerLinks(): Promise<{ links: BrokerLinks }> {
+  const res = await fetch("/api/broker-links")
+  if (!res.ok) throw new Error("failed")
+  return res.json()
+}
 
 interface Broker {
   name: string
@@ -15,7 +32,7 @@ interface Broker {
   rating: number
   traders: string
   features: string
-  link: string
+  linkKey: keyof BrokerLinks
   topPick?: boolean
 }
 
@@ -27,7 +44,7 @@ const BROKERS: Broker[] = [
     rating: 4.9,
     traders: "120k+ traders",
     features: "Regulated • MT4/MT5 • Low Spreads",
-    link: "https://www.xmwebsite.net/referral?token=U-F1EIZcmcug6NKlILwrnA",
+    linkKey: "xmLink",
     topPick: true,
   },
   {
@@ -37,7 +54,7 @@ const BROKERS: Broker[] = [
     rating: 4.8,
     traders: "98k+ traders",
     features: "Regulated • Zero Fees • Fast Withdrawal",
-    link: "https://exness.com/join",
+    linkKey: "exnessLink",
   },
   {
     name: "IC Markets",
@@ -46,7 +63,7 @@ const BROKERS: Broker[] = [
     rating: 4.7,
     traders: "75k+ traders",
     features: "Raw Spreads • Low Fees • ECN",
-    link: "https://icmarkets.com/join",
+    linkKey: "icmarketsLink",
   },
   {
     name: "FBS",
@@ -55,7 +72,7 @@ const BROKERS: Broker[] = [
     rating: 4.6,
     traders: "64k+ traders",
     features: "Bonus up to $100 • CopyTrade",
-    link: "https://fbs.com/join",
+    linkKey: "fbsLink",
   },
   {
     name: "OctaFX",
@@ -64,7 +81,7 @@ const BROKERS: Broker[] = [
     rating: 4.5,
     traders: "52k+ traders",
     features: "Cashback • Low Deposits • Mobile App",
-    link: "https://octasl.click/iZp7FIYLJ7U",
+    linkKey: "octafxLink",
   },
   {
     name: "Pepperstone",
@@ -73,11 +90,27 @@ const BROKERS: Broker[] = [
     rating: 4.6,
     traders: "38k+ traders",
     features: "Global • MT4/MT5 • Secure",
-    link: "https://pepperstone.com/join",
+    linkKey: "pepperstoneLink",
   },
 ]
 
 export function BrokerComparison() {
+  const { data } = useQuery({
+    queryKey: ["broker-links"],
+    queryFn: fetchBrokerLinks,
+    staleTime: 10 * 60 * 1000,
+    refetchOnWindowFocus: false,
+  })
+
+  const links = data?.links ?? {
+    xmLink: "https://www.xmwebsite.net/referral?token=U-F1EIZcmcug6NKlILwrnA",
+    exnessLink: "https://exness.com/join",
+    icmarketsLink: "https://icmarkets.com/join",
+    fbsLink: "https://fbs.com/join",
+    octafxLink: "https://octasl.click/iZp7FIYLJ7U",
+    pepperstoneLink: "https://pepperstone.com/join",
+  }
+
   return (
     <div className="mt-4 px-2">
       {/* Top text + red arrow */}
@@ -124,68 +157,71 @@ export function BrokerComparison() {
           }}
           className="broker-slider !pb-8"
         >
-          {BROKERS.map((broker) => (
-            <SwiperSlide key={broker.name}>
-              <div
-                className={`relative flex h-full flex-col items-center rounded-xl p-3 ${
-                  broker.topPick
-                    ? "border-2 border-gold bg-gradient-to-b from-gold/10 to-[#1a1a1a] shadow-lg shadow-gold/20"
-                    : "border border-white/10 bg-[#1a1a1a]"
-                }`}
-              >
-                {/* TOP PICK badge */}
-                {broker.topPick && (
-                  <div className="absolute -top-2 left-1/2 -translate-x-1/2 rounded-full bg-gold px-2 py-0.5 text-[8px] font-bold text-black shadow">
-                    ⭐ TOP PICK
-                  </div>
-                )}
-
-                {/* Logo */}
+          {BROKERS.map((broker) => {
+            const link = links[broker.linkKey] || "#"
+            return (
+              <SwiperSlide key={broker.name}>
                 <div
-                  className="mt-2 flex h-10 w-10 items-center justify-center rounded-lg text-xs font-black text-white shadow"
-                  style={{ backgroundColor: broker.logoBg }}
+                  className={`relative flex h-full flex-col items-center rounded-xl p-3 ${
+                    broker.topPick
+                      ? "border-2 border-gold bg-gradient-to-b from-gold/10 to-[#1a1a1a] shadow-lg shadow-gold/20"
+                      : "border border-white/10 bg-[#1a1a1a]"
+                  }`}
                 >
-                  {broker.logo}
+                  {/* TOP PICK badge — positioned above the card border, no overlap */}
+                  {broker.topPick && (
+                    <div className="absolute -top-2.5 left-1/2 z-10 -translate-x-1/2 rounded-full bg-gold px-2.5 py-0.5 text-[8px] font-bold text-black shadow-md">
+                      ⭐ TOP PICK
+                    </div>
+                  )}
+
+                  {/* Logo — extra top margin when topPick to make room for badge */}
+                  <div
+                    className={`flex h-10 w-10 items-center justify-center rounded-lg text-xs font-black text-white shadow ${broker.topPick ? "mt-3" : "mt-0"}`}
+                    style={{ backgroundColor: broker.logoBg }}
+                  >
+                    {broker.logo}
+                  </div>
+
+                  {/* Broker name */}
+                  <h3 className="mt-2 text-xs font-bold text-white">{broker.name}</h3>
+
+                  {/* 5 Stars */}
+                  <div className="mt-1 flex gap-0.5">
+                    {Array.from({ length: 5 }).map((_, i) => (
+                      <Star key={i} className="h-2.5 w-2.5 fill-gold text-gold" />
+                    ))}
+                  </div>
+
+                  {/* Rating + traders */}
+                  <p className="mt-1 text-[10px] font-bold text-white">
+                    {broker.rating} <span className="text-white/50">• {broker.traders}</span>
+                  </p>
+
+                  {/* Features */}
+                  <p className="mt-1.5 text-center text-[9px] leading-tight text-white/50">
+                    {broker.features}
+                  </p>
+
+                  {/* Join Now button */}
+                  <Link
+                    href={link}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="mt-3 flex w-full items-center justify-center gap-1 rounded-lg bg-gradient-to-b from-gold to-amber-600 px-3 py-1.5 text-[10px] font-bold text-black shadow-sm transition hover:from-amber-500 hover:to-amber-700"
+                  >
+                    Join Now
+                  </Link>
+
+                  {/* URL */}
+                  <p className="mt-1.5 flex items-center gap-0.5 text-[8px] text-white/30">
+                    <ExternalLink className="h-2.5 w-2.5" />
+                    {link.replace("https://", "").replace("www.", "").split("/")[0]}
+                  </p>
                 </div>
-
-                {/* Broker name */}
-                <h3 className="mt-2 text-xs font-bold text-white">{broker.name}</h3>
-
-                {/* 5 Stars */}
-                <div className="mt-1 flex gap-0.5">
-                  {Array.from({ length: 5 }).map((_, i) => (
-                    <Star key={i} className="h-2.5 w-2.5 fill-gold text-gold" />
-                  ))}
-                </div>
-
-                {/* Rating + traders */}
-                <p className="mt-1 text-[10px] font-bold text-white">
-                  {broker.rating} <span className="text-white/50">• {broker.traders}</span>
-                </p>
-
-                {/* Features */}
-                <p className="mt-1.5 text-center text-[9px] leading-tight text-white/50">
-                  {broker.features}
-                </p>
-
-                {/* Join Now button */}
-                <Link
-                  href={broker.link}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="mt-3 flex w-full items-center justify-center gap-1 rounded-lg bg-gradient-to-b from-gold to-amber-600 px-3 py-1.5 text-[10px] font-bold text-black shadow-sm transition hover:from-amber-500 hover:to-amber-700"
-                >
-                  Join Now
-                </Link>
-
-                {/* URL */}
-                <p className="mt-1.5 flex items-center gap-0.5 text-[8px] text-white/30">
-                  <ExternalLink className="h-2.5 w-2.5" />
-                  {broker.link.replace("https://", "").replace("www.", "").split("/")[0]}
-                </p>
-              </div>
-            </SwiperSlide>
-          ))}
+              </SwiperSlide>
+            )
+          })}
         </Swiper>
       </div>
 

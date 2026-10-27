@@ -141,6 +141,7 @@ export function AdminPanel() {
             { id: "broker-ads", label: "Broker Ads", icon: Megaphone, color: "bg-teal-500" },
             { id: "affiliate-ads", label: "Affiliate Ads", icon: ImageIcon, color: "bg-fuchsia-500" },
             { id: "banners", label: "Promo Banners", icon: LayoutGrid, color: "bg-violet-500" },
+            { id: "broker-links", label: "Broker Links", icon: Link2, color: "bg-indigo-500" },
             { id: "payment", label: "Payment Settings", icon: CreditCard, color: "bg-indigo-500" },
             { id: "pages", label: "Pages", icon: BookOpen, color: "bg-rose-500" },
             { id: "comments", label: "Comments", icon: MessageSquare, color: "bg-sky-500" },
@@ -186,6 +187,7 @@ export function AdminPanel() {
         <TabsContent value="broker-ads" className="mt-5"><BrokerAdsTab /></TabsContent>
         <TabsContent value="affiliate-ads" className="mt-5"><AffiliateAdsTab /></TabsContent>
         <TabsContent value="banners" className="mt-5"><PromotionBannersTab /></TabsContent>
+        <TabsContent value="broker-links" className="mt-5"><BrokerLinksTab /></TabsContent>
         <TabsContent value="payment" className="mt-5"><PaymentSettingsTab /></TabsContent>
         <TabsContent value="pages" className="mt-5"><PagesTab /></TabsContent>
         <TabsContent value="signals" className="mt-5"><SignalManager /></TabsContent>
@@ -2827,6 +2829,97 @@ function NotificationsTab() {
         </CardContent>
       </Card>
     </div>
+  )
+}
+
+/* ---------------- Broker Links ---------------- */
+function BrokerLinksTab() {
+  const qc = useQueryClient()
+  const [links, setLinks] = useState({
+    xmLink: "",
+    exnessLink: "",
+    icmarketsLink: "",
+    fbsLink: "",
+    octafxLink: "",
+    pepperstoneLink: "",
+  })
+  const [loaded, setLoaded] = useState(false)
+
+  const { data, isLoading } = useQuery({
+    queryKey: ["admin-broker-links"],
+    queryFn: async () => {
+      const res = await fetch("/api/admin/broker-links")
+      if (!res.ok) throw new Error("failed")
+      return res.json()
+    },
+  })
+
+  if (data?.links && !loaded) {
+    setLinks(data.links)
+    setLoaded(true)
+  }
+
+  const save = useMutation({
+    mutationFn: async () => {
+      const res = await fetch("/api/admin/broker-links", {
+        method: "PUT",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify(links),
+      })
+      if (!res.ok) throw new Error("failed")
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["admin-broker-links"] })
+      qc.invalidateQueries({ queryKey: ["broker-links"] })
+      toast.success("Broker links saved!")
+    },
+    onError: () => toast.error("Failed to save"),
+  })
+
+  if (isLoading) return <p className="py-6 text-center text-sm text-muted-foreground">Loading...</p>
+
+  const brokers = [
+    { key: "xmLink", label: "XM", color: "#0066CC" },
+    { key: "exnessLink", label: "Exness", color: "#00B14F" },
+    { key: "icmarketsLink", label: "IC Markets", color: "#1A3A5C" },
+    { key: "fbsLink", label: "FBS", color: "#FF6B00" },
+    { key: "octafxLink", label: "OctaFX", color: "#F7941D" },
+    { key: "pepperstoneLink", label: "Pepperstone", color: "#00529B" },
+  ]
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2"><LayoutGrid className="h-5 w-5 text-brand" /> Broker Comparison Links</CardTitle>
+        <CardDescription>Edit referral links for the 6 brokers shown on the home page Broker Comparison section.</CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-3">
+        {brokers.map((b) => (
+          <div key={b.key} className="space-y-1">
+            <label className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-wide text-muted-foreground">
+              <span className="inline-flex h-5 w-5 items-center justify-center rounded text-[8px] font-black text-white" style={{ backgroundColor: b.color }}>
+                {b.label.substring(0, 2)}
+              </span>
+              {b.label} Referral Link
+            </label>
+            <Input
+              value={(links as any)[b.key]}
+              onChange={(e) => setLinks((p) => ({ ...p, [b.key]: e.target.value }))}
+              className="h-9"
+              placeholder={`https://${b.label.toLowerCase().replace(" ", "")}.com/your-referral-link`}
+            />
+          </div>
+        ))}
+        <Button
+          className="h-10 w-full gap-2 bg-brand font-bold text-brand-foreground hover:bg-brand/90"
+          onClick={() => save.mutate()}
+          disabled={save.isPending}
+        >
+          {save.isPending ? <Save className="h-4 w-4 animate-pulse" /> : <Save className="h-4 w-4" />}
+          Save Broker Links
+        </Button>
+      </CardContent>
+    </Card>
   )
 }
 

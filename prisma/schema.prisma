@@ -7,7 +7,7 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
+  provider = "postgresql"
   url       = env("DATABASE_URL")
   directUrl = env("DIRECT_URL")
 }
@@ -441,4 +441,17 @@ model Promotion {
 
   @@index([isActive])
   @@index([sortOrder])
+}
+
+// Broker Comparison links — 6 brokers shown on the home page. Admin can edit
+// the referral links from the admin panel. Singleton (id = "singleton").
+model BrokerLinks {
+  id          String   @id @default("singleton")
+  xmLink      String   @default("https://www.xmwebsite.net/referral?token=U-F1EIZcmcug6NKlILwrnA")
+  exnessLink  String   @default("https://exness.com/join")
+  icmarketsLink String @default("https://icmarkets.com/join")
+  fbsLink     String   @default("https://fbs.com/join")
+  octafxLink  String   @default("https://octasl.click/iZp7FIYLJ7U")
+  pepperstoneLink String @default("https://pepperstone.com/join")
+  updatedAt   DateTime @updatedAt
 }
