@@ -14,6 +14,7 @@ import { Footer } from "@/components/tradeseekho/footer"
 import { BrokerAdBanner } from "@/components/tradeseekho/broker-ad-banner"
 import { AffiliateAdBanner } from "@/components/tradeseekho/affiliate-ad-banner"
 import { PromotionSlider } from "@/components/tradeseekho/promotion-slider"
+import { BrokerComparison } from "@/components/tradeseekho/broker-comparison"
 import { SignalList } from "@/components/tradeseekho/signal-list"
 import { PriceAlertSheet } from "@/components/tradeseekho/price-alert-sheet"
 import { MarketGaugeSheet } from "@/components/tradeseekho/market-gauge-sheet"
@@ -180,6 +181,10 @@ export default function Home() {
             {/* Promotion Slider — rotating banners between Gold Price and Lessons.
                 Auto-hides when no active banners. Admin-controlled from "Promotion Banners" tab. */}
             <PromotionSlider />
+
+            {/* Broker Comparison — premium section with 6 broker cards (XM highlighted).
+                Black + gold theme, Swiper slider, responsive. */}
+            <BrokerComparison />
 
             {/* Choose Your Level */}
             <section className="mb-4">
