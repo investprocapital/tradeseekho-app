@@ -132,10 +132,10 @@ const BROKERS: Broker[] = [
 ]
 
 export function BrokerComparison() {
+  // Hooks must be called before any conditional return (Rules of Hooks).
   // Check if admin has enabled the Broker Comparison section
   const { data: ads } = useAdSettings()
   const showBrokerAds = ads?.showBrokerAds ?? true
-  if (!showBrokerAds) return null
 
   // Fetch broker links with 7-day localStorage caching
   const { data } = useQuery({
@@ -144,7 +144,11 @@ export function BrokerComparison() {
     staleTime: 60 * 60 * 1000, // 1 hour React Query cache
     refetchOnWindowFocus: false,
     refetchOnMount: false,
+    enabled: showBrokerAds, // only fetch when section is visible
   })
+
+  // Hide entire section when admin disables it
+  if (!showBrokerAds) return null
 
   const links = data?.links ?? DEFAULT_LINKS
 
