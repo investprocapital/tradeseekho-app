@@ -7,7 +7,7 @@ import {
   Download, Users, BookOpen, BarChart3, Shield, Lock, LogOut, Eye,
   Plus, Pencil, Trash2, Save, Send, Megaphone, Check, ChevronRight, ArrowLeft,
   Crown, X, Upload, CreditCard, Search, TrendingUp, MessageSquare, Copy, ExternalLink,
-  Bell, Image as ImageIcon, Link2, LayoutGrid,
+  Bell, Image as ImageIcon, Link2, LayoutGrid, RefreshCw,
 } from "lucide-react"
 import {
   Card, CardContent, CardHeader, CardTitle, CardDescription,
@@ -1231,6 +1231,20 @@ function AdsTab() {
               onCheckedChange={(v) => setForm((f) => f && ({ ...f, signalsEnabled: v }))}
             />
           </div>
+
+          {/* Broker Comparison Section ON/OFF — hide the entire "World's Top Broker" section */}
+          <div className="flex items-center justify-between rounded-lg border border-indigo-500/30 bg-indigo-500/5 p-3">
+            <div>
+              <div className="text-sm font-bold">Broker Comparison Section (World's Top Broker)</div>
+              <div className="text-[11px] text-muted-foreground">
+                Show/hide the broker comparison cards on the home page.
+              </div>
+            </div>
+            <Switch
+              checked={form.showBrokerAds ?? true}
+              onCheckedChange={(v) => setForm((f) => f && ({ ...f, showBrokerAds: v }))}
+            />
+          </div>
         </CardContent>
       </Card>
 
@@ -1260,6 +1274,7 @@ type AdminAdsForm = {
   reviewsEnabled?: boolean
   brokerAdsEnabled?: boolean
   signalsEnabled?: boolean
+  showBrokerAds?: boolean
 }
 
 /* ---------------- Pro Requests ---------------- */
@@ -2918,6 +2933,45 @@ function BrokerLinksTab() {
           {save.isPending ? <Save className="h-4 w-4 animate-pulse" /> : <Save className="h-4 w-4" />}
           Save Broker Links
         </Button>
+
+        {/* Force-update: clears ALL users' 7-day localStorage cache.
+            Updates brokerAdsUpdatedAt in DB → all clients detect mismatch
+            and re-fetch on next visit. Use when you need urgent broker
+            link changes (don't want to wait 7 days). */}
+        <div className="rounded-xl border-2 border-dashed border-amber-500/40 bg-amber-500/5 p-3">
+          <div className="mb-2 text-center">
+            <p className="text-sm font-bold text-amber-600">⚡ Force Update All Users</p>
+            <p className="text-[11px] text-muted-foreground">
+              Click to instantly refresh ALL users' cached broker links. Use when you urgently change broker links.
+            </p>
+          </div>
+          <Button
+            variant="outline"
+            className="h-10 w-full gap-2 border-amber-500/50 font-bold text-amber-600 hover:bg-amber-500/10"
+            onClick={async () => {
+              try {
+                // Fetch current ad settings
+                const cfgRes = await fetch("/api/admin/ads")
+                const cfg = await cfgRes.json()
+                // Send PUT with forceUpdateBrokerCache flag
+                const res = await fetch("/api/admin/ads", {
+                  method: "PUT",
+                  headers: { "content-type": "application/json" },
+                  body: JSON.stringify({ ...cfg, forceUpdateBrokerCache: true }),
+                })
+                if (res.ok) {
+                  toast.success("✅ All users' cache cleared! They'll see updated links on next visit.")
+                } else {
+                  toast.error("Failed to clear cache")
+                }
+              } catch {
+                toast.error("Failed to clear cache")
+              }
+            }}
+          >
+            <RefreshCw className="h-4 w-4" /> Clear All Users Cache
+          </Button>
+        </div>
       </CardContent>
     </Card>
   )

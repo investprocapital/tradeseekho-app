@@ -24,6 +24,8 @@ export interface AdSettings {
   reviewsEnabled?: boolean
   brokerAdsEnabled?: boolean
   signalsEnabled?: boolean
+  showBrokerAds?: boolean
+  brokerAdsUpdatedAt?: string | null
 }
 
 async function j<T>(res: Response | Promise<Response>): Promise<T> {

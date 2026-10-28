@@ -241,6 +241,13 @@ model AdSettings {
   // hidden, the signals sheet doesn't open, and the public API returns empty
   // array (no DB fetch — zero bandwidth).
   signalsEnabled       Boolean  @default(true)
+  // Broker Comparison section ON/OFF — global toggle to hide the entire
+  // "World's Top Broker" section on the home page.
+  showBrokerAds        Boolean  @default(true)
+  // Force-update timestamp — when admin clicks "Clear All Users Cache",
+  // this updates. Clients compare their cached timestamp with this value
+  // and refresh their 7-day localStorage cache if mismatched.
+  brokerAdsUpdatedAt   DateTime  @default(now())
   updatedAt            DateTime @updatedAt
 }
 

@@ -28,6 +28,8 @@ export async function GET() {
       reviewsEnabled: s.reviewsEnabled,
       brokerAdsEnabled: s.brokerAdsEnabled,
       signalsEnabled: s.signalsEnabled,
+      showBrokerAds: s.showBrokerAds,
+      brokerAdsUpdatedAt: s.brokerAdsUpdatedAt?.toISOString() ?? null,
     })
   } catch (e: any) {
     console.error("[admin/ads] DB unreachable:", e?.message)
@@ -48,6 +50,8 @@ export async function GET() {
       reviewsEnabled: true,
       brokerAdsEnabled: true,
       signalsEnabled: true,
+      showBrokerAds: true,
+      brokerAdsUpdatedAt: null,
     })
   }
 }
@@ -104,6 +108,10 @@ export async function PUT(req: Request) {
   if ("reviewsEnabled" in body) data.reviewsEnabled = !!body.reviewsEnabled
   if ("brokerAdsEnabled" in body) data.brokerAdsEnabled = !!body.brokerAdsEnabled
   if ("signalsEnabled" in body) data.signalsEnabled = !!body.signalsEnabled
+  if ("showBrokerAds" in body) data.showBrokerAds = !!body.showBrokerAds
+  // Force-update: admin clicked "Clear All Users Cache" → update timestamp
+  // so all clients refresh their 7-day localStorage cache.
+  if (body.forceUpdateBrokerCache) data.brokerAdsUpdatedAt = new Date()
 
   const updated = await db.adSettings.upsert({
     where: { id: "singleton" },
@@ -127,5 +135,7 @@ export async function PUT(req: Request) {
     reviewsEnabled: updated.reviewsEnabled,
     brokerAdsEnabled: updated.brokerAdsEnabled,
     signalsEnabled: updated.signalsEnabled,
+    showBrokerAds: updated.showBrokerAds,
+    brokerAdsUpdatedAt: updated.brokerAdsUpdatedAt?.toISOString() ?? null,
   })
 }
