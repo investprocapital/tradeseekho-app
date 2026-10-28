@@ -363,6 +363,42 @@ function DashboardTab() {
   const [au, setAu] = useState("")
   const saveStats = useSaveStats()
 
+  // ─── Fetch ad status data for the "Top Application Ads Status" box ───
+  const { data: adsSettings } = useAdminAds()
+  const { data: brokerAdsData } = useBrokerAds()
+  const { data: affiliateData } = useAffiliateAd()
+  const { data: bannersData } = useQuery<{ banners: any[] }>({
+    queryKey: ["admin-banners"],
+    queryFn: async () => {
+      const res = await fetch("/api/admin/banners")
+      if (!res.ok) return { banners: [] }
+      return res.json()
+    },
+  })
+
+  // Calculate ad statuses
+  const adSettingsActive = adsSettings ? [
+    adsSettings.bannerEnabled,
+    adsSettings.interstitialEnabled,
+    adsSettings.signalBottomAd,
+    adsSettings.brokerAdsEnabled,
+    adsSettings.signalsEnabled,
+    adsSettings.showBrokerAds,
+    adsSettings.priceAlertsEnabled,
+    adsSettings.reviewsEnabled,
+    adsSettings.commentsEnabled,
+    adsSettings.googleLoginEnabled,
+  ].filter(Boolean).length : 0
+  const adSettingsTotal = 10
+
+  const brokerAdsActive = brokerAdsData?.ads?.filter((a: any) => a.enabled).length ?? 0
+  const brokerAdsTotal = brokerAdsData?.ads?.length ?? 0
+
+  const affiliateActive = affiliateData?.ad?.enabled ? 1 : 0
+
+  const bannersActive = bannersData?.banners?.filter((b: any) => b.isActive).length ?? 0
+  const bannersTotal = bannersData?.banners?.length ?? 0
+
   // Sync local inputs when server stats arrive (adjust-during-render, lint-clean)
   const [seenStats, setSeenStats] = useState<typeof data>(null)
   if (data && data !== seenStats) {
@@ -376,6 +412,42 @@ function DashboardTab() {
     { icon: Users, label: t("admin.activeUsers"), value: data?.activeUsers ?? 0, color: "#00bfa5" },
     { icon: BookOpen, label: t("admin.totalLessons"), value: data?.totalLessons ?? 0, color: "var(--gold)" },
     { icon: BarChart3, label: t("admin.totalQuizzes"), value: data?.totalQuizzes ?? 0, color: "#7c4dff" },
+  ]
+
+  // Ad status items for the "Top Application Ads Status" box
+  const adStatusItems = [
+    {
+      tab: "ads",
+      label: "Ad Settings",
+      active: adSettingsActive,
+      total: adSettingsTotal,
+      icon: Megaphone,
+      color: "#f59e0b",
+    },
+    {
+      tab: "broker-ads",
+      label: "Broker Ads",
+      active: brokerAdsActive,
+      total: brokerAdsTotal,
+      icon: Megaphone,
+      color: "#14b8a6",
+    },
+    {
+      tab: "affiliate-ads",
+      label: "Affiliate Ads",
+      active: affiliateActive,
+      total: 1,
+      icon: ImageIcon,
+      color: "#d946ef",
+    },
+    {
+      tab: "banners",
+      label: "Promo Banners",
+      active: bannersActive,
+      total: bannersTotal,
+      icon: LayoutGrid,
+      color: "#8b5cf6",
+    },
   ]
 
   return (
@@ -395,6 +467,52 @@ function DashboardTab() {
           </Card>
         ))}
       </div>
+
+      {/* ─── Top Application Ads Status ───
+          One-glance overview of which ads are currently live.
+          Click any row to jump to that tab. */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-base">
+            <Megaphone className="h-5 w-5 text-brand" /> Top Application Ads Status
+          </CardTitle>
+          <CardDescription>Ek nazar mein dekhein kaunse ads live chal rahe hain.</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
+            {adStatusItems.map((item) => {
+              const isActive = item.active > 0
+              return (
+                <button
+                  key={item.label}
+                  onClick={() => setAdminTab(item.tab as any)}
+                  className="flex items-center justify-between rounded-xl border-2 p-3 text-start transition hover:border-brand/50 hover:bg-muted/30"
+                  style={{ borderColor: isActive ? `${item.color}40` : undefined }}
+                >
+                  <div className="flex items-center gap-2.5">
+                    <span className="inline-flex h-9 w-9 items-center justify-center rounded-lg text-white" style={{ background: item.color }}>
+                      <item.icon className="h-4 w-4" />
+                    </span>
+                    <div>
+                      <div className="text-xs font-bold text-foreground">{item.label}</div>
+                      <div className="flex items-center gap-1 text-[10px] text-muted-foreground">
+                        <span className={`inline-block h-2 w-2 rounded-full ${isActive ? "bg-emerald-500" : "bg-muted-foreground/30"}`} />
+                        {isActive ? `${item.active} Active` : "Inactive"}
+                      </div>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <span className={`text-sm font-extrabold ${isActive ? "text-emerald-600" : "text-muted-foreground"}`}>
+                      {item.active}
+                    </span>
+                    <span className="text-[10px] text-muted-foreground">/{item.total}</span>
+                  </div>
+                </button>
+              )
+            })}
+          </div>
+        </CardContent>
+      </Card>
 
       <div className="grid gap-4 lg:grid-cols-2">
         <Card>
