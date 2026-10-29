@@ -1,6 +1,6 @@
 "use client"
 
-import { useRef, useState } from "react"
+import { useRef, useState, useEffect } from "react"
 import { useSession } from "next-auth/react"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
@@ -25,10 +25,26 @@ export function EditProfileDialog() {
   const [err, setErr] = useState<string | null>(null)
   // Use the hook to get the current avatar from DB (not from session cookie)
   const { data: meData } = useCurrentUser()
-  const [avatarUrl, setAvatarUrl] = useState(meData?.user?.image ?? null)
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null)
   const [avatarBusy, setAvatarBusy] = useState(false)
   const fileRef = useRef<HTMLInputElement>(null)
   const mut = useUpdateProfile()
+
+  // ─── Sync avatar URL when meData loads ───
+  // This fixes the bug where avatar showed empty because state was initialized
+  // before meData was fetched. Now we update whenever meData changes.
+  useEffect(() => {
+    if (meData?.user?.image) {
+      setAvatarUrl(meData.user.image)
+    }
+  }, [meData?.user?.image])
+
+  // Also sync name when session loads
+  useEffect(() => {
+    if (user?.name) {
+      setName(user.name)
+    }
+  }, [user?.name])
 
   const onAvatar = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const f = e.target.files?.[0]
@@ -41,10 +57,9 @@ export function EditProfileDialog() {
       const j = await res.json()
       if (!res.ok) throw new Error(j.error || "upload_failed")
       setAvatarUrl(j.image)
-      toast.success("Profile photo updated — refreshing…")
-      // Full reload so the NextAuth JWT/session refreshes with the new image
-      // (updateSession alone doesn't reliably propagate the image to the header).
-      setTimeout(() => window.location.reload(), 800)
+      toast.success("Profile photo updated!")
+      // Don't reload — just update the state. The avatar will show immediately.
+      // The session will refresh on next page load or when user re-opens the app.
     } catch (e2: any) {
       const msg = e2?.message
       toast.error(msg === "too_large" ? "Image too large (max 500KB). Use a smaller image." : msg === "unauthorized" ? "Please sign in first." : "Could not upload photo")
@@ -62,19 +77,15 @@ export function EditProfileDialog() {
       const payload: { name?: string; currentPassword?: string; newPassword?: string } = {}
       if (name.trim() && name.trim() !== (user?.name ?? "")) payload.name = name.trim()
       if (next) { payload.newPassword = next; payload.currentPassword = cur || undefined }
+
       if (Object.keys(payload).length === 0) {
-        // If photo was already uploaded, just close — no error needed
-        if (avatarUrl && avatarUrl !== (user as { image?: string })?.image) {
-          setOpen(false)
-          toast.success("Profile photo updated")
-          return
-        }
-        setErr("No changes to save. Edit your name or password above, or upload a new photo.")
-        setBusy(false)
+        // No name/password changes — just close (photo was already saved if uploaded)
+        setOpen(false)
+        toast.success("Profile saved")
         return
       }
       await mut.mutateAsync(payload)
-      toast.success("Profile updated")
+      toast.success("Profile updated!")
       setOpen(false)
       setCur(""); setNext("")
       // reload so the header avatar/name refreshes from the session
@@ -94,7 +105,7 @@ export function EditProfileDialog() {
           <DialogTitle className="flex items-center gap-2 text-xl font-extrabold">
             <User className="h-5 w-5 text-brand" /> Edit Profile
           </DialogTitle>
-          <DialogDescription>Update your name and password.</DialogDescription>
+          <DialogDescription>Update your photo, name and password.</DialogDescription>
         </DialogHeader>
 
         {!user ? (
@@ -131,7 +142,7 @@ export function EditProfileDialog() {
               </button>
               <div className="min-w-0 flex-1">
                 <p className="text-sm font-bold">Profile photo</p>
-                <p className="text-[11px] text-muted-foreground">Tap the avatar to upload (JPG/PNG, max 2MB).</p>
+                <p className="text-[11px] text-muted-foreground">Tap the avatar to upload (JPG/PNG, max 500KB).</p>
                 <Button type="button" variant="outline" size="sm" className="mt-1.5 h-8 gap-1.5 text-xs" onClick={() => fileRef.current?.click()} disabled={avatarBusy}>
                   <Upload className="h-3.5 w-3.5" /> {avatarBusy ? "Uploading…" : "Upload"}
                 </Button>
