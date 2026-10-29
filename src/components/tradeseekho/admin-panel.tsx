@@ -391,7 +391,12 @@ function DashboardTab() {
   ].filter(Boolean).length : 0
   const adSettingsTotal = 10
 
-  const brokerAdsActive = brokerAdsData?.ads?.filter((a: any) => a.enabled).length ?? 0
+  // Broker Ads: if global toggle is OFF, show 0 active (even if individual
+  // slots are enabled). The global toggle (brokerAdsEnabled) overrides all.
+  const brokerAdsGlobalOn = adsSettings?.brokerAdsEnabled ?? true
+  const brokerAdsActive = brokerAdsGlobalOn
+    ? (brokerAdsData?.ads?.filter((a: any) => a.enabled).length ?? 0)
+    : 0
   const brokerAdsTotal = brokerAdsData?.ads?.length ?? 0
 
   const affiliateActive = affiliateData?.ad?.enabled ? 1 : 0
@@ -431,6 +436,7 @@ function DashboardTab() {
       total: brokerAdsTotal,
       icon: Megaphone,
       color: "#14b8a6",
+      subtitle: !brokerAdsGlobalOn ? "Globally Hidden" : undefined,
     },
     {
       tab: "affiliate-ads",
@@ -497,7 +503,7 @@ function DashboardTab() {
                       <div className="text-xs font-bold text-foreground">{item.label}</div>
                       <div className="flex items-center gap-1 text-[10px] text-muted-foreground">
                         <span className={`inline-block h-2 w-2 rounded-full ${isActive ? "bg-emerald-500" : "bg-muted-foreground/30"}`} />
-                        {isActive ? `${item.active} Active` : "Inactive"}
+                        {isActive ? `${item.active} Active` : (item.subtitle || "Inactive")}
                       </div>
                     </div>
                   </div>
