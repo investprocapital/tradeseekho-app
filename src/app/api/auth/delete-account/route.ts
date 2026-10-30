@@ -75,6 +75,19 @@ export async function POST() {
     //    Progress, Bookmark, Certificate, ProRequest (all onDelete: Cascade)
     await withDbRetry(() => db.user.delete({ where: { id: userId } }))
 
+    // 5) Log the deletion so admin can see who deleted their account
+    try {
+      await withDbRetry(() => db.deletedAccount.create({
+        data: {
+          email: user.email ?? "unknown",
+          name: user.name ?? null,
+        },
+      }))
+    } catch (e: any) {
+      console.error("[delete-account] Failed to log deletion:", e?.message)
+      // Don't block — the account is already deleted
+    }
+
     console.log(`[delete-account] Account deleted: ${user.email ?? user.id}`)
 
     return NextResponse.json({

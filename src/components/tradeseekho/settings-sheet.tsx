@@ -20,7 +20,7 @@ import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuLabel, DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu"
 import {
-  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription,
+  AlertDialog, AlertDialogCancel, AlertDialogContent, AlertDialogDescription,
   AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
 
@@ -283,12 +283,9 @@ export function SettingsSheet() {
                     </div>
                     <AlertDialogFooter>
                       <AlertDialogCancel disabled={deleting}>Cancel</AlertDialogCancel>
-                      <AlertDialogAction
+                      <Button
                         disabled={deleting}
-                        onClick={(e) => {
-                          e.preventDefault() // prevent auto-close; let handler decide
-                          handleDeleteAccount()
-                        }}
+                        onClick={() => handleDeleteAccount()}
                         className="gap-2 bg-red-600 font-bold text-white hover:bg-red-700 disabled:opacity-50"
                       >
                         {deleting ? (
@@ -296,7 +293,7 @@ export function SettingsSheet() {
                         ) : (
                           <><Trash2 className="h-4 w-4" /> Yes, Delete Forever</>
                         )}
-                      </AlertDialogAction>
+                      </Button>
                     </AlertDialogFooter>
                   </AlertDialogContent>
                 </AlertDialog>

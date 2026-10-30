@@ -466,3 +466,15 @@ model BrokerLinks {
   pepperstoneLink String @default("https://pepperstone.com/join")
   updatedAt   DateTime @updatedAt
 }
+
+// Deleted Account Log — when a user deletes their account, a record is created
+// here so the admin can see who deleted. Shown in the admin Dashboard with
+// a red icon + email. Admin can dismiss (delete) these records.
+model DeletedAccount {
+  id        String   @id @default(cuid())
+  email     String   // user's email at time of deletion
+  name      String?  // user's name at time of deletion
+  createdAt DateTime @default(now())
+
+  @@index([createdAt])
+}

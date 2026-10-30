@@ -7,7 +7,7 @@ import {
   Download, Users, BookOpen, BarChart3, Shield, Lock, LogOut, Eye,
   Plus, Pencil, Trash2, Save, Send, Megaphone, Check, ChevronRight, ArrowLeft,
   Crown, X, Upload, CreditCard, Search, TrendingUp, MessageSquare, Copy, ExternalLink,
-  Bell, Image as ImageIcon, Link2, LayoutGrid, RefreshCw,
+  Bell, Image as ImageIcon, Link2, LayoutGrid, RefreshCw, UserMinus,
 } from "lucide-react"
 import {
   Card, CardContent, CardHeader, CardTitle, CardDescription,
@@ -519,6 +519,11 @@ function DashboardTab() {
           </div>
         </CardContent>
       </Card>
+
+      {/* ─── Deleted Accounts Log ───
+          Shows when a user deletes their account. Red icon + email.
+          Admin can dismiss individual or all. */}
+      <DeletedAccountsBox />
 
       <div className="grid gap-4 lg:grid-cols-2">
         <Card>
@@ -3391,5 +3396,87 @@ function PromotionBannersTab() {
         </CardContent>
       </Card>
     </div>
+  )
+}
+
+/* ---------------- Deleted Accounts Log ---------------- */
+function DeletedAccountsBox() {
+  const qc = useQueryClient()
+  const { data, isLoading } = useQuery({
+    queryKey: ["admin-deleted-accounts"],
+    queryFn: async () => {
+      const res = await fetch("/api/admin/deleted-accounts")
+      if (!res.ok) return { accounts: [] }
+      return res.json()
+    },
+  })
+
+  const accounts: Array<{ id: string; email: string; name: string | null; createdAt: string }> = data?.accounts ?? []
+
+  const deleteOne = useMutation({
+    mutationFn: async (id: string) => {
+      await fetch(`/api/admin/deleted-accounts?id=${id}`, { method: "DELETE" })
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["admin-deleted-accounts"] }),
+  })
+
+  const deleteAll = useMutation({
+    mutationFn: async () => {
+      await fetch("/api/admin/deleted-accounts?all=true", { method: "DELETE" })
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["admin-deleted-accounts"] })
+      toast.success("All dismissed")
+    },
+  })
+
+  if (isLoading || accounts.length === 0) return null
+
+  return (
+    <Card className="border-red-500/30">
+      <CardHeader>
+        <div className="flex items-center justify-between">
+          <div>
+            <CardTitle className="flex items-center gap-2 text-base text-red-600">
+              <UserMinus className="h-5 w-5" /> Deleted Accounts ({accounts.length})
+            </CardTitle>
+            <CardDescription>Users who permanently deleted their account.</CardDescription>
+          </div>
+          <Button
+            size="sm"
+            variant="ghost"
+            className="gap-1 text-xs text-muted-foreground"
+            onClick={() => deleteAll.mutate()}
+          >
+            Dismiss All
+          </Button>
+        </div>
+      </CardHeader>
+      <CardContent>
+        <div className="max-h-48 space-y-1.5 overflow-y-auto">
+          {accounts.map((a) => (
+            <div key={a.id} className="flex items-center justify-between rounded-lg border border-red-500/20 bg-red-500/5 p-2.5">
+              <div className="flex items-center gap-2.5">
+                <span className="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-red-500/15 text-red-600">
+                  <UserMinus className="h-4 w-4" />
+                </span>
+                <div>
+                  <div className="text-xs font-bold text-foreground">{a.email}</div>
+                  <div className="text-[10px] text-muted-foreground">
+                    {a.name ? `${a.name} · ` : ""}{new Date(a.createdAt).toLocaleDateString("en-GB", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" })}
+                  </div>
+                </div>
+              </div>
+              <button
+                onClick={() => deleteOne.mutate(a.id)}
+                className="text-[10px] font-bold text-muted-foreground hover:text-foreground"
+              >
+                Dismiss
+              </button>
+            </div>
+          ))}
+        </div>
+      </CardContent>
+    </Card>
   )
 }
