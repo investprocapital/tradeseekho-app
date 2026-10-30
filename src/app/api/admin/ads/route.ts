@@ -29,6 +29,7 @@ export async function GET() {
       brokerAdsEnabled: s.brokerAdsEnabled,
       signalsEnabled: s.signalsEnabled,
       showBrokerAds: s.showBrokerAds,
+      shiftBannerToBottom: s.shiftBannerToBottom,
       brokerAdsUpdatedAt: s.brokerAdsUpdatedAt?.toISOString() ?? null,
     })
   } catch (e: any) {
@@ -51,6 +52,7 @@ export async function GET() {
       brokerAdsEnabled: true,
       signalsEnabled: true,
       showBrokerAds: true,
+      shiftBannerToBottom: false,
       brokerAdsUpdatedAt: null,
     })
   }
@@ -109,6 +111,7 @@ export async function PUT(req: Request) {
   if ("brokerAdsEnabled" in body) data.brokerAdsEnabled = !!body.brokerAdsEnabled
   if ("signalsEnabled" in body) data.signalsEnabled = !!body.signalsEnabled
   if ("showBrokerAds" in body) data.showBrokerAds = !!body.showBrokerAds
+  if ("shiftBannerToBottom" in body) data.shiftBannerToBottom = !!body.shiftBannerToBottom
   // Force-update: admin clicked "Clear All Users Cache" → update timestamp
   // so all clients refresh their 7-day localStorage cache.
   if (body.forceUpdateBrokerCache) data.brokerAdsUpdatedAt = new Date()
@@ -136,6 +139,7 @@ export async function PUT(req: Request) {
     brokerAdsEnabled: updated.brokerAdsEnabled,
     signalsEnabled: updated.signalsEnabled,
     showBrokerAds: updated.showBrokerAds,
+    shiftBannerToBottom: updated.shiftBannerToBottom,
     brokerAdsUpdatedAt: updated.brokerAdsUpdatedAt?.toISOString() ?? null,
   })
 }

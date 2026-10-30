@@ -25,6 +25,7 @@ export interface AdSettings {
   brokerAdsEnabled?: boolean
   signalsEnabled?: boolean
   showBrokerAds?: boolean
+  shiftBannerToBottom?: boolean
   brokerAdsUpdatedAt?: string | null
 }
 

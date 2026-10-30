@@ -7,7 +7,7 @@ import { motion } from "framer-motion"
 import { Sprout, LineChart, Trophy, CheckCircle2, Award, BookOpen, Crown, ArrowRight, Lock, BarChart3, ChevronRight, Bell } from "lucide-react"
 import { useStore } from "@/lib/store"
 import type { Lang } from "@/lib/i18n"
-import { useLessonsBundle, useProMe, useCurrentUser } from "@/components/tradeseekho/use-data"
+import { useLessonsBundle, useProMe, useCurrentUser, useAdSettings } from "@/components/tradeseekho/use-data"
 import { useAlertChecker } from "@/components/tradeseekho/use-alert-checker"
 import { Header } from "@/components/tradeseekho/header"
 import { Footer } from "@/components/tradeseekho/footer"
@@ -54,6 +54,8 @@ export default function Home() {
   const setProPlan = useStore((s) => s.setProPlan)
   const setSettingsOpen = useStore((s) => s.setSettingsOpen)
   const { data: proMe } = useProMe()
+  const { data: adSettings } = useAdSettings()
+  const shiftBannerToBottom = adSettings?.shiftBannerToBottom ?? false
   // ─── Plan-specific Pro checks (use 3 explicit booleans, NOT proStatus) ───
   // Each feature only unlocks if the user has the corresponding plan boolean.
   // This prevents the bug where buying ONE plan unlocks ALL features.
@@ -179,8 +181,9 @@ export default function Home() {
             <MarketGaugeCard />
 
             {/* Promotion Slider — rotating banners between Gold Price and Lessons.
-                Auto-hides when no active banners. Admin-controlled from "Promotion Banners" tab. */}
-            <PromotionSlider />
+                When shiftBannerToBottom is ON, slider moves below Lessons section.
+                Auto-hides when no active banners. Admin-controlled from Ad Settings tab. */}
+            {!shiftBannerToBottom && <PromotionSlider />}
 
             {/* Broker Comparison — premium section with 6 broker cards (XM highlighted).
                 Black + gold theme, Swiper slider, responsive. */}
@@ -218,6 +221,10 @@ export default function Home() {
                 </div>
               )}
             </section>
+
+            {/* Promotion Slider at bottom — shown when shiftBannerToBottom is ON.
+                Moves the XM/banner slider from top to below the Lessons section. */}
+            {shiftBannerToBottom && <PromotionSlider />}
           </>
         ) : bottomTab === "lessons" ? (
           <>

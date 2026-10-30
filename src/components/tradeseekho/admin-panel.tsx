@@ -1369,6 +1369,20 @@ function AdsTab() {
               onCheckedChange={(v) => setForm((f) => f && ({ ...f, showBrokerAds: v }))}
             />
           </div>
+
+          {/* Promotion Slider Shift — move the XM/banner slider from Top to Bottom */}
+          <div className="flex items-center justify-between rounded-lg border border-violet-500/30 bg-violet-500/5 p-3">
+            <div>
+              <div className="text-sm font-bold">Shift Banner Slider to Bottom</div>
+              <div className="text-[11px] text-muted-foreground">
+                ON = Banner slider moves below Lessons section. OFF = Banner stays at top (Market Gauge ke neeche).
+              </div>
+            </div>
+            <Switch
+              checked={form.shiftBannerToBottom ?? false}
+              onCheckedChange={(v) => setForm((f) => f && ({ ...f, shiftBannerToBottom: v }))}
+            />
+          </div>
         </CardContent>
       </Card>
 
@@ -1399,6 +1413,7 @@ type AdminAdsForm = {
   brokerAdsEnabled?: boolean
   signalsEnabled?: boolean
   showBrokerAds?: boolean
+  shiftBannerToBottom?: boolean
 }
 
 /* ---------------- Pro Requests ---------------- */

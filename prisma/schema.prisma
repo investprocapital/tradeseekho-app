@@ -7,7 +7,7 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
+  provider = "postgresql"
   url       = env("DATABASE_URL")
   directUrl = env("DIRECT_URL")
 }
@@ -244,6 +244,10 @@ model AdSettings {
   // Broker Comparison section ON/OFF — global toggle to hide the entire
   // "World's Top Broker" section on the home page.
   showBrokerAds        Boolean  @default(true)
+  // Promotion Slider position: when true, the XM/banner slider shifts from
+  // top (Market Gauge ke neeche) to bottom (Lessons ke baad). Admin controls
+  // this from the Promo Banners tab.
+  shiftBannerToBottom  Boolean  @default(false)
   // Force-update timestamp — when admin clicks "Clear All Users Cache",
   // this updates. Clients compare their cached timestamp with this value
   // and refresh their 7-day localStorage cache if mismatched.
