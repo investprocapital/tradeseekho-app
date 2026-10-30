@@ -3122,6 +3122,22 @@ function PromotionBannersTab() {
   const [editing, setEditing] = useState<string | null>(null)
   const [showForm, setShowForm] = useState(false)
 
+  // ─── Shift Banner to Bottom toggle ───
+  // Fetch ad settings to get + update shiftBannerToBottom
+  const { data: adsData } = useAdminAds()
+  const saveAds = useSaveAds()
+  const shiftBannerToBottom = adsData?.shiftBannerToBottom ?? false
+
+  const toggleShift = async (v: boolean) => {
+    if (!adsData) return
+    try {
+      await saveAds.mutateAsync({ ...adsData, shiftBannerToBottom: v })
+      toast.success(v ? "Banner shifted to Bottom (below Lessons)" : "Banner moved back to Top")
+    } catch {
+      toast.error("Failed to toggle. Try saving from Ad Settings tab.")
+    }
+  }
+
   // Form state
   const [form, setForm] = useState({ imageUrl: "", title: "", linkUrl: "", isActive: true, sortOrder: 0 })
   const [uploading, setUploading] = useState(false)
@@ -3247,6 +3263,33 @@ function PromotionBannersTab() {
           </div>
         </CardHeader>
         <CardContent className="space-y-4">
+          {/* ─── Banner Position Toggle ───
+              Show/hide this toggle right here in Promo Banners tab so admin
+              doesn't have to go to Ad Settings to find it. */}
+          <div className="flex items-center justify-between rounded-xl border-2 border-violet-500/30 bg-violet-500/5 p-3">
+            <div>
+              <div className="text-sm font-bold">📍 Banner Slider Position</div>
+              <div className="text-[11px] text-muted-foreground">
+                {shiftBannerToBottom
+                  ? "Banner is at BOTTOM (below Lessons section)"
+                  : "Banner is at TOP (Market Gauge ke neeche)"}
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className={`text-[10px] font-bold ${!shiftBannerToBottom ? "text-emerald-600" : "text-muted-foreground"}`}>
+                TOP
+              </span>
+              <Switch
+                checked={shiftBannerToBottom}
+                onCheckedChange={toggleShift}
+                disabled={saveAds.isPending}
+              />
+              <span className={`text-[10px] font-bold ${shiftBannerToBottom ? "text-violet-600" : "text-muted-foreground"}`}>
+                BOTTOM
+              </span>
+            </div>
+          </div>
+
           {/* Form (Add/Edit) */}
           {showForm && (
             <div className="rounded-xl border-2 border-brand/30 bg-brand-muted/10 p-4 space-y-3">
