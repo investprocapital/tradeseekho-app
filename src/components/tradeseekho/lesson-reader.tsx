@@ -2,7 +2,6 @@
 
 import { useMemo, useRef, useEffect, useState } from "react"
 import { createPortal } from "react-dom"
-import Image from "next/image"
 import ReactMarkdown from "react-markdown"
 import { Sheet, SheetContent, SheetTitle, SheetDescription } from "@/components/ui/sheet"
 import { Button } from "@/components/ui/button"
@@ -173,20 +172,17 @@ export function LessonReader() {
               >
                 {lesson.imageUrl && (
                   <div
-                    className="relative mb-5 overflow-hidden rounded-xl cursor-zoom-in w-full h-44 sm:h-52"
+                    className="relative mb-5 overflow-hidden rounded-xl cursor-zoom-in w-full"
                     onClick={() => setZoomImage(lesson.imageUrl!)}
                     onDoubleClick={() => setZoomImage(lesson.imageUrl!)}
                   >
-                    <Image
+                    <img
                       src={lesson.imageUrl}
                       alt=""
-                      fill
-                      sizes="(max-width: 768px) 100vw, 800px"
-                      className="h-full w-full object-cover no-select"
+                      className="h-auto w-full rounded-xl object-cover no-select"
+                      style={{ maxHeight: "320px" }}
                       draggable={false}
-                      quality={75}
                       loading="lazy"
-                      priority={false}
                     />
                     <div className="absolute bottom-2 right-2 max-w-[80%] rounded-full bg-background/80 px-2 py-1 text-[10px] font-bold text-muted-foreground text-center">🔍 Tap or double-click to zoom</div>
                   </div>
