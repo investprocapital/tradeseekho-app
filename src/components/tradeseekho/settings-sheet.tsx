@@ -78,20 +78,19 @@ export function SettingsSheet() {
         <div className="flex-1 overflow-y-auto overscroll-contain" style={{ WebkitOverflowScrolling: "touch", minHeight: 0, touchAction: "pan-y" }}>
           <div className="space-y-1 p-4">
 
-            {/* ACCOUNT */}
+            {/* ACCOUNT — keep Settings open underneath so closing a sub-page
+                returns to Settings, not a blank screen. */}
             <Section title="Account">
               <Row icon={UserIcon} label="Edit profile" hint="Change name & password"
-                onClick={() => { setOpen(false); setEditProfileOpen(true) }} />
-              {/* Set Password — for Google users to set a password so browser
-                  can save it for auto-fill. Opens login dialog in set-password mode. */}
+                onClick={() => { setEditProfileOpen(true) }} />
               <Row icon={Lock} label="Set Password" hint="Save login to device (Google users)"
-                onClick={() => { setOpen(false); setLoginView("set-password"); setLoginOpen(true) }} />
+                onClick={() => { setLoginView("set-password"); setLoginOpen(true) }} />
               <Row icon={Bookmark} label="My Bookmarks" hint={bookmarksCount > 0 ? `${bookmarksCount} saved` : "No bookmarks yet"}
-                onClick={() => { setOpen(false); setBookmarksOpen(true) }} />
+                onClick={() => { setBookmarksOpen(true) }} />
               <Row icon={Trophy} label="Leaderboard" hint="View rankings"
-                onClick={() => { setOpen(false); setLeaderboardOpen(true) }} />
+                onClick={() => { setLeaderboardOpen(true) }} />
               <Row icon={Award} label="Certificates" hint={certs.length > 0 ? `${certs.length} earned` : "No certificates yet"}
-                onClick={() => { setOpen(false); setCertOpen(true) }} />
+                onClick={() => { setCertOpen(true) }} />
             </Section>
 
             <Separator className="my-3" />
@@ -158,7 +157,7 @@ export function SettingsSheet() {
             {priceAlertsEnabled && (
               <Section title="Trading Tools">
                 <Row icon={Bell} label="Price Alerts" hint="Set price notifications"
-                  onClick={() => { setOpen(false); setPriceAlertsOpen(true) }} />
+                  onClick={() => { setPriceAlertsOpen(true) }} />
               </Section>
             )}
 
