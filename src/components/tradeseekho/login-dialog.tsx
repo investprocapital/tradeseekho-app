@@ -173,7 +173,7 @@ export function LoginDialog() {
         onPointerDownOutside={(e) => e.preventDefault()}
         onEscapeKeyDown={(e) => e.preventDefault()}
         onInteractOutside={(e) => e.preventDefault()}
-        className="!fixed !inset-0 !z-[100] !top-0 !left-0 !flex !max-h-none !w-full !max-w-none !translate-x-0 !translate-y-0 !flex-col !overflow-hidden !border-0 !rounded-none !p-0 !bg-[#070F2B]"
+        className="!fixed !inset-0 !z-[120] !top-0 !left-0 !flex !max-h-none !w-full !max-w-none !translate-x-0 !translate-y-0 !flex-col !overflow-hidden !border-0 !rounded-none !p-0 !bg-[#070F2B]"
         style={{ borderRadius: 0, position: "fixed", inset: 0, width: "100vw", height: "100vh", maxWidth: "none", transform: "none", top: 0, left: 0 }}
       >
         <DialogTitle className="sr-only">Login</DialogTitle>
