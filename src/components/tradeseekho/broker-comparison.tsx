@@ -20,11 +20,11 @@ interface BrokerLinks {
 }
 
 // ─── 7-day localStorage cache for broker links ───
-// Fetches broker links from API, caches in localStorage for 7 days.
-// After 7 days OR if admin force-updates (brokerAdsUpdatedAt changes),
+// Fetches broker links from API, caches in localStorage for 30 days.
+// After 30 days OR if admin force-updates (brokerAdsUpdatedAt changes),
 // re-fetches from API. This reduces data usage to near-zero.
 const CACHE_KEY = "broker-links-cache"
-const CACHE_TTL = 7 * 24 * 60 * 60 * 1000 // 7 days in ms
+const CACHE_TTL = 30 * 24 * 60 * 60 * 1000 // 30 days in ms
 
 interface CachedData {
   links: BrokerLinks
