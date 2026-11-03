@@ -7,7 +7,7 @@ import {
   Download, Users, BookOpen, BarChart3, Shield, Lock, LogOut, Eye,
   Plus, Pencil, Trash2, Save, Send, Megaphone, Check, ChevronRight, ArrowLeft,
   Crown, X, Upload, CreditCard, Search, TrendingUp, MessageSquare, Copy, ExternalLink,
-  Bell, Image as ImageIcon, Link2, LayoutGrid, RefreshCw, UserMinus,
+  Bell, Image as ImageIcon, Link2, LayoutGrid, RefreshCw, UserMinus, Settings, AlertCircle,
 } from "lucide-react"
 import {
   Card, CardContent, CardHeader, CardTitle, CardDescription,
@@ -146,6 +146,7 @@ export function AdminPanel() {
             { id: "pages", label: "Pages", icon: BookOpen, color: "bg-rose-500" },
             { id: "comments", label: "Comments", icon: MessageSquare, color: "bg-sky-500" },
             { id: "notifications", label: "Notifications", icon: Bell, color: "bg-red-500" },
+            { id: "admin-settings", label: "Admin Settings", icon: Settings, color: "bg-slate-500" },
           ].map((tab) => {
             const Icon = tab.icon
             const isActive = adminTab === tab.id
@@ -194,6 +195,7 @@ export function AdminPanel() {
         <TabsContent value="pro" className="mt-5"><ProRequestsTab /></TabsContent>
         <TabsContent value="comments" className="mt-5"><ManageCommentsTab /></TabsContent>
         <TabsContent value="notifications" className="mt-5"><NotificationsTab /></TabsContent>
+        <TabsContent value="admin-settings" className="mt-5"><AdminSettingsTab /></TabsContent>
       </Tabs>
     </div>
   )
@@ -3478,5 +3480,125 @@ function DeletedAccountsBox() {
         </div>
       </CardContent>
     </Card>
+  )
+}
+
+/* ---------------- Admin Settings (Change Password) ---------------- */
+function AdminSettingsTab() {
+  const [cur, setCur] = useState("")
+  const [next, setNext] = useState("")
+  const [confirm, setConfirm] = useState("")
+  const [busy, setBusy] = useState(false)
+  const [err, setErr] = useState<string | null>(null)
+  const [showPw, setShowPw] = useState(false)
+
+  const onSave = async () => {
+    setErr(null)
+    if (!cur) { setErr("Enter your current password"); return }
+    if (next.length < 6) { setErr("New password must be at least 6 characters"); return }
+    if (next !== confirm) { setErr("New passwords don't match"); return }
+    setBusy(true)
+    try {
+      const res = await fetch("/api/admin/change-password", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ currentPassword: cur, newPassword: next }),
+      })
+      const j = await res.json().catch(() => ({}))
+      if (!res.ok) { setErr(j?.error || j?.message || "Failed"); setBusy(false); return }
+      toast.success(j?.message || "Password changed successfully!")
+      setCur(""); setNext(""); setConfirm("")
+    } catch (e: any) {
+      setErr(e?.message || "Failed to change password")
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  return (
+    <div className="space-y-4">
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Lock className="h-5 w-5 text-brand" /> Change Admin Password
+          </CardTitle>
+          <CardDescription>
+            Change your admin login password. After changing, use your email + new password to login.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {/* Current password */}
+          <div className="space-y-1.5">
+            <label className="text-[11px] font-bold uppercase tracking-wide text-muted-foreground">Current Password</label>
+            <div className="relative">
+              <Lock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                type={showPw ? "text" : "password"}
+                value={cur}
+                onChange={(e) => setCur(e.target.value)}
+                className="h-10 pl-9"
+                placeholder="Your current password"
+              />
+              <button type="button" onClick={() => setShowPw(!showPw)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
+                {showPw ? <Eye className="h-4 w-4" /> : <Lock className="h-4 w-4" />}
+              </button>
+            </div>
+          </div>
+
+          {/* New password */}
+          <div className="space-y-1.5">
+            <label className="text-[11px] font-bold uppercase tracking-wide text-muted-foreground">New Password</label>
+            <div className="relative">
+              <Lock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                type={showPw ? "text" : "password"}
+                value={next}
+                onChange={(e) => setNext(e.target.value)}
+                className="h-10 pl-9"
+                placeholder="Min 6 characters"
+                minLength={6}
+              />
+            </div>
+          </div>
+
+          {/* Confirm new password */}
+          <div className="space-y-1.5">
+            <label className="text-[11px] font-bold uppercase tracking-wide text-muted-foreground">Confirm New Password</label>
+            <div className="relative">
+              <Lock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                type={showPw ? "text" : "password"}
+                value={confirm}
+                onChange={(e) => setConfirm(e.target.value)}
+                className="h-10 pl-9"
+                placeholder="Re-enter new password"
+                minLength={6}
+              />
+            </div>
+          </div>
+
+          {err && (
+            <p className="flex items-center gap-1.5 text-xs font-semibold text-destructive">
+              <AlertCircle className="h-3.5 w-3.5" /> {err}
+            </p>
+          )}
+
+          <Button
+            className="h-10 w-full gap-2 bg-brand font-bold text-brand-foreground hover:bg-brand/90"
+            onClick={onSave}
+            disabled={busy}
+          >
+            {busy ? <Save className="h-4 w-4 animate-pulse" /> : <Lock className="h-4 w-4" />}
+            Change Password
+          </Button>
+
+          <div className="rounded-xl border border-amber-500/30 bg-amber-500/5 p-3">
+            <p className="text-[11px] text-amber-600">
+              <b>Note:</b> After changing your password, you can login with your email + new password from the Admin Login screen (Email mode).
+            </p>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
   )
 }
