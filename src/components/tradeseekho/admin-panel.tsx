@@ -2429,13 +2429,14 @@ function UsersTab() {
                 <TableHead className="whitespace-nowrap">Payment Method</TableHead>
                 <TableHead className="whitespace-nowrap">Joined</TableHead>
                 <TableHead className="whitespace-nowrap">Quiz</TableHead>
+                <TableHead className="whitespace-nowrap">Action</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {isLoading ? (
-                <TableRow><TableCell colSpan={7} className="py-6 text-center text-muted-foreground">Loading...</TableCell></TableRow>
+                <TableRow><TableCell colSpan={8} className="py-6 text-center text-muted-foreground">Loading...</TableCell></TableRow>
               ) : users.length === 0 ? (
-                <TableRow><TableCell colSpan={7} className="py-6 text-center text-muted-foreground">No users found.</TableCell></TableRow>
+                <TableRow><TableCell colSpan={8} className="py-6 text-center text-muted-foreground">No users found.</TableCell></TableRow>
               ) : users.map((u) => (
                 <TableRow key={u.id} className="hover:bg-muted/30">
                   <TableCell className="font-semibold text-xs whitespace-nowrap">{u.email}</TableCell>
@@ -2480,6 +2481,28 @@ function UsersTab() {
                     {new Date(u.joinedAt).toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" })}
                   </TableCell>
                   <TableCell className="text-xs font-bold whitespace-nowrap">{u.passedQuizzes}/{u.totalLessons}</TableCell>
+                  <TableCell className="whitespace-nowrap">
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="gap-1 h-7 px-2 text-[10px] text-destructive hover:text-destructive hover:bg-destructive/10"
+                      onClick={async () => {
+                        if (!confirm(`Permanently delete account: ${u.email}?\n\nAll data (progress, bookmarks, certificates, alerts, comments) will be removed. This CANNOT be undone.`)) return
+                        try {
+                          const res = await fetch(`/api/admin/users?id=${u.id}`, { method: "DELETE" })
+                          const j = await res.json().catch(() => ({}))
+                          if (!res.ok) { toast.error(j?.error || "Failed to delete"); return }
+                          toast.success(`Account deleted: ${u.email}`)
+                          // Refresh the list
+                          window.location.reload()
+                        } catch {
+                          toast.error("Failed to delete account")
+                        }
+                      }}
+                    >
+                      <Trash2 className="h-3 w-3" /> Remove
+                    </Button>
+                  </TableCell>
                 </TableRow>
               ))}
             </TableBody>
