@@ -525,6 +525,10 @@ function DashboardTab() {
           </CardContent>
         </Card>
       </div>
+
+      {/* ─── Storage Usage Meter ─── */}
+      <StorageUsageMeter />
+
     </div>
   )
 }
@@ -3567,5 +3571,130 @@ function AdminSettingsTab() {
         </CardContent>
       </Card>
     </div>
+  )
+}
+
+/* ---------------- Storage Usage Meter ---------------- */
+function StorageUsageMeter() {
+  const { data, isLoading } = useQuery({
+    queryKey: ["admin-usage"],
+    queryFn: async () => {
+      const res = await fetch("/api/admin/usage")
+      if (!res.ok) throw new Error("failed")
+      return res.json()
+    },
+    staleTime: 60 * 60 * 1000, // 1 hour cache
+    refetchOnWindowFocus: false,
+  })
+
+  if (isLoading) {
+    return (
+      <Card>
+        <CardContent className="p-5">
+          <p className="text-sm text-muted-foreground">Loading storage usage...</p>
+        </CardContent>
+      </Card>
+    )
+  }
+
+  if (!data) return null
+
+  const formatBytes = (bytes: number) => {
+    if (bytes === 0) return "0 B"
+    const k = 1024
+    const sizes = ["B", "KB", "MB", "GB"]
+    const i = Math.floor(Math.log(bytes) / Math.log(k))
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + " " + sizes[i]
+  }
+
+  const cards = [
+    {
+      title: "Vercel Blob Storage",
+      icon: ImageIcon,
+      used: data.vercelBlob?.used ?? 0,
+      limit: data.vercelBlob?.limit ?? 1073741824,
+      pct: data.vercelBlob?.percentage ?? 0,
+      error: data.vercelBlob?.error,
+      color: "var(--brand)",
+    },
+    {
+      title: "Supabase Database",
+      icon: BarChart3,
+      used: data.supabaseDB?.used ?? 0,
+      limit: data.supabaseDB?.limit ?? 524288000,
+      pct: data.supabaseDB?.percentage ?? 0,
+      error: data.supabaseDB?.error,
+      color: "#10b981",
+    },
+  ]
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2 text-base">
+          <Shield className="h-5 w-5 text-brand" /> Storage Usage
+        </CardTitle>
+        <CardDescription>Vercel Blob + Supabase DB — refreshes every 1 hour</CardDescription>
+      </CardHeader>
+      <CardContent>
+        <div className="grid gap-4 sm:grid-cols-2">
+          {cards.map((card) => {
+            const isWarning = card.pct >= 80
+            const isDanger = card.pct >= 95
+            const barColor = isDanger ? "#ef4444" : isWarning ? "#f59e0b" : card.color
+            return (
+              <div
+                key={card.title}
+                className={`rounded-xl border-2 p-4 ${isWarning ? "border-red-500/40 bg-red-500/5" : "border-border bg-card"}`}
+              >
+                <div className="mb-2 flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <span className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-white" style={{ background: barColor }}>
+                      <card.icon className="h-4 w-4" />
+                    </span>
+                    <span className="text-sm font-bold">{card.title}</span>
+                  </div>
+                  <span className={`text-sm font-extrabold ${isWarning ? "text-red-600" : "text-foreground"}`}>
+                    {card.pct}%
+                  </span>
+                </div>
+
+                {/* Progress bar */}
+                <div className="mb-2 h-3 w-full overflow-hidden rounded-full bg-muted">
+                  <div
+                    className="h-full rounded-full transition-all duration-500"
+                    style={{ width: `${Math.min(card.pct, 100)}%`, backgroundColor: barColor }}
+                  />
+                </div>
+
+                {/* Used / Limit */}
+                <div className="flex items-center justify-between text-[11px] text-muted-foreground">
+                  <span><b className="text-foreground">{formatBytes(card.used)}</b> used</span>
+                  <span>{formatBytes(card.limit)} limit</span>
+                </div>
+
+                {/* Warning */}
+                {isWarning && (
+                  <p className="mt-2 flex items-center gap-1 text-[11px] font-bold text-red-600">
+                    <AlertCircle className="h-3.5 w-3.5" />
+                    {isDanger ? "Storage 95% Full — Critical!" : "Storage 80% Full"}
+                  </p>
+                )}
+                {card.error && (
+                  <p className="mt-1 text-[10px] text-muted-foreground/60">⚠ {card.error}</p>
+                )}
+              </div>
+            )
+          })}
+        </div>
+
+        {/* Last updated */}
+        {data.cachedAt && (
+          <p className="mt-3 text-center text-[10px] text-muted-foreground">
+            Last updated: {new Date(data.cachedAt).toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" })}
+          </p>
+        )}
+      </CardContent>
+    </Card>
   )
 }
