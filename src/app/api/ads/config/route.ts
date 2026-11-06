@@ -53,6 +53,9 @@ export async function GET(req: Request) {
     signalsEnabled: s.signalsEnabled,
     showBrokerAds: s.showBrokerAds,
     shiftBannerToBottom: s.shiftBannerToBottom,
+    brokerSlideTime: s.brokerSlideTime,
+    admobRefreshTime: s.admobRefreshTime,
+    affiliateShowTime: s.affiliateShowTime,
     brokerAdsUpdatedAt: s.brokerAdsUpdatedAt?.toISOString() ?? null,
   })
   res.headers.set("Cache-Control", "public, s-maxage=300, stale-while-revalidate=600")

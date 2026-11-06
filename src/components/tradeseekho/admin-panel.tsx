@@ -1338,6 +1338,68 @@ function AdsTab() {
               onCheckedChange={(v) => setForm((f) => f && ({ ...f, shiftBannerToBottom: v }))}
             />
           </div>
+
+          {/* ─── Ad Timing Controls ─── */}
+          <div className="rounded-xl border-2 border-cyan-500/30 bg-cyan-500/5 p-3 space-y-3">
+            <div className="text-sm font-bold text-cyan-600">⏱ Ad Timing Controls</div>
+
+            {/* Broker Slide Time */}
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <div className="text-xs font-bold">Broker Slide Ad — Auto-rotate Time</div>
+                <div className="text-[10px] text-muted-foreground">Kitne seconds baad next broker card show ho</div>
+              </div>
+              <div className="flex items-center gap-2">
+                <Input
+                  type="number"
+                  value={form.brokerSlideTime ?? 10}
+                  onChange={(e) => setForm((f) => f && ({ ...f, brokerSlideTime: Number(e.target.value) }))}
+                  className="h-8 w-20 text-center text-sm"
+                  min={3}
+                  max={120}
+                />
+                <span className="text-xs font-bold text-muted-foreground">sec</span>
+              </div>
+            </div>
+
+            {/* AdMob Refresh Time */}
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <div className="text-xs font-bold">AdMob Banner — Refresh Time</div>
+                <div className="text-[10px] text-muted-foreground">Kitne seconds baad naya ad load ho</div>
+              </div>
+              <div className="flex items-center gap-2">
+                <Input
+                  type="number"
+                  value={form.admobRefreshTime ?? 60}
+                  onChange={(e) => setForm((f) => f && ({ ...f, admobRefreshTime: Number(e.target.value) }))}
+                  className="h-8 w-20 text-center text-sm"
+                  min={30}
+                  max={300}
+                />
+                <span className="text-xs font-bold text-muted-foreground">sec</span>
+              </div>
+            </div>
+
+            {/* Affiliate Ad Show Time */}
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <div className="text-xs font-bold">Affiliate Ad — Show Duration</div>
+                <div className="text-[10px] text-muted-foreground">0 = hamesha visible, &gt;0 = itne seconds baad hide</div>
+              </div>
+              <div className="flex items-center gap-2">
+                <Input
+                  type="number"
+                  value={form.affiliateShowTime ?? 0}
+                  onChange={(e) => setForm((f) => f && ({ ...f, affiliateShowTime: Number(e.target.value) }))}
+                  className="h-8 w-20 text-center text-sm"
+                  min={0}
+                  max={300}
+                />
+                <span className="text-xs font-bold text-muted-foreground">sec</span>
+              </div>
+            </div>
+          </div>
         </CardContent>
       </Card>
 
@@ -1369,6 +1431,9 @@ type AdminAdsForm = {
   signalsEnabled?: boolean
   showBrokerAds?: boolean
   shiftBannerToBottom?: boolean
+  brokerSlideTime?: number
+  admobRefreshTime?: number
+  affiliateShowTime?: number
 }
 
 /* ---------------- Pro Requests ---------------- */

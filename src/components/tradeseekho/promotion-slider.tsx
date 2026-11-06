@@ -4,6 +4,7 @@ import { useQuery } from "@tanstack/react-query"
 import { Swiper, SwiperSlide } from "swiper/react"
 import { Autoplay, Pagination } from "swiper/modules"
 import Link from "next/link"
+import { useAdSettings } from "./use-data"
 
 // Import Swiper styles
 import "swiper/css"
@@ -36,12 +37,14 @@ async function fetchBanners(): Promise<{ banners: Banner[] }> {
  * - 10 min client cache (staleTime) — prevents re-fetching on every navigation
  */
 export function PromotionSlider() {
+  const { data: ads } = useAdSettings()
+  const slideTime = (ads?.brokerSlideTime ?? 4) * 1000 // use same timing as broker slider
   const { data } = useQuery({
     queryKey: ["promotion-banners"],
     queryFn: fetchBanners,
-    staleTime: 10 * 60 * 1000, // 10 min cache (was 5 min)
-    refetchOnWindowFocus: false, // don't re-fetch when tab regains focus
-    refetchOnMount: false, // don't re-fetch when component remounts
+    staleTime: 10 * 60 * 1000,
+    refetchOnWindowFocus: false,
+    refetchOnMount: false,
   })
 
   const banners = data?.banners ?? []
@@ -53,7 +56,7 @@ export function PromotionSlider() {
     <div className="mt-3 px-0">
       <Swiper
         modules={[Autoplay, Pagination]}
-        autoplay={{ delay: 4000, disableOnInteraction: false }} // 4 seconds
+        autoplay={{ delay: slideTime, disableOnInteraction: false }}
         loop={banners.length > 1}
         pagination={{ clickable: true }} // dots indicator (clickable)
         spaceBetween={8}

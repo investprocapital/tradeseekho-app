@@ -26,6 +26,9 @@ export interface AdSettings {
   signalsEnabled?: boolean
   showBrokerAds?: boolean
   shiftBannerToBottom?: boolean
+  brokerSlideTime?: number
+  admobRefreshTime?: number
+  affiliateShowTime?: number
   brokerAdsUpdatedAt?: string | null
 }
 

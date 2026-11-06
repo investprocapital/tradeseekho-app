@@ -7,7 +7,7 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
+  provider = "postgresql"
   url       = env("DATABASE_URL")
   directUrl = env("DIRECT_URL")
 }
@@ -248,6 +248,13 @@ model AdSettings {
   // top (Market Gauge ke neeche) to bottom (Lessons ke baad). Admin controls
   // this from the Promo Banners tab.
   shiftBannerToBottom  Boolean  @default(false)
+  // ─── Ad Timing Controls (admin-set, in seconds) ───
+  // Broker slide ad: how many seconds before rotating to next broker card
+  brokerSlideTime      Int      @default(10)
+  // AdMob banner: refresh interval in seconds (how often new ad loads)
+  admobRefreshTime     Int      @default(60)
+  // Affiliate ad: not time-based (always visible when ON), but kept for future
+  affiliateShowTime    Int      @default(0)
   // Force-update timestamp — when admin clicks "Clear All Users Cache",
   // this updates. Clients compare their cached timestamp with this value
   // and refresh their 7-day localStorage cache if mismatched.

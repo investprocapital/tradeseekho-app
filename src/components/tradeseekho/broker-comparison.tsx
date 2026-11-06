@@ -133,9 +133,10 @@ const BROKERS: Broker[] = [
 
 export function BrokerComparison() {
   // Hooks must be called before any conditional return (Rules of Hooks).
-  // Check if admin has enabled the Broker Comparison section
+  // Fetch ad settings for timing + visibility
   const { data: ads } = useAdSettings()
   const showBrokerAds = ads?.showBrokerAds ?? true
+  const slideTime = (ads?.brokerSlideTime ?? 10) * 1000 // convert to ms
 
   // Fetch broker links with 7-day localStorage caching
   const { data } = useQuery({
@@ -189,7 +190,7 @@ export function BrokerComparison() {
         <div style={{ overflow: "visible", marginTop: "15px" }}>
           <Swiper
             modules={[Autoplay, Pagination]}
-            autoplay={{ delay: 5000, disableOnInteraction: false }}
+            autoplay={{ delay: slideTime, disableOnInteraction: false }}
             loop={true}
             pagination={{ clickable: true }}
             spaceBetween={10}

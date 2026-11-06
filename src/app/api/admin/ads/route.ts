@@ -30,6 +30,9 @@ export async function GET() {
       signalsEnabled: s.signalsEnabled,
       showBrokerAds: s.showBrokerAds,
       shiftBannerToBottom: s.shiftBannerToBottom,
+      brokerSlideTime: s.brokerSlideTime,
+      admobRefreshTime: s.admobRefreshTime,
+      affiliateShowTime: s.affiliateShowTime,
       brokerAdsUpdatedAt: s.brokerAdsUpdatedAt?.toISOString() ?? null,
     })
   } catch (e: any) {
@@ -53,6 +56,9 @@ export async function GET() {
       signalsEnabled: true,
       showBrokerAds: true,
       shiftBannerToBottom: false,
+      brokerSlideTime: 10,
+      admobRefreshTime: 60,
+      affiliateShowTime: 0,
       brokerAdsUpdatedAt: null,
     })
   }
@@ -112,6 +118,9 @@ export async function PUT(req: Request) {
   if ("signalsEnabled" in body) data.signalsEnabled = !!body.signalsEnabled
   if ("showBrokerAds" in body) data.showBrokerAds = !!body.showBrokerAds
   if ("shiftBannerToBottom" in body) data.shiftBannerToBottom = !!body.shiftBannerToBottom
+  if ("brokerSlideTime" in body) data.brokerSlideTime = Number(body.brokerSlideTime) || 10
+  if ("admobRefreshTime" in body) data.admobRefreshTime = Number(body.admobRefreshTime) || 60
+  if ("affiliateShowTime" in body) data.affiliateShowTime = Number(body.affiliateShowTime) || 0
   // Force-update: admin clicked "Clear All Users Cache" → update timestamp
   // so all clients refresh their 7-day localStorage cache.
   if (body.forceUpdateBrokerCache) data.brokerAdsUpdatedAt = new Date()
@@ -140,6 +149,9 @@ export async function PUT(req: Request) {
     signalsEnabled: updated.signalsEnabled,
     showBrokerAds: updated.showBrokerAds,
     shiftBannerToBottom: updated.shiftBannerToBottom,
+    brokerSlideTime: updated.brokerSlideTime,
+    admobRefreshTime: updated.admobRefreshTime,
+    affiliateShowTime: updated.affiliateShowTime,
     brokerAdsUpdatedAt: updated.brokerAdsUpdatedAt?.toISOString() ?? null,
   })
 }
