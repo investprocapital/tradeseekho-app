@@ -31,14 +31,15 @@ const AD_COLORS = [
 export function BrokerAdBanner({ fixed = false }: { fixed?: boolean }) {
   const { data: proMe } = useProMe()
   const hasLessonsPro = proMe?.isProLessons ?? false
-  // Pro (lessons plan) users see NO ads
-  if (hasLessonsPro) return null
 
   const { data } = useQuery<{ ads: BrokerAd[] }>({
     queryKey: ["broker-ads"],
     queryFn: fetchBrokerAds,
     staleTime: 60_000,
   })
+
+  // Pro (lessons plan) users see NO ads
+  if (hasLessonsPro) return null
 
   // When the global brokerAdsEnabled toggle is OFF, the API returns an empty
   // array → ads.length === 0 → component returns null (hidden).

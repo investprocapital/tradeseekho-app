@@ -49,14 +49,15 @@ async function fetchAffiliateAd(): Promise<{ ad: AffiliateAd | null }> {
 export function AffiliateAdBanner() {
   const { data: proMe } = useProMe()
   const hasLessonsPro = proMe?.isProLessons ?? false
-  // Pro (lessons plan) users see NO ads
-  if (hasLessonsPro) return null
 
   const { data } = useQuery({
     queryKey: ["affiliate-ad"],
     queryFn: fetchAffiliateAd,
     staleTime: 60_000,
   })
+
+  // Pro (lessons plan) users see NO ads
+  if (hasLessonsPro) return null
 
   const ad = data?.ad
   if (!ad) return null
