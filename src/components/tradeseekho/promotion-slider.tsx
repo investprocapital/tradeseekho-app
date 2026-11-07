@@ -40,9 +40,8 @@ export function PromotionSlider() {
   const { data: ads } = useAdSettings()
   const { data: proMe } = useProMe()
   const hasLessonsPro = proMe?.isProLessons ?? false
-  // Pro (lessons plan) users see NO ads
-  if (hasLessonsPro) return null
-  const slideTime = (ads?.brokerSlideTime ?? 4) * 1000 // use same timing as broker slider
+  // Pro (lessons plan) users see NO ads — but hooks must come first
+  const slideTime = (ads?.brokerSlideTime ?? 4) * 1000
   const { data } = useQuery({
     queryKey: ["promotion-banners"],
     queryFn: fetchBanners,
@@ -53,8 +52,8 @@ export function PromotionSlider() {
 
   const banners = data?.banners ?? []
 
-  // Auto-hide when no active banners — no empty space
-  if (banners.length === 0) return null
+  // Auto-hide when no active banners OR user is Pro
+  if (banners.length === 0 || hasLessonsPro) return null
 
   return (
     <div className="mt-3 px-0">
