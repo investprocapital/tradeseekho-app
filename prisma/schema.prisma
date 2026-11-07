@@ -258,8 +258,12 @@ model AdSettings {
   // ─── Ad Timing Controls (admin-set, in seconds) ───
   // Broker slide ad: how many seconds before rotating to next broker card
   brokerSlideTime      Int      @default(10)
-  // AdMob banner: refresh interval in seconds (how often new ad loads)
+  // AdMob banner ad: refresh interval in seconds (how often new ad loads)
   admobRefreshTime     Int      @default(60)
+  // ─── Rewarded Ad (unlock 1 lesson free by watching video ad) ───
+  rewardedEnabled      Boolean  @default(false) // Master ON/OFF for rewarded ads
+  rewardedAdUnitId     String   @default("") // AdMob rewarded unit ID (admin fills via panel)
+  rewardedLessonsEnabled Boolean @default(false) // When ON, locked lessons show "Watch Ad" option
   // Affiliate ad: not time-based (always visible when ON), but kept for future
   affiliateShowTime    Int      @default(0)
   // Force-update timestamp — when admin clicks "Clear All Users Cache",

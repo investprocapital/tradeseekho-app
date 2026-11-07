@@ -29,6 +29,9 @@ export interface AdSettings {
   brokerSlideTime?: number
   admobRefreshTime?: number
   affiliateShowTime?: number
+  rewardedEnabled?: boolean
+  rewardedAdUnitId?: string
+  rewardedLessonsEnabled?: boolean
   brokerAdsUpdatedAt?: string | null
 }
 

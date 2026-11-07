@@ -4,6 +4,7 @@ import { useState, useEffect } from "react"
 import { useQuery } from "@tanstack/react-query"
 import { motion, AnimatePresence } from "framer-motion"
 import { Megaphone, ExternalLink } from "lucide-react"
+import { useProMe } from "./use-data"
 
 interface BrokerAd {
   id: string
@@ -28,15 +29,17 @@ const AD_COLORS = [
 ]
 
 export function BrokerAdBanner({ fixed = false }: { fixed?: boolean }) {
+  const { data: proMe } = useProMe()
+  const hasLessonsPro = proMe?.isProLessons ?? false
+
   const { data } = useQuery<{ ads: BrokerAd[] }>({
     queryKey: ["broker-ads"],
     queryFn: fetchBrokerAds,
     staleTime: 60_000,
   })
 
-  // When the global brokerAdsEnabled toggle is OFF, the API returns an empty
-  // array → ads.length === 0 → component returns null (hidden).
-  const ads = (data?.ads ?? []).filter((a) => a.enabled)
+  // Pro (lessons plan) users see NO ads — but hooks must come first
+  const ads = hasLessonsPro ? [] : (data?.ads ?? []).filter((a) => a.enabled)
   const [currentIdx, setCurrentIdx] = useState(0)
 
   // Auto-rotate every 10 seconds

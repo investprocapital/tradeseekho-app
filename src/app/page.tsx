@@ -4,7 +4,8 @@ import { useEffect, useState, useRef } from "react"
 import { useSession } from "next-auth/react"
 import { useQuery } from "@tanstack/react-query"
 import { motion } from "framer-motion"
-import { Sprout, LineChart, Trophy, CheckCircle2, Award, BookOpen, Crown, ArrowRight, Lock, BarChart3, ChevronRight, Bell } from "lucide-react"
+import { Sprout, LineChart, Trophy, CheckCircle2, Award, BookOpen, Crown, ArrowRight, Lock, BarChart3, ChevronRight, Bell, Play, CreditCard } from "lucide-react"
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog"
 import { useStore } from "@/lib/store"
 import type { Lang } from "@/lib/i18n"
 import { useLessonsBundle, useProMe, useCurrentUser, useAdSettings } from "@/components/tradeseekho/use-data"
@@ -56,6 +57,7 @@ export default function Home() {
   const { data: proMe } = useProMe()
   const { data: adSettings } = useAdSettings()
   const shiftBannerToBottom = adSettings?.shiftBannerToBottom ?? false
+  const rewardedLessonsEnabled = adSettings?.rewardedEnabled && adSettings?.rewardedLessonsEnabled
   // ─── Plan-specific Pro checks (use 3 explicit booleans, NOT proStatus) ───
   // Each feature only unlocks if the user has the corresponding plan boolean.
   // This prevents the bug where buying ONE plan unlocks ALL features.
@@ -257,7 +259,7 @@ export default function Home() {
                   <p className="py-8 text-center text-sm text-muted-foreground">No lessons yet.</p>
                 ) : (
                   visibleLessons.map((l, i) => (
-                    <LessonRow key={l.id} lesson={l} lang={lang} isPro={isPro} seqLocked={!isPro && i > 0 && !visibleLessons[i - 1].passed && l.categorySlug !== "beginner"} onOpen={() => openLesson(l.id)} onPro={() => { setProPlan("lessons"); setProOpen(true) }} />
+                    <LessonRow key={l.id} lesson={l} lang={lang} isPro={isPro} seqLocked={!isPro && i > 0 && !visibleLessons[i - 1].passed && l.categorySlug !== "beginner"} onOpen={() => openLesson(l.id)} onPro={() => { setProPlan("lessons"); setProOpen(true) }} rewardedLessonsEnabled={rewardedLessonsEnabled} />
                   ))
                 )}
               </div>
@@ -477,25 +479,63 @@ function LevelBox({
   )
 }
 
-function LessonRow({ lesson, lang, isPro, onOpen, onPro, seqLocked }: { lesson: LessonListItemDTO; lang: string; isPro: boolean; onOpen: () => void; onPro: () => void; seqLocked?: boolean }) {
+function LessonRow({ lesson, lang, isPro, onOpen, onPro, seqLocked, rewardedLessonsEnabled }: { lesson: LessonListItemDTO; lang: string; isPro: boolean; onOpen: () => void; onPro: () => void; seqLocked?: boolean; rewardedLessonsEnabled?: boolean }) {
+  const [unlockDialogOpen, setUnlockDialogOpen] = useState(false)
+  const [adBusy, setAdBusy] = useState(false)
+
   // ─── Pro-lock logic (3-level system) ───
-  // 1. Beginner = ALL FREE (never locked, all 12 lessons open)
-  // 2. Intermediate = Lesson 1 free (preview), Lesson 2-10 Pro-locked
-  // 3. Advanced = Lesson 1 free (preview), Lesson 2-21 Pro-locked
-  //
-  // `proLocked` = the lesson requires a Pro upgrade to open.
-  //    Triggered when: category is intermediate/advanced AND orderInCategory > 1
-  // `seqLocked` = the previous lesson hasn't been passed yet (sequential unlock).
-  //    Only applies to beginner (intermediate/advanced use proLocked instead).
   const isPremiumLocked = (lesson.categorySlug === "intermediate" || lesson.categorySlug === "advanced") && lesson.orderInCategory > 1
   const proLocked = isPremiumLocked && !isPro
   const isLocked = proLocked || seqLocked
+
+  // ─── Locked lesson click handler ───
+  // If rewarded ads enabled → show dialog with 2 options (Watch Ad / Buy Pro)
+  // If rewarded ads disabled → directly open Pro buy page
+  const onLockedClick = () => {
+    if (rewardedLessonsEnabled) {
+      setUnlockDialogOpen(true)
+    } else {
+      onPro()
+    }
+  }
+
+  // ─── Watch Ad handler ───
+  // Calls /api/lessons/unlock to mark lesson as unlocked (passed=true)
+  // Then opens the lesson
+  const onWatchAd = async () => {
+    setAdBusy(true)
+    try {
+      const res = await fetch("/api/lessons/unlock", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ lessonId: lesson.id }),
+      })
+      const j = await res.json().catch(() => ({}))
+      if (!res.ok) {
+        toast.error(j?.message || "Failed to unlock. Try again.")
+        setAdBusy(false)
+        return
+      }
+      toast.success("🎉 Lesson unlocked! Opening...")
+      setUnlockDialogOpen(false)
+      setAdBusy(false)
+      // Open the lesson after a short delay
+      setTimeout(() => onOpen(), 300)
+    } catch {
+      toast.error("Failed to unlock. Try again.")
+      setAdBusy(false)
+    }
+  }
   const titleText = lesson.title[lang] || lesson.title.en
   const blurredTitle = proLocked ? "Locked — Upgrade to Pro to unlock" : titleText
   return (
+    <>
     <button
       onClick={() => {
-        if (proLocked) { onPro(); return }
+        if (proLocked) {
+          onLockedClick()
+          return
+        }
         if (seqLocked) {
           toast(lang === "ur" || lang === "ar" ? "براہ کرم پہلا سبق مکمل کریں" : lang === "hi" ? "कृपया पिछला पाठ पूर्ण करें" : "Please complete the previous lesson first")
           return
@@ -542,6 +582,52 @@ function LessonRow({ lesson, lang, isPro, onOpen, onPro, seqLocked }: { lesson: 
         </div>
       )}
     </button>
+
+    {/* ─── Unlock Dialog (Watch Ad vs Buy Pro) ─── */}
+    <Dialog open={unlockDialogOpen} onOpenChange={(v) => !adBusy && setUnlockDialogOpen(v)}>
+      <DialogContent className="max-w-sm p-0">
+        <DialogHeader className="border-b border-border p-5">
+          <DialogTitle className="flex items-center gap-2 text-lg font-extrabold text-gold">
+            <Lock className="h-5 w-5" /> Unlock This Lesson
+          </DialogTitle>
+          <DialogDescription className="text-sm">
+            This lesson is locked. Choose an option below.
+          </DialogDescription>
+        </DialogHeader>
+        <div className="space-y-3 p-5">
+          {/* Option 1: Watch Video Ad */}
+          <button
+            onClick={onWatchAd}
+            disabled={adBusy}
+            className="flex w-full items-center gap-3 rounded-xl border-2 border-emerald-500/40 bg-emerald-500/5 p-3 text-start transition hover:border-emerald-500/60 hover:bg-emerald-500/10 disabled:opacity-50"
+          >
+            <span className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-emerald-500 text-white">
+              {adBusy ? <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white" /> : <Play className="h-5 w-5" />}
+            </span>
+            <div className="min-w-0 flex-1">
+              <div className="text-sm font-bold text-foreground">Watch Video Ad</div>
+              <div className="text-[11px] text-muted-foreground">Unlock this 1 lesson FREE</div>
+            </div>
+          </button>
+
+          {/* Option 2: Buy Pro */}
+          <button
+            onClick={() => { setUnlockDialogOpen(false); onPro() }}
+            disabled={adBusy}
+            className="flex w-full items-center gap-3 rounded-xl border-2 border-gold/40 bg-gold/5 p-3 text-start transition hover:border-gold/60 hover:bg-gold/10 disabled:opacity-50"
+          >
+            <span className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-gold text-white">
+              <Crown className="h-5 w-5" />
+            </span>
+            <div className="min-w-0 flex-1">
+              <div className="text-sm font-bold text-foreground">Buy Pro — Rs 1400 (5 USD)</div>
+              <div className="text-[11px] text-muted-foreground">Unlock ALL lessons permanently</div>
+            </div>
+          </button>
+        </div>
+      </DialogContent>
+    </Dialog>
+    </>
   )
 }
 

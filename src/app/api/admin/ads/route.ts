@@ -33,6 +33,9 @@ export async function GET() {
       brokerSlideTime: s.brokerSlideTime,
       admobRefreshTime: s.admobRefreshTime,
       affiliateShowTime: s.affiliateShowTime,
+      rewardedEnabled: s.rewardedEnabled,
+      rewardedAdUnitId: s.rewardedAdUnitId,
+      rewardedLessonsEnabled: s.rewardedLessonsEnabled,
       brokerAdsUpdatedAt: s.brokerAdsUpdatedAt?.toISOString() ?? null,
     })
   } catch (e: any) {
@@ -59,6 +62,9 @@ export async function GET() {
       brokerSlideTime: 10,
       admobRefreshTime: 60,
       affiliateShowTime: 0,
+      rewardedEnabled: false,
+      rewardedAdUnitId: "",
+      rewardedLessonsEnabled: false,
       brokerAdsUpdatedAt: null,
     })
   }
@@ -121,6 +127,9 @@ export async function PUT(req: Request) {
   if ("brokerSlideTime" in body) data.brokerSlideTime = Number(body.brokerSlideTime) || 10
   if ("admobRefreshTime" in body) data.admobRefreshTime = Number(body.admobRefreshTime) || 60
   if ("affiliateShowTime" in body) data.affiliateShowTime = Number(body.affiliateShowTime) || 0
+  if ("rewardedEnabled" in body) data.rewardedEnabled = !!body.rewardedEnabled
+  if ("rewardedAdUnitId" in body) data.rewardedAdUnitId = String(body.rewardedAdUnitId)
+  if ("rewardedLessonsEnabled" in body) data.rewardedLessonsEnabled = !!body.rewardedLessonsEnabled
   // Force-update: admin clicked "Clear All Users Cache" → update timestamp
   // so all clients refresh their 7-day localStorage cache.
   if (body.forceUpdateBrokerCache) data.brokerAdsUpdatedAt = new Date()
@@ -152,6 +161,9 @@ export async function PUT(req: Request) {
     brokerSlideTime: updated.brokerSlideTime,
     admobRefreshTime: updated.admobRefreshTime,
     affiliateShowTime: updated.affiliateShowTime,
+    rewardedEnabled: updated.rewardedEnabled,
+    rewardedAdUnitId: updated.rewardedAdUnitId,
+    rewardedLessonsEnabled: updated.rewardedLessonsEnabled,
     brokerAdsUpdatedAt: updated.brokerAdsUpdatedAt?.toISOString() ?? null,
   })
 }
