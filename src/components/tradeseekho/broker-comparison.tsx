@@ -5,7 +5,7 @@ import { Swiper, SwiperSlide } from "swiper/react"
 import { Autoplay, Pagination } from "swiper/modules"
 import { Star, Shield, ExternalLink } from "lucide-react"
 import Link from "next/link"
-import { useAdSettings } from "./use-data"
+import { useAdSettings, useProMe } from "./use-data"
 
 import "swiper/css"
 import "swiper/css/pagination"
@@ -135,6 +135,8 @@ export function BrokerComparison() {
   // Hooks must be called before any conditional return (Rules of Hooks).
   // Fetch ad settings for timing + visibility
   const { data: ads } = useAdSettings()
+  const { data: proMe } = useProMe()
+  const hasLessonsPro = proMe?.isProLessons ?? false
   const showBrokerAds = ads?.showBrokerAds ?? true
   const slideTime = (ads?.brokerSlideTime ?? 10) * 1000 // convert to ms
 
@@ -148,8 +150,8 @@ export function BrokerComparison() {
     enabled: showBrokerAds, // only fetch when section is visible
   })
 
-  // Hide entire section when admin disables it
-  if (!showBrokerAds) return null
+  // Hide entire section when admin disables it OR user is Pro
+  if (!showBrokerAds || hasLessonsPro) return null
 
   const links = data?.links ?? DEFAULT_LINKS
 

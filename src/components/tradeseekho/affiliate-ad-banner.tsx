@@ -3,6 +3,7 @@
 import { useQuery } from "@tanstack/react-query"
 import { ExternalLink } from "lucide-react"
 import { motion } from "framer-motion"
+import { useProMe } from "./use-data"
 
 // ─── Types ───
 interface AffiliateAd {
@@ -46,6 +47,11 @@ async function fetchAffiliateAd(): Promise<{ ad: AffiliateAd | null }> {
  * - Hidden completely when admin toggle is OFF
  */
 export function AffiliateAdBanner() {
+  const { data: proMe } = useProMe()
+  const hasLessonsPro = proMe?.isProLessons ?? false
+  // Pro (lessons plan) users see NO ads
+  if (hasLessonsPro) return null
+
   const { data } = useQuery({
     queryKey: ["affiliate-ad"],
     queryFn: fetchAffiliateAd,

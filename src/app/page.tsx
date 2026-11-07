@@ -620,7 +620,7 @@ function LessonRow({ lesson, lang, isPro, onOpen, onPro, seqLocked, rewardedLess
               <Crown className="h-5 w-5" />
             </span>
             <div className="min-w-0 flex-1">
-              <div className="text-sm font-bold text-foreground">Buy Pro — Rs 1400</div>
+              <div className="text-sm font-bold text-foreground">Buy Pro — Rs 1400 (5 USD)</div>
               <div className="text-[11px] text-muted-foreground">Unlock ALL lessons permanently</div>
             </div>
           </button>

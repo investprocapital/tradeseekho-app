@@ -4,6 +4,7 @@ import { useState, useEffect } from "react"
 import { useQuery } from "@tanstack/react-query"
 import { motion, AnimatePresence } from "framer-motion"
 import { Megaphone, ExternalLink } from "lucide-react"
+import { useProMe } from "./use-data"
 
 interface BrokerAd {
   id: string
@@ -28,6 +29,11 @@ const AD_COLORS = [
 ]
 
 export function BrokerAdBanner({ fixed = false }: { fixed?: boolean }) {
+  const { data: proMe } = useProMe()
+  const hasLessonsPro = proMe?.isProLessons ?? false
+  // Pro (lessons plan) users see NO ads
+  if (hasLessonsPro) return null
+
   const { data } = useQuery<{ ads: BrokerAd[] }>({
     queryKey: ["broker-ads"],
     queryFn: fetchBrokerAds,

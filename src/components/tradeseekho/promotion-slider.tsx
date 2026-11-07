@@ -4,7 +4,7 @@ import { useQuery } from "@tanstack/react-query"
 import { Swiper, SwiperSlide } from "swiper/react"
 import { Autoplay, Pagination } from "swiper/modules"
 import Link from "next/link"
-import { useAdSettings } from "./use-data"
+import { useAdSettings, useProMe } from "./use-data"
 
 // Import Swiper styles
 import "swiper/css"
@@ -38,6 +38,10 @@ async function fetchBanners(): Promise<{ banners: Banner[] }> {
  */
 export function PromotionSlider() {
   const { data: ads } = useAdSettings()
+  const { data: proMe } = useProMe()
+  const hasLessonsPro = proMe?.isProLessons ?? false
+  // Pro (lessons plan) users see NO ads
+  if (hasLessonsPro) return null
   const slideTime = (ads?.brokerSlideTime ?? 4) * 1000 // use same timing as broker slider
   const { data } = useQuery({
     queryKey: ["promotion-banners"],
