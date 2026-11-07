@@ -52,13 +52,23 @@ export async function GET(
   // Non-Pro users cannot open locked lesson details (blocks direct API access
   // bypassing the client-side blur). Returns 403 so the client can show the
   // Pro upgrade popup.
+  // EXCEPTION: If the user has a Progress record with passed=true for this
+  // lesson (e.g., unlocked via rewarded ad), allow access.
   const orderInCategory = idx + 1
   const isPremiumLocked = (lesson.category.slug === "intermediate" || lesson.category.slug === "advanced") && orderInCategory > 1
   if (isPremiumLocked && !pro) {
-    return NextResponse.json(
-      { error: "pro_required", message: "Buy the Lessons Pro plan to unlock Intermediate & Advanced lessons 2+." },
-      { status: 403 },
-    )
+    // Check if user has unlocked this lesson via rewarded ad
+    const existingProg = await db.progress.findUnique({
+      where: { userId_lessonId: { userId, lessonId: lesson.id } },
+      select: { passed: true },
+    })
+    if (!existingProg?.passed) {
+      return NextResponse.json(
+        { error: "pro_required", message: "Buy the Lessons Pro plan to unlock Intermediate & Advanced lessons 2+." },
+        { status: 403 },
+      )
+    }
+    // User has passed=true (rewarded ad unlock) → allow access
   }
 
   const [prog, bm] = await Promise.all([
