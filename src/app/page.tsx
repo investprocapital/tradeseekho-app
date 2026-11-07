@@ -66,11 +66,14 @@ export default function Home() {
   const isPro = hasLessonsPro
 
   // Save email to localStorage when user is authenticated (for auto-fill next login)
-  useEffect(() => {
-    if (status === "authenticated" && session?.user?.email) {
-      try { localStorage.setItem("last_email", session.user.email) } catch {}
-    }
-  }, [status, session])
+  // DO NOT save email to localStorage — privacy bug fix.
+  // Each user's email should only be visible on their own device via
+  // the browser's built-in password manager, not shared via localStorage.
+  // useEffect(() => {
+  //   if (status === "authenticated" && session?.user?.email) {
+  //     try { localStorage.setItem("last_email", session.user.email) } catch {}
+  //   }
+  // }, [status, session])
   const { data: userData } = useCurrentUser()
 
   // ─── Reopen Settings sheet when returning from a legal page ───

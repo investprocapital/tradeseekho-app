@@ -289,6 +289,12 @@ export function SettingsSheet() {
                 <Button
                   className="mt-2 h-11 w-full gap-2 bg-destructive font-bold text-white hover:bg-destructive/90"
                   onClick={() => {
+                    // ─── Privacy fix: clear all saved email/password on logout ───
+                    try { localStorage.removeItem("last_email") } catch {}
+                    // Clear any stored credentials
+                    if ("credentials" in navigator) {
+                      navigator.credentials?.preventSilentAccess?.().catch(() => {})
+                    }
                     setShowAdmin(false)
                     setOpen(false)
                     signOut({ callbackUrl: "/", redirect: true })

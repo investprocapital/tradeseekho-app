@@ -60,18 +60,13 @@ export function LoginDialog() {
   // If true, we show a "Use Continue with Google" hint instead of "Invalid password".
   const [googleUserHint, setGoogleUserHint] = useState(false)
 
-  const reset = () => { setView("landing"); setEmail(""); setPassword(""); setName(""); setErr(null); setBusy(false); setGoogleUserHint(false) }
+  const reset = () => { setView("landing"); setEmail(""); setPassword(""); setName(""); setNewPw(""); setResetLink(""); setErr(null); setBusy(false); setGoogleUserHint(false) }
 
-  // Auto-fill email from localStorage on mount + when dialog opens.
-  // This pre-fills the email field with the last used email (Google or manual).
-  useEffect(() => {
-    if (loginOpen) {
-      const lastEmail = typeof window !== "undefined" ? localStorage.getItem("last_email") : null
-      if (lastEmail && !email) {
-        Promise.resolve().then(() => setEmail(lastEmail))
-      }
-    }
-  }, [loginOpen])
+  // DO NOT auto-fill email from localStorage. This was causing a privacy bug
+  // where one user's email would show on another user's device (e.g., when
+  // sharing the app link). Each user starts with an EMPTY email field.
+  // The browser's own password manager handles auto-fill per-device.
+  // useEffect for email pre-fill has been REMOVED.
 
   // Check if the entered email is a Google-only user (no password).
   // Called when user blurs the email field (onBlur). If the email is registered
@@ -136,8 +131,9 @@ export function LoginDialog() {
         setBusy(false)
         return
       }
-      // Save email to localStorage for auto-fill next time
-      if (email && typeof window !== "undefined") localStorage.setItem("last_email", email)
+      // DO NOT save email to localStorage — privacy bug fix.
+      // Each device should only show its own email via browser password manager.
+      // if (email && typeof window !== "undefined") localStorage.setItem("last_email", email)
 
       // ─── Credential Management API: tell browser to save password ───
       // This triggers the "Save password?" popup in Chrome/Edge/Firefox.
@@ -301,11 +297,11 @@ export function LoginDialog() {
                   <h2 className="text-2xl font-extrabold text-white">{view === "signup" ? "Create Account" : "Welcome Back"}</h2>
                   <p className="mt-1 text-sm text-white/50">{view === "signup" ? "Sign up to start learning" : "Login to your account to continue"}</p>
 
-                  <form onSubmit={submit} autoComplete="on" className="mt-6 w-full space-y-3">
+                  <form onSubmit={submit} autoComplete="off" className="mt-6 w-full space-y-3">
                     {view === "signup" && (
                       <div className="relative">
                         <User className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#06b6d4]" />
-                        <input value={name} onChange={(e) => setName(e.target.value)} placeholder="Your Name" autoComplete="name"
+                        <input value={name} onChange={(e) => setName(e.target.value)} placeholder="Your Name" autoComplete="off"
                           className="h-12 w-full rounded-xl border border-[#1E3A5F] bg-[#0f172a]/80 ps-10 pe-3 text-sm text-white placeholder:text-white/30 focus:border-[#00D09C] focus:outline-none" />
                       </div>
                     )}
@@ -314,7 +310,7 @@ export function LoginDialog() {
                       <input
                         type="email"
                         name="email"
-                        autoComplete="email"
+                        autoComplete="off"
                         inputMode="email"
                         value={email}
                         onChange={(e) => { setEmail(e.target.value); setGoogleUserHint(false); setErr(null) }}
@@ -342,7 +338,7 @@ export function LoginDialog() {
                     {!googleUserHint && (
                       <div className="relative">
                         <Lock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#06b6d4]" />
-                        <input type={showPw ? "text" : "password"} name="password" autoComplete={view === "signup" ? "new-password" : "current-password"} value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Password" required minLength={6}
+                        <input type={showPw ? "text" : "password"} name="password" autoComplete="off" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Password" required minLength={6}
                           className="h-12 w-full rounded-xl border border-[#1E3A5F] bg-[#0f172a]/80 ps-10 pe-10 text-sm text-white placeholder:text-white/30 focus:border-[#00D09C] focus:outline-none" />
                         <button type="button" onClick={() => setShowPw(!showPw)} className="absolute right-3 top-1/2 -translate-y-1/2 text-white/30 hover:text-white/60">
                           {showPw ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
@@ -386,7 +382,7 @@ export function LoginDialog() {
                   <div className="mt-6 w-full space-y-3">
                     <div className="flex items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-3">
                       <Mail className="h-4 w-4 text-white/40" />
-                      <input value={email} onChange={(e) => setEmail(e.target.value)} type="email" name="email" autoComplete="email" inputMode="email" placeholder="your@email.com" className="h-12 w-full bg-transparent text-sm text-white placeholder:text-white/30 focus:outline-none" />
+                      <input value={email} onChange={(e) => setEmail(e.target.value)} type="email" name="email" autoComplete="off" inputMode="email" placeholder="your@email.com" className="h-12 w-full bg-transparent text-sm text-white placeholder:text-white/30 focus:outline-none" />
                     </div>
 
                     {err && <p className="flex items-center gap-1.5 text-xs font-semibold text-red-400"><AlertCircle className="h-3.5 w-3.5" /> {err}</p>}
@@ -529,7 +525,7 @@ export function LoginDialog() {
                         placeholder="New Password (min 6 chars)"
                         required
                         minLength={6}
-                        autoComplete="new-password"
+                        autoComplete="off"
                         className="h-12 w-full rounded-xl border border-[#1E3A5F] bg-[#0f172a]/80 ps-10 pe-10 text-sm text-white placeholder:text-white/30 focus:border-[#00D09C] focus:outline-none"
                       />
                       <button type="button" onClick={() => setShowPw(!showPw)} className="absolute right-3 top-1/2 -translate-y-1/2 text-white/30 hover:text-white/60">
@@ -553,7 +549,8 @@ export function LoginDialog() {
                             setBusy(false); return
                           }
                           // Save email to localStorage
-                          if (j.email && typeof window !== "undefined") localStorage.setItem("last_email", j.email)
+                          // DO NOT save email to localStorage — privacy fix
+                          // if (j.email && typeof window !== "undefined") localStorage.setItem("last_email", j.email)
                           // Credential Management API — tell browser to save the new password
                           if (typeof window !== "undefined" && "credentials" in navigator) {
                             try {

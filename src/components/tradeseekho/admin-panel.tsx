@@ -116,8 +116,12 @@ export function AdminPanel() {
               logout.mutateAsync()
               setAdminAuthed(false)
               setShowAdmin(false)
+              // Privacy fix: clear saved email on logout
+              try { localStorage.removeItem("last_email") } catch {}
+              if ("credentials" in navigator) {
+                navigator.credentials?.preventSilentAccess?.().catch(() => {})
+              }
               // Also sign out of NextAuth so the session is fully cleared
-              // Use redirect:true so NextAuth handles cookie clear + redirect
               signOut({ callbackUrl: "/", redirect: true })
             }}
           >
