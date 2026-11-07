@@ -63,7 +63,7 @@ export async function GET() {
       admobRefreshTime: 60,
       affiliateShowTime: 0,
       rewardedEnabled: false,
-      rewardedAdUnitId: "ca-app-pub-2888983054/rewarded-lesson",
+      rewardedAdUnitId: "",
       rewardedLessonsEnabled: false,
       brokerAdsUpdatedAt: null,
     })
