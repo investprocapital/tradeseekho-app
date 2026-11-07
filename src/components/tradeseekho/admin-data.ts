@@ -285,7 +285,9 @@ export interface ProSettingsData {
   usdPrice: number
   pkrRate: number
   jazzcashNumber: string
+  jazzcashEnabled?: boolean
   easypaisaNumber: string
+  easypaisaEnabled?: boolean
   cardEnabled: boolean
   cardInstructions: string
   sadapayEnabled?: boolean

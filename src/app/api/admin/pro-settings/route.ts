@@ -18,7 +18,9 @@ export async function GET() {
     usdPrice: s.usdPrice,
     pkrRate: s.pkrRate,
     jazzcashNumber: s.jazzcashNumber,
+    jazzcashEnabled: s.jazzcashEnabled,
     easypaisaNumber: s.easypaisaNumber,
+    easypaisaEnabled: s.easypaisaEnabled,
     cardEnabled: s.cardEnabled,
     cardInstructions: s.cardInstructions,
     sadapayEnabled: s.sadapayEnabled,
@@ -45,7 +47,9 @@ export async function PUT(req: Request) {
   if ("usdPrice" in body) data.usdPrice = Number(body.usdPrice) || 5
   if ("pkrRate" in body) data.pkrRate = Number(body.pkrRate) || 280
   if ("jazzcashNumber" in body) data.jazzcashNumber = String(body.jazzcashNumber)
+  if ("jazzcashEnabled" in body) data.jazzcashEnabled = !!body.jazzcashEnabled
   if ("easypaisaNumber" in body) data.easypaisaNumber = String(body.easypaisaNumber)
+  if ("easypaisaEnabled" in body) data.easypaisaEnabled = !!body.easypaisaEnabled
   if ("cardEnabled" in body) data.cardEnabled = !!body.cardEnabled
   if ("cardInstructions" in body) data.cardInstructions = String(body.cardInstructions)
   // SadaPay
@@ -73,7 +77,9 @@ export async function PUT(req: Request) {
     usdPrice: updated.usdPrice,
     pkrRate: updated.pkrRate,
     jazzcashNumber: updated.jazzcashNumber,
+    jazzcashEnabled: updated.jazzcashEnabled,
     easypaisaNumber: updated.easypaisaNumber,
+    easypaisaEnabled: updated.easypaisaEnabled,
     cardEnabled: updated.cardEnabled,
     cardInstructions: updated.cardInstructions,
     sadapayEnabled: updated.sadapayEnabled,

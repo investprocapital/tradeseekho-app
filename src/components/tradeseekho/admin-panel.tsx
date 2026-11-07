@@ -1641,6 +1641,8 @@ function PaymentSettingsTab() {
   const [pkrRate, setPkrRate] = useState("280")
   const [jazzcash, setJazzcash] = useState("")
   const [easypaisa, setEasypaisa] = useState("")
+  const [jazzcashEnabled, setJazzcashEnabled] = useState(true)
+  const [easypaisaEnabled, setEasypaisaEnabled] = useState(true)
   const [cardEnabled, setCardEnabled] = useState(true)
   const [cardInstructions, setCardInstructions] = useState("")
   const [sadapayEnabled, setSadapayEnabled] = useState(true)
@@ -1662,6 +1664,8 @@ function PaymentSettingsTab() {
     setPkrRate(String(data.pkrRate))
     setJazzcash(data.jazzcashNumber)
     setEasypaisa(data.easypaisaNumber)
+    setJazzcashEnabled(data.jazzcashEnabled ?? true)
+    setEasypaisaEnabled(data.easypaisaEnabled ?? true)
     setCardEnabled(data.cardEnabled)
     setCardInstructions(data.cardInstructions)
     setSadapayEnabled(data.sadapayEnabled ?? true)
@@ -1685,6 +1689,8 @@ function PaymentSettingsTab() {
         pkrRate: Number(pkrRate) || 280,
         jazzcashNumber: jazzcash,
         easypaisaNumber: easypaisa,
+        jazzcashEnabled,
+        easypaisaEnabled,
         cardEnabled,
         cardInstructions,
         sadapayEnabled,
@@ -1733,14 +1739,26 @@ function PaymentSettingsTab() {
 
           {/* JazzCash */}
           <div className="space-y-1.5">
-            <label className="text-xs font-bold uppercase tracking-wide text-muted-foreground">JazzCash Number</label>
-            <Input value={jazzcash} onChange={(e) => setJazzcash(e.target.value)} placeholder="03XX-XXXXXXX" className="h-10" />
+            <div className="flex items-center justify-between">
+              <label className="text-xs font-bold uppercase tracking-wide text-muted-foreground">JazzCash Number</label>
+              <div className="flex items-center gap-2">
+                <span className="text-[10px] font-bold text-muted-foreground">{jazzcashEnabled ? "ON" : "OFF"}</span>
+                <Switch checked={jazzcashEnabled} onCheckedChange={setJazzcashEnabled} />
+              </div>
+            </div>
+            <Input value={jazzcash} onChange={(e) => setJazzcash(e.target.value)} placeholder="03XX-XXXXXXX" className="h-10" disabled={!jazzcashEnabled} />
           </div>
 
           {/* Easypaisa */}
           <div className="space-y-1.5">
-            <label className="text-xs font-bold uppercase tracking-wide text-muted-foreground">Easypaisa Number</label>
-            <Input value={easypaisa} onChange={(e) => setEasypaisa(e.target.value)} placeholder="03XX-XXXXXXX" className="h-10" />
+            <div className="flex items-center justify-between">
+              <label className="text-xs font-bold uppercase tracking-wide text-muted-foreground">Easypaisa Number</label>
+              <div className="flex items-center gap-2">
+                <span className="text-[10px] font-bold text-muted-foreground">{easypaisaEnabled ? "ON" : "OFF"}</span>
+                <Switch checked={easypaisaEnabled} onCheckedChange={setEasypaisaEnabled} />
+              </div>
+            </div>
+            <Input value={easypaisa} onChange={(e) => setEasypaisa(e.target.value)} placeholder="03XX-XXXXXXX" className="h-10" disabled={!easypaisaEnabled} />
           </div>
 
           {/* Card option */}

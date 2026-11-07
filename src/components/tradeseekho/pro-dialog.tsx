@@ -22,7 +22,9 @@ interface ProSettings {
   pkrRate: number
   pkrPrice: number
   jazzcashNumber: string
+  jazzcashEnabled?: boolean
   easypaisaNumber: string
+  easypaisaEnabled?: boolean
   cardEnabled: boolean
   cardInstructions: string
   sadapayEnabled: boolean
@@ -90,10 +92,13 @@ export function ProDialog() {
   const pkrPrice = settings?.pkrPrice ?? Math.round(usdPrice * pkrRate)
   const displayAmount = amount || String(pkrPrice)
 
-  const methods: { id: Method; label: string; color: string; accent: string; icon: any; subtitle?: string }[] = [
-    { id: "JazzCash", label: "JazzCash", color: "#ED1C24", accent: "bg-[#ED1C24]", icon: Smartphone },
-    { id: "Easypaisa", label: "Easypaisa", color: "#00B14F", accent: "bg-[#00B14F]", icon: Smartphone },
-  ]
+  const methods: { id: Method; label: string; color: string; accent: string; icon: any; subtitle?: string }[] = []
+  if (settings?.jazzcashEnabled !== false) {
+    methods.push({ id: "JazzCash", label: "JazzCash", color: "#ED1C24", accent: "bg-[#ED1C24]", icon: Smartphone })
+  }
+  if (settings?.easypaisaEnabled !== false) {
+    methods.push({ id: "Easypaisa", label: "Easypaisa", color: "#00B14F", accent: "bg-[#00B14F]", icon: Smartphone })
+  }
   if (settings?.cardEnabled !== false) {
     methods.push({ id: "Card", label: "Visa / Debit Card", color: "#1A1F71", accent: "bg-[#1A1F71]", icon: CreditCard })
   }

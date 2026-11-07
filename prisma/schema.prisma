@@ -7,7 +7,7 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
+  provider = "postgresql"
   url       = env("DATABASE_URL")
   directUrl = env("DIRECT_URL")
 }
@@ -282,6 +282,8 @@ model ProSettings {
   pkrRate         Float    @default(280)   // 1 USD = X PKR (admin editable)
   jazzcashNumber  String   @default("03XX-XXXXXXX")
   easypaisaNumber String   @default("03XX-XXXXXXX")
+  jazzcashEnabled  Boolean  @default(true)  // Show/hide JazzCash payment option
+  easypaisaEnabled Boolean  @default(true)  // Show/hide Easypaisa payment option
   cardEnabled     Boolean  @default(true)  // Show Visa/Debit Card option
   cardInstructions String  @default("Contact admin on WhatsApp for card payment link")
   // SadaPay — for international/worldwide clients
