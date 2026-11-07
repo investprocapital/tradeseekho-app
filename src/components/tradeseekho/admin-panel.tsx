@@ -1404,6 +1404,48 @@ function AdsTab() {
               </div>
             </div>
           </div>
+
+          {/* ─── Rewarded Ad Settings ─── */}
+          <div className="rounded-xl border-2 border-amber-500/30 bg-amber-500/5 p-3 space-y-3">
+            <div className="text-sm font-bold text-amber-600">🎁 Rewarded Ad Settings</div>
+
+            {/* Rewarded Ad Master Toggle */}
+            <div className="flex items-center justify-between">
+              <div>
+                <div className="text-xs font-bold">Rewarded Video Ad — Master ON/OFF</div>
+                <div className="text-[10px] text-muted-foreground">Enable/disable rewarded ads entirely</div>
+              </div>
+              <Switch
+                checked={form.rewardedEnabled ?? false}
+                onCheckedChange={(v) => setForm((f) => f && ({ ...f, rewardedEnabled: v }))}
+              />
+            </div>
+
+            {/* Rewarded for Lessons Toggle */}
+            <div className="flex items-center justify-between">
+              <div>
+                <div className="text-xs font-bold">Rewarded Ad for Locked Lessons</div>
+                <div className="text-[10px] text-muted-foreground">ON = locked lessons show "Watch Ad to Unlock FREE" + "Buy Pro". OFF = only "Buy Pro".</div>
+              </div>
+              <Switch
+                checked={form.rewardedLessonsEnabled ?? false}
+                onCheckedChange={(v) => setForm((f) => f && ({ ...f, rewardedLessonsEnabled: v }))}
+                disabled={!form.rewardedEnabled}
+              />
+            </div>
+
+            {/* Rewarded Ad Unit ID */}
+            <div className="space-y-1">
+              <label className="text-[10px] font-bold uppercase tracking-wide text-muted-foreground">Rewarded Ad Unit ID</label>
+              <Input
+                value={form.rewardedAdUnitId ?? ""}
+                onChange={(e) => setForm((f) => f && ({ ...f, rewardedAdUnitId: e.target.value }))}
+                className="h-9 text-xs font-mono"
+                placeholder="ca-app-pub-2888983054/rewarded-lesson"
+                disabled={!form.rewardedEnabled}
+              />
+            </div>
+          </div>
         </CardContent>
       </Card>
 
@@ -1438,6 +1480,9 @@ type AdminAdsForm = {
   brokerSlideTime?: number
   admobRefreshTime?: number
   affiliateShowTime?: number
+  rewardedEnabled?: boolean
+  rewardedAdUnitId?: string
+  rewardedLessonsEnabled?: boolean
 }
 
 /* ---------------- Pro Requests ---------------- */

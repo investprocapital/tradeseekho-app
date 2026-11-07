@@ -56,6 +56,7 @@ export default function Home() {
   const { data: proMe } = useProMe()
   const { data: adSettings } = useAdSettings()
   const shiftBannerToBottom = adSettings?.shiftBannerToBottom ?? false
+  const rewardedLessonsEnabled = adSettings?.rewardedEnabled && adSettings?.rewardedLessonsEnabled
   // ─── Plan-specific Pro checks (use 3 explicit booleans, NOT proStatus) ───
   // Each feature only unlocks if the user has the corresponding plan boolean.
   // This prevents the bug where buying ONE plan unlocks ALL features.
@@ -257,7 +258,7 @@ export default function Home() {
                   <p className="py-8 text-center text-sm text-muted-foreground">No lessons yet.</p>
                 ) : (
                   visibleLessons.map((l, i) => (
-                    <LessonRow key={l.id} lesson={l} lang={lang} isPro={isPro} seqLocked={!isPro && i > 0 && !visibleLessons[i - 1].passed && l.categorySlug !== "beginner"} onOpen={() => openLesson(l.id)} onPro={() => { setProPlan("lessons"); setProOpen(true) }} />
+                    <LessonRow key={l.id} lesson={l} lang={lang} isPro={isPro} seqLocked={!isPro && i > 0 && !visibleLessons[i - 1].passed && l.categorySlug !== "beginner"} onOpen={() => openLesson(l.id)} onPro={() => { setProPlan("lessons"); setProOpen(true) }} rewardedLessonsEnabled={rewardedLessonsEnabled} />
                   ))
                 )}
               </div>
@@ -477,7 +478,7 @@ function LevelBox({
   )
 }
 
-function LessonRow({ lesson, lang, isPro, onOpen, onPro, seqLocked }: { lesson: LessonListItemDTO; lang: string; isPro: boolean; onOpen: () => void; onPro: () => void; seqLocked?: boolean }) {
+function LessonRow({ lesson, lang, isPro, onOpen, onPro, seqLocked, rewardedLessonsEnabled }: { lesson: LessonListItemDTO; lang: string; isPro: boolean; onOpen: () => void; onPro: () => void; seqLocked?: boolean; rewardedLessonsEnabled?: boolean }) {
   // ─── Pro-lock logic (3-level system) ───
   // 1. Beginner = ALL FREE (never locked, all 12 lessons open)
   // 2. Intermediate = Lesson 1 free (preview), Lesson 2-10 Pro-locked
@@ -495,7 +496,26 @@ function LessonRow({ lesson, lang, isPro, onOpen, onPro, seqLocked }: { lesson: 
   return (
     <button
       onClick={() => {
-        if (proLocked) { onPro(); return }
+        if (proLocked) {
+          if (rewardedLessonsEnabled) {
+            const choice = confirm(
+              "🔒 This lesson is locked!\n\n" +
+              "Choose an option:\n\n" +
+              "OK = Watch Video Ad — Unlock this 1 lesson FREE\n" +
+              "Cancel = Buy Pro (Rs 1400) — Unlock ALL lessons\n\n" +
+              "Tap OK to watch a short ad, or Cancel to buy Pro."
+            )
+            if (choice) {
+              toast.success("🎬 Rewarded ad will play here. Lesson unlocked!")
+              onOpen()
+            } else {
+              onPro()
+            }
+          } else {
+            onPro()
+          }
+          return
+        }
         if (seqLocked) {
           toast(lang === "ur" || lang === "ar" ? "براہ کرم پہلا سبق مکمل کریں" : lang === "hi" ? "कृपया पिछला पाठ पूर्ण करें" : "Please complete the previous lesson first")
           return
