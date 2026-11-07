@@ -20,6 +20,8 @@ export async function GET() {
         isProAlerts: false,
         isProSignals: false,
         proExpiredAt: null,
+        // No signed-in user → default Ads ON (anonymous/local learners still see ads).
+        adsEnabled: true,
         latestRequest: null,
       })
     }
@@ -32,6 +34,7 @@ export async function GET() {
         isProAlerts: true,
         isProSignals: true,
         proExpiredAt: true,
+        adsEnabled: true,
       },
     }))
     const latest = await withDbRetry(() => db.proRequest.findFirst({
@@ -39,6 +42,9 @@ export async function GET() {
       orderBy: { createdAt: "desc" },
       select: { id: true, method: true, status: true, planType: true, createdAt: true, reviewerNote: true },
     }))
+    // Effective ads = stored flag AND not Pro. Pro users are ALWAYS ad-free.
+    const rawAds = user?.adsEnabled ?? true
+    const isPro = user?.proStatus === "active"
     return NextResponse.json({
       proStatus: user?.proStatus ?? "none",
       proPlans: user?.proPlans ?? "",
@@ -46,6 +52,9 @@ export async function GET() {
       isProAlerts: user?.isProAlerts ?? false,
       isProSignals: user?.isProSignals ?? false,
       proExpiredAt: user?.proExpiredAt ?? null,
+      // Effective per-user ads flag (Pro => always false). Client shows the
+      // AdMob video interstitial at the start of each lesson only when true.
+      adsEnabled: rawAds && !isPro,
       latestRequest: latest,
     })
   } catch (e: any) {
@@ -57,6 +66,7 @@ export async function GET() {
       isProAlerts: false,
       isProSignals: false,
       proExpiredAt: null,
+      adsEnabled: true,
       latestRequest: null,
     })
   }

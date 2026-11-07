@@ -46,6 +46,7 @@ export async function GET(req: Request) {
       proPlans: true,
       createdAt: true,
       lessonsCompleted: true,
+      adsEnabled: true,
       proRequests: {
         orderBy: { createdAt: "desc" },
         take: 1,
@@ -78,6 +79,9 @@ export async function GET(req: Request) {
     passedQuizzes: u._count.progress,
     totalLessons,
     deviceInfo: "Web Browser", // Placeholder — device tracking not implemented
+    // Per-user Ads ON/OFF. Pro users are ALWAYS ad-free → effective state forced OFF.
+    adsEnabled: u.adsEnabled,
+    adsEffective: u.adsEnabled && u.proStatus !== "active",
   }))
 
   // Count ALL users (ignoring search/filter) for the prominent "Total Clients" box

@@ -42,7 +42,7 @@ import {
   useAdminProRequests, useApproveProRequest, useRejectProRequest,
   useProSettings, useSaveProSettings,
   useBrokerAds, useSaveBrokerAds, useAdminPages, useSavePage,
-  useAdminUsers, usePendingProCount,
+  useAdminUsers, usePendingProCount, useToggleUserAds,
   useAffiliateAd, useSaveAffiliateAd,
 } from "./admin-data"
 import { SignalManager } from "./signal-manager"
@@ -2425,6 +2425,7 @@ function UsersTab() {
   const [search, setSearch] = useState("")
   const [filter, setFilter] = useState("all")
   const { data, isLoading } = useAdminUsers(search, filter)
+  const toggleAds = useToggleUserAds()
 
   const users = data?.users ?? []
   const proCount = users.filter((u) => u.proStatus === "active").length
@@ -2510,12 +2511,13 @@ function UsersTab() {
       {/* Users Table — horizontal scroll on mobile so all columns visible */}
       <Card className="overflow-visible">
         <div className="max-h-[60vh] w-full overflow-x-auto overflow-y-auto overscroll-contain" style={{ WebkitOverflowScrolling: "touch", touchAction: "pan-x pan-y" }}>
-          <table className="w-max min-w-[700px] border-collapse text-left text-xs">
+          <table className="w-max min-w-[820px] border-collapse text-left text-xs">
             <TableHeader>
               <TableRow>
                 <TableHead>Email</TableHead>
                 <TableHead>Name</TableHead>
                 <TableHead className="whitespace-nowrap">Pro Status</TableHead>
+                <TableHead className="whitespace-nowrap">Ads</TableHead>
                 <TableHead className="whitespace-nowrap">Plan Type</TableHead>
                 <TableHead className="whitespace-nowrap">Payment Method</TableHead>
                 <TableHead className="whitespace-nowrap">Joined</TableHead>
@@ -2525,9 +2527,9 @@ function UsersTab() {
             </TableHeader>
             <TableBody>
               {isLoading ? (
-                <TableRow><TableCell colSpan={8} className="py-6 text-center text-muted-foreground">Loading...</TableCell></TableRow>
+                <TableRow><TableCell colSpan={9} className="py-6 text-center text-muted-foreground">Loading...</TableCell></TableRow>
               ) : users.length === 0 ? (
-                <TableRow><TableCell colSpan={8} className="py-6 text-center text-muted-foreground">No users found.</TableCell></TableRow>
+                <TableRow><TableCell colSpan={9} className="py-6 text-center text-muted-foreground">No users found.</TableCell></TableRow>
               ) : users.map((u) => (
                 <TableRow key={u.id} className="hover:bg-muted/30">
                   <TableCell className="font-semibold text-xs whitespace-nowrap">{u.email}</TableCell>
@@ -2540,6 +2542,30 @@ function UsersTab() {
                     ) : (
                       <Badge variant="outline" className="text-[10px]">Free</Badge>
                     )}
+                  </TableCell>
+                  {/* ─── Per-user Ads ON/OFF toggle ───
+                      Pro users are ALWAYS ad-free → toggle is disabled + forced OFF.
+                      Free users: admin can flip Ads ON (video ad before each lesson)
+                      or OFF (no ads) per individual client. */}
+                  <TableCell className="whitespace-nowrap">
+                    <div className="flex items-center gap-2">
+                      <Switch
+                        checked={u.adsEffective}
+                        disabled={u.proStatus === "active" || toggleAds.isPending}
+                        aria-label={`Toggle ads for ${u.email}`}
+                        onCheckedChange={async (checked) => {
+                          try {
+                            await toggleAds.mutateAsync({ id: u.id, adsEnabled: checked })
+                            toast.success(`Ads ${checked ? "ON" : "OFF"} for ${u.email}`)
+                          } catch (e: any) {
+                            toast.error(e?.message || "Failed to update ads setting")
+                          }
+                        }}
+                      />
+                      <span className={`text-[10px] font-bold ${u.adsEffective ? "text-emerald-600" : "text-muted-foreground"}`}>
+                        {u.proStatus === "active" ? "OFF (Pro)" : u.adsEffective ? "ON" : "OFF"}
+                      </span>
+                    </div>
                   </TableCell>
                   {/* Plan Type — color badges: Alerts=Blue, Signals=Green, Lessons=Orange, All=Gold */}
                   <TableCell className="whitespace-nowrap py-3">

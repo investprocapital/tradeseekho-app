@@ -11,10 +11,11 @@ import { Separator } from "@/components/ui/separator"
 import { Bookmark, X, ArrowLeft, ArrowRight, BarChart3, Lock, CheckCircle2, BookOpen, RefreshCw } from "lucide-react"
 import { motion, AnimatePresence } from "framer-motion"
 import { useStore, useT } from "@/lib/store"
-import { useLessonDetail, useToggleBookmark } from "./use-data"
+import { useLessonDetail, useToggleBookmark, useProMe } from "./use-data"
 import { usePick } from "./localize"
 import { QuizContent } from "./quiz-modal"
 import { AdBanner } from "./ad-banner"
+import { LessonVideoAdOverlay } from "./lesson-video-ad"
 import { TradingViewChart } from "./tradingview-chart"
 // NOTE: MarketGaugeScreen removed from lesson-reader to reduce DB calls.
 // Gauge is now only available via the "Market Gauge" button on the home
@@ -41,11 +42,24 @@ export function LessonReader() {
   const toggleBookmark = useStore((s) => s.toggleBookmark)
   const mutBm = useToggleBookmark()
   const { data, isLoading } = useLessonDetail(activeLessonId)
+  // Per-user Ads ON/OFF (effective: Pro users are always ad-free → false).
+  const { data: proMe } = useProMe()
+  const adsEnabled = proMe?.adsEnabled ?? true
 
   const lesson = data?.lesson
   const quiz = data?.quiz
   const open = !!activeLessonId
   const showQuiz = !!activeLessonId && quizOpenFor === activeLessonId && !!quiz
+
+  // ─── Per-user AdMob video interstitial ───
+  // Shows ONCE at the start of each opened lesson when the user's Ads flag is
+  // ON (Pro users never see it — adsEffective is false server-side). Derived
+  // (not effect-driven) so it re-arms automatically every time a different
+  // lesson is opened, and the same lesson is closed & reopened. Dismissed via
+  // the Skip button (5s countdown, AdMob-style) which stamps the lesson id.
+  const [shownAdForLessonId, setShownAdForLessonId] = useState<string | null>(null)
+  const shouldShowAd =
+    adsEnabled && !!activeLessonId && !!lesson && shownAdForLessonId !== activeLessonId && !showQuiz
 
   const mdComponents = useMemo(
     () => ({
@@ -77,7 +91,7 @@ export function LessonReader() {
     <Sheet open={open} onOpenChange={(v) => !v && closeLesson()}>
       <SheetContent
         side="right"
-        className="flex w-full flex-col gap-0 p-0 z-[100] sm:max-w-2xl lg:max-w-3xl"
+        className="relative flex w-full flex-col gap-0 p-0 z-[100] sm:max-w-2xl lg:max-w-3xl"
         style={{ width: "100%", maxWidth: "100%", height: "100dvh" }}
         onContextMenu={(e) => e.preventDefault()}
         onInteractOutside={(e) => { if (zoomImage) e.preventDefault() }}
@@ -90,6 +104,14 @@ export function LessonReader() {
               <QuizContent lesson={lesson} quiz={quiz} />
             ) : (
             <>
+            {/* ─── Per-user AdMob video interstitial ───
+                Shows once at the start of each lesson when the user's Ads flag
+                is ON (Pro users never see it — adsEffective is false for them). */}
+            <LessonVideoAdOverlay
+              show={shouldShowAd}
+              lessonTitle={pick(lesson.title)}
+              onSkip={() => setShownAdForLessonId(activeLessonId)}
+            />
             {/* Full-page scrollable area — header + progress + body all scroll together */}
             <div
               className="flex-1 overflow-y-auto overscroll-contain"

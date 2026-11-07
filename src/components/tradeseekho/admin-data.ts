@@ -375,6 +375,10 @@ export interface AdminUser {
   passedQuizzes: number
   totalLessons: number
   deviceInfo: string
+  // Per-user Ads ON/OFF (admin-controlled). adsEnabled = stored toggle;
+  // adsEffective = adsEnabled && not Pro (Pro users are always ad-free).
+  adsEnabled: boolean
+  adsEffective: boolean
 }
 
 export function useAdminUsers(search?: string, filter?: string) {
@@ -389,6 +393,24 @@ export function useAdminUsers(search?: string, filter?: string) {
   return useQuery<{ users: AdminUser[]; total: number; totalAll: number; totalProAll: number; totalFreeAll: number }>({
     queryKey,
     queryFn: () => j(fetch(url).then((r) => r)),
+  })
+}
+
+// Toggle per-user Ads ON/OFF from the admin Users tab.
+export function useToggleUserAds() {
+  const qc = useQueryClient()
+  return useMutation<{ ok: boolean; adsEnabled: boolean; adsEffective: boolean }, Error, { id: string; adsEnabled: boolean }>({
+    mutationFn: async ({ id, adsEnabled }) => {
+      const res = await fetch(`/api/admin/users/${id}`, {
+        method: "PATCH",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ adsEnabled }),
+      })
+      return j(Promise.resolve(res))
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["admin-users"] })
+    },
   })
 }
 

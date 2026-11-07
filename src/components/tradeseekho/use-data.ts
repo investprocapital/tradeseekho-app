@@ -206,6 +206,9 @@ export interface ProMe {
   isProAlerts: boolean
   isProSignals: boolean
   proExpiresAt: string | null
+  // Effective per-user ads flag (Pro => always false). When true, the lesson
+  // reader shows an AdMob video interstitial at the start of each lesson.
+  adsEnabled: boolean
   latestRequest: { id: string; method: string; status: string; planType: string; createdAt: string; reviewerNote: string | null } | null
 }
 

@@ -6,6 +6,67 @@ import { withDbRetry } from "@/lib/db-retry"
 export const dynamic = "force-dynamic"
 
 /**
+ * PATCH /api/admin/users/[id]  body: { adsEnabled: boolean }
+ * (also accepts ?id=X query for backward compat)
+ *
+ * Toggle per-user Ads ON/OFF from the admin Users tab.
+ * - Ads ON  → user sees an AdMob video interstitial at the start of each lesson.
+ * - Ads OFF → no ads shown to that user.
+ * - Pro users (proStatus === "active") are ALWAYS ad-free: attempting to turn
+ *   Ads ON for a Pro user is rejected (returns 400) so the admin UI stays honest.
+ */
+export async function PATCH(
+  req: Request,
+  { params }: { params: Promise<{ id: string }> },
+) {
+  const guard = await requireAdmin()
+  if (guard) return guard
+
+  const { id: pathId } = await params
+  const { searchParams } = new URL(req.url)
+  const id = pathId || searchParams.get("id")
+  if (!id) return NextResponse.json({ error: "id required" }, { status: 400 })
+
+  const body = await req.json().catch(() => ({} as { adsEnabled?: boolean }))
+  if (typeof body.adsEnabled !== "boolean") {
+    return NextResponse.json({ error: "adsEnabled (boolean) required" }, { status: 400 })
+  }
+
+  try {
+    const user = await withDbRetry(() => db.user.findUnique({
+      where: { id },
+      select: { id: true, proStatus: true, adsEnabled: true },
+    }))
+
+    if (!user) {
+      return NextResponse.json({ error: "User not found" }, { status: 404 })
+    }
+
+    // Pro users can never have ads enabled — enforce server-side too.
+    if (body.adsEnabled && user.proStatus === "active") {
+      return NextResponse.json(
+        { error: "Pro users are always ad-free. Ads cannot be enabled for a Pro client." },
+        { status: 400 },
+      )
+    }
+
+    await withDbRetry(() => db.user.update({
+      where: { id },
+      data: { adsEnabled: body.adsEnabled as boolean },
+    }))
+
+    return NextResponse.json({
+      ok: true,
+      adsEnabled: body.adsEnabled,
+      adsEffective: body.adsEnabled && user.proStatus !== "active",
+    })
+  } catch (e: any) {
+    console.error("[admin/users PATCH]", e?.message)
+    return NextResponse.json({ error: "db_error", message: e?.message }, { status: 500 })
+  }
+}
+
+/**
  * DELETE /api/admin/users?id=X
  *
  * Admin can permanently delete any client account.

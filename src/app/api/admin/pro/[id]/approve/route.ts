@@ -44,8 +44,10 @@ export async function POST(
   // ─── Set ONLY the specific plan boolean(s) ───
   // For "all" (bundle): set all 3 to true.
   // For single plans: set ONLY that one boolean. Do NOT touch the others.
-  const updateData: { isProLessons?: boolean; isProAlerts?: boolean; isProSignals?: boolean; proStatus: string; proPlans?: string } = {
+  const updateData: { isProLessons?: boolean; isProAlerts?: boolean; isProSignals?: boolean; proStatus: string; proPlans?: string; adsEnabled?: boolean } = {
     proStatus: "active",
+    // Pro users are ALWAYS ad-free: auto turn OFF per-user ads when upgraded.
+    adsEnabled: false,
   }
 
   if (planToAdd === "lessons") {

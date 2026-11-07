@@ -7,7 +7,7 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
+  provider = "sqlite"
   url       = env("DATABASE_URL")
   directUrl = env("DIRECT_URL")
 }
@@ -126,6 +126,13 @@ model User {
   isProAlerts     Boolean    @default(false) // true = unlimited price alerts
   isProSignals    Boolean    @default(false) // true = premium signals unlocked
   proExpiresAt    DateTime?  // optional expiry; null = lifetime
+  // ─── Per-user Ads ON/OFF (admin-controlled) ───
+  // When true: user sees an AdMob video interstitial at the start of each
+  // lesson (Lessons 1–43). When false: no ads. Pro users are ALWAYS ad-free —
+  // their effective ad state is forced OFF at read time (proStatus === "active"
+  // => ads ignored) regardless of this flag. Admin can toggle per single client
+  // from the Users tab.
+  adsEnabled      Boolean    @default(true)
   fcmToken        String?    // Firebase Cloud Messaging token (for push notifications when app is closed)
   preferredLang   String?    // en | ur | hi | ar — saved per-user, auto-applied on login
   lessonsCompleted Int     @default(0) // cumulative count of lessons passed (for ad interstitial cadence)
