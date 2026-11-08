@@ -78,7 +78,7 @@ export function LessonVideoAd({
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="absolute inset-0 z-[200] flex flex-col bg-black"
+      className="fixed inset-0 z-[200] flex flex-col bg-black"
     >
       {/* Top bar: Ad badge (left) + countdown/skip (right) */}
       <div className="absolute left-0 right-0 top-0 z-20 flex items-center justify-between p-3">
