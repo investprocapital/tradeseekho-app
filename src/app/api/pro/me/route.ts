@@ -20,8 +20,8 @@ export async function GET() {
         isProAlerts: false,
         isProSignals: false,
         proExpiredAt: null,
-        // No signed-in user → default Ads ON (anonymous/local learners still see ads).
-        adsEnabled: true,
+        // No signed-in user → Ads OFF by default (admin must opt-in per client).
+        adsEnabled: false,
         latestRequest: null,
       })
     }
@@ -43,7 +43,7 @@ export async function GET() {
       select: { id: true, method: true, status: true, planType: true, createdAt: true, reviewerNote: true },
     }))
     // Effective ads = stored flag AND not Pro. Pro users are ALWAYS ad-free.
-    const rawAds = user?.adsEnabled ?? true
+    const rawAds = user?.adsEnabled ?? false
     const isPro = user?.proStatus === "active"
     return NextResponse.json({
       proStatus: user?.proStatus ?? "none",
@@ -66,7 +66,7 @@ export async function GET() {
       isProAlerts: false,
       isProSignals: false,
       proExpiredAt: null,
-      adsEnabled: true,
+      adsEnabled: false,
       latestRequest: null,
     })
   }

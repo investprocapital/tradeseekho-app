@@ -43,8 +43,9 @@ export function LessonReader() {
   const mutBm = useToggleBookmark()
   const { data, isLoading } = useLessonDetail(activeLessonId)
   // Per-user Ads ON/OFF (effective: Pro users are always ad-free → false).
+  // Default OFF until admin turns Ads ON for this client.
   const { data: proMe } = useProMe()
-  const adsEnabled = proMe?.adsEnabled ?? true
+  const adsEnabled = proMe?.adsEnabled ?? false
 
   const lesson = data?.lesson
   const quiz = data?.quiz
