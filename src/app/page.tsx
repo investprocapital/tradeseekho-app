@@ -54,6 +54,12 @@ export default function Home() {
   const setProOpen = useStore((s) => s.setProOpen)
   const setProPlan = useStore((s) => s.setProPlan)
   const setSettingsOpen = useStore((s) => s.setSettingsOpen)
+  // Pro-lesson flow: if user clicked a Pro-locked lesson while not logged in,
+  // we opened Signup. After successful login (page reloads), this persisted
+  // flag triggers the Pro payment popup automatically.
+  const pendingProAfterLogin = useStore((s) => s.pendingProAfterLogin)
+  const setPendingProAfterLogin = useStore((s) => s.setPendingProAfterLogin)
+  const setLoginReason = useStore((s) => s.setLoginReason)
   const { data: proMe } = useProMe()
   const { data: adSettings } = useAdSettings()
   const shiftBannerToBottom = adSettings?.shiftBannerToBottom ?? false
@@ -123,6 +129,23 @@ export default function Home() {
     //   setLoginOpen(true)
     // }
   }, [status, loginOpen, setLoginOpen, onboardingSeen])
+
+  // ─── Pro-lesson flow: after login, auto-open Pro payment popup ───
+  // User clicked a Pro-locked lesson while not logged in → we opened Signup.
+  // After successful login (page reloads), session becomes "authenticated" and
+  // this flag (persisted in localStorage) triggers the Pro payment popup.
+  useEffect(() => {
+    if (pendingProAfterLogin && status === "authenticated") {
+      setPendingProAfterLogin(false)
+      setLoginReason(null)
+      // Small delay so the page settles after reload before opening the popup.
+      const t = setTimeout(() => {
+        setProPlan("lessons")
+        setProOpen(true)
+      }, 600)
+      return () => clearTimeout(t)
+    }
+  }, [pendingProAfterLogin, status, setPendingProAfterLogin, setLoginReason, setProPlan, setProOpen])
 
   // ROLE-GATED ADMIN PANEL: showAdmin is persisted in localStorage, but it
   // MUST only be active when the logged-in user's role is actually "admin".
@@ -487,6 +510,12 @@ function LevelBox({
 function LessonRow({ lesson, lang, isPro, onOpen, onPro, seqLocked, rewardedLessonsEnabled }: { lesson: LessonListItemDTO; lang: string; isPro: boolean; onOpen: () => void; onPro: () => void; seqLocked?: boolean; rewardedLessonsEnabled?: boolean }) {
   const [unlockDialogOpen, setUnlockDialogOpen] = useState(false)
   const [adBusy, setAdBusy] = useState(false)
+  // Pro-lesson flow: check if user is logged in before showing Pro popup.
+  const { data: session } = useSession()
+  const setLoginOpen = useStore((s) => s.setLoginOpen)
+  const setLoginReason = useStore((s) => s.setLoginReason)
+  const setPendingProAfterLogin = useStore((s) => s.setPendingProAfterLogin)
+  const setProPlan = useStore((s) => s.setProPlan)
 
   // ─── Pro-lock logic (3-level system) ───
   const isPremiumLocked = (lesson.categorySlug === "intermediate" || lesson.categorySlug === "advanced") && lesson.orderInCategory > 1
@@ -494,9 +523,20 @@ function LessonRow({ lesson, lang, isPro, onOpen, onPro, seqLocked, rewardedLess
   const isLocked = proLocked || seqLocked
 
   // ─── Locked lesson click handler ───
-  // If rewarded ads enabled → show dialog with 2 options (Watch Ad / Buy Pro)
-  // If rewarded ads disabled → directly open Pro buy page
+  // Pro-lesson flow:
+  //   1. Not logged in → Signup popup first (with custom text). After login,
+  //      the Pro payment popup auto-opens (via pendingProAfterLogin flag).
+  //   2. Logged in + rewarded ads enabled → show dialog (Watch Ad / Buy Pro)
+  //   3. Logged in + rewarded ads disabled → directly open Pro buy page
   const onLockedClick = () => {
+    if (!session?.user) {
+      // Not logged in → open Signup popup first. After login, Pro popup auto-opens.
+      setLoginReason("pro_lesson")
+      setPendingProAfterLogin(true)
+      setProPlan("lessons")
+      setLoginOpen(true)
+      return
+    }
     if (rewardedLessonsEnabled) {
       setUnlockDialogOpen(true)
     } else {

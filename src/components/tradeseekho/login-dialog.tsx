@@ -6,7 +6,7 @@ import { signIn } from "next-auth/react"
 import { useQuery } from "@tanstack/react-query"
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog"
 import { useStore } from "@/lib/store"
-import { Mail, Lock, User, Loader2, AlertCircle, ArrowLeft, ArrowRight, Eye, EyeOff, GraduationCap, BarChart3, TrendingUp, Moon, Sun, CheckCircle2 } from "lucide-react"
+import { Mail, Lock, User, Loader2, AlertCircle, ArrowLeft, ArrowRight, Eye, EyeOff, GraduationCap, BarChart3, TrendingUp, Moon, Sun, CheckCircle2, X } from "lucide-react"
 import { useTheme } from "next-themes"
 
 type View = "landing" | "signin" | "signup" | "forgot" | "forgot-sent" | "forgot-done" | "set-password"
@@ -24,6 +24,11 @@ export function LoginDialog() {
   const loginView = useStore((s) => s.loginView)
   const setLoginView = useStore((s) => s.setLoginView)
   const setShowAdmin = useStore((s) => s.setShowAdmin)
+  // Pro-lesson flow: when login was opened from a Pro-locked lesson click, we
+  // show a custom message + auto-switch to the signup view so the user can
+  // create a free account quickly.
+  const loginReason = useStore((s) => s.loginReason)
+  const setLoginReason = useStore((s) => s.setLoginReason)
   const { theme, setTheme } = useTheme()
 
   // Fetch ad settings to check if Google Login button is enabled/disabled
@@ -56,11 +61,28 @@ export function LoginDialog() {
       })
     }
   }, [loginOpen, loginView, setLoginView])
+
+  // Pro-lesson flow: when login opens from a Pro-locked lesson click, auto-
+  // switch to the signup view so the user can create a free account quickly.
+  useEffect(() => {
+    if (loginOpen && loginReason === "pro_lesson") {
+      Promise.resolve().then(() => setView("signup"))
+    }
+  }, [loginOpen, loginReason])
   // Tracks whether the entered email is a Google-only user (no password set).
   // If true, we show a "Use Continue with Google" hint instead of "Invalid password".
   const [googleUserHint, setGoogleUserHint] = useState(false)
 
   const reset = () => { setView("landing"); setEmail(""); setPassword(""); setName(""); setNewPw(""); setResetLink(""); setErr(null); setBusy(false); setGoogleUserHint(false) }
+
+  // Also clear loginReason when dialog closes (but keep pendingProAfterLogin
+  // so the Pro popup can auto-open after successful login + page reload).
+  const closeAndReset = () => {
+    setLoginReason(null)
+    useStore.setState({ pendingProAfterLogin: false })
+    setLoginOpen(false)
+    reset()
+  }
 
   // DO NOT auto-fill email from localStorage. This was causing a privacy bug
   // where one user's email would show on another user's device (e.g., when
@@ -188,6 +210,19 @@ export function LoginDialog() {
           </span>
         </button>
 
+        {/* Close button — only shown when login was opened from a Pro-lesson
+            click. Lets the user dismiss the signup popup if they don't want
+            to create an account right now. Clears the Pro-lesson flow flags. */}
+        {loginReason === "pro_lesson" && (
+          <button
+            onClick={closeAndReset}
+            className="absolute right-20 top-3 z-30 flex h-8 w-8 items-center justify-center rounded-full bg-white/10 text-white/60 transition hover:bg-white/20 hover:text-white"
+            aria-label="Close"
+          >
+            <X className="h-4 w-4" />
+          </button>
+        )}
+
         {/* SINGLE COLUMN — full width, scrollable */}
         <div className="relative flex h-full w-full flex-col overflow-y-auto">
           {/* Background: candlesticks */}
@@ -295,7 +330,13 @@ export function LoginDialog() {
                     <span className="mt-2 text-lg font-extrabold"><span className="text-white">TradeSeekho</span> <span className="text-[#00D09C]">PK</span></span>
                   </div>
                   <h2 className="text-2xl font-extrabold text-white">{view === "signup" ? "Create Account" : "Welcome Back"}</h2>
-                  <p className="mt-1 text-sm text-white/50">{view === "signup" ? "Sign up to start learning" : "Login to your account to continue"}</p>
+                  <p className="mt-1 text-sm text-white/50">
+                    {loginReason === "pro_lesson"
+                      ? "Create FREE account to continue and keep your PRO access safe"
+                      : view === "signup"
+                        ? "Sign up to start learning"
+                        : "Login to your account to continue"}
+                  </p>
 
                   <form onSubmit={submit} autoComplete="off" className="mt-6 w-full space-y-3">
                     {view === "signup" && (

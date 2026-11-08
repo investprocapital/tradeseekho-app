@@ -2,6 +2,7 @@
 
 import { motion } from "framer-motion"
 import Image from "next/image"
+import { useSession } from "next-auth/react"
 import { Lock, CheckCircle2, Clock, Bookmark, ChevronRight, CircleDot, BarChart3 } from "lucide-react"
 import { useStore, useT } from "@/lib/store"
 import { usePick } from "./localize"
@@ -49,8 +50,46 @@ function LessonCard({ lesson, index, totalInCategory }: { lesson: LessonListItem
   const toggleBm = useStore((s) => s.toggleBookmark)
   const isBookmarked = useStore((s) => s.bookmarks.includes(lesson.id))
   const mutBookmark = useToggleBookmark()
+  // Pro-lesson flow: if user clicks a Pro-locked lesson (Intermediate/Advanced
+  // lesson 2+), we intercept. Not logged in → Signup popup first (then Pro
+  // payment popup auto-opens after login). Logged in but not Pro → Pro payment
+  // popup directly. Beginner lessons (1-12) are always free, no login needed.
+  const { data: session } = useSession()
+  const setLoginOpen = useStore((s) => s.setLoginOpen)
+  const setProOpen = useStore((s) => s.setProOpen)
+  const setProPlan = useStore((s) => s.setProPlan)
+  const setPendingProAfterLogin = useStore((s) => s.setPendingProAfterLogin)
+  const setLoginReason = useStore((s) => s.setLoginReason)
 
   const locked = !lesson.passed && lesson.orderInCategory > 1 && !lesson.completed
+  // Pro paywall: Intermediate/Advanced lessons 2+ require Pro (Beginner = all free).
+  // Matches the server-side paywall in /api/lessons/[id]/route.ts (isPremiumLocked).
+  // Note: we DON'T check lesson.isFree here because that field is true for all
+  // lessons by default in the DB — the real gate is category + orderInCategory.
+  const isProLocked =
+    (lesson.categorySlug === "intermediate" || lesson.categorySlug === "advanced") &&
+    lesson.orderInCategory > 1
+
+  const handleLessonClick = () => {
+    if (isProLocked) {
+      // Pro-locked lesson clicked.
+      if (!session?.user) {
+        // Not logged in → open Signup popup first. After login, the pendingProAfterLogin
+        // flag (persisted) triggers the Pro payment popup automatically.
+        setLoginReason("pro_lesson")
+        setPendingProAfterLogin(true)
+        setProPlan("lessons")
+        setLoginOpen(true)
+        return
+      }
+      // Logged in but not Pro → open Pro payment popup directly.
+      setProPlan("lessons")
+      setProOpen(true)
+      return
+    }
+    // Free lesson (Beginner 1-12, or Intermediate/Advanced lesson 1 preview) → open normally.
+    openLesson(lesson.id)
+  }
 
   const onBookmark = (e: React.MouseEvent) => {
     e.stopPropagation()
@@ -73,7 +112,7 @@ function LessonCard({ lesson, index, totalInCategory }: { lesson: LessonListItem
           below the bookmark button so taps work on mobile + web) */}
       <button
         type="button"
-        onClick={() => openLesson(lesson.id)}
+        onClick={handleLessonClick}
         className="absolute inset-0 z-10 h-full w-full cursor-pointer"
         aria-label={`${t("action.readLesson")}: ${pick(lesson.title)}`}
       />

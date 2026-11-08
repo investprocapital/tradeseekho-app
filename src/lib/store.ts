@@ -74,6 +74,16 @@ interface AppState {
   // "alerts" = from Price Alerts, "lessons" = from locked lesson, "signals" = from signals
   proPlan: "alerts" | "lessons" | "signals" | null
   setProPlan: (v: "alerts" | "lessons" | "signals" | null) => void
+  // ─── Pro lesson flow ───
+  // When true: user clicked a Pro-locked lesson without being logged in →
+  // we opened the Signup popup. After successful login (page reloads), this
+  // flag is checked → Pro payment popup auto-opens. Persisted across reload.
+  pendingProAfterLogin: boolean
+  setPendingProAfterLogin: (v: boolean) => void
+  // Custom message shown in the login dialog when it was opened from a Pro
+  // lesson click (e.g. "Create FREE account to continue and keep your PRO access safe").
+  loginReason: "pro_lesson" | null
+  setLoginReason: (v: "pro_lesson" | null) => void
 
   leaderboardOpen: boolean
   setLeaderboardOpen: (v: boolean) => void
@@ -167,6 +177,10 @@ export const useStore = create<AppState>()(
       setLoginOpen: (v) => set({ loginOpen: v }),
       loginView: null,
       setLoginView: (v) => set({ loginView: v }),
+      pendingProAfterLogin: false,
+      setPendingProAfterLogin: (v) => set({ pendingProAfterLogin: v }),
+      loginReason: null,
+      setLoginReason: (v) => set({ loginReason: v }),
       proPlan: null,
       setProPlan: (v) => set({ proPlan: v }),
 
@@ -218,6 +232,9 @@ export const useStore = create<AppState>()(
         progress: s.progress,
         adminAuthed: s.adminAuthed,
         showAdmin: s.showAdmin,
+        // Persist Pro-lesson flow flags so they survive the post-login reload.
+        pendingProAfterLogin: s.pendingProAfterLogin,
+        loginReason: s.loginReason,
       }),
     },
   ),
