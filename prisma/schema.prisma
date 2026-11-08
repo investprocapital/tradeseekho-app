@@ -323,6 +323,19 @@ model PageContent {
   updatedAt DateTime @updatedAt
 }
 
+// ─── API Keys (admin-managed, encrypted at rest) ───
+// Stores Vercel Blob token + Supabase URL/Key so admin can update them from
+// the panel without redeploying. Tokens are AES-256-GCM encrypted; the column
+// holds a JSON string { c, iv, tag } (all base64). supabaseUrl is plain text
+// (not secret). Singleton row (id = "singleton").
+model ApiKeys {
+  id               String   @id @default("singleton")
+  vercelBlobToken  String?  // AES-256-GCM encrypted JSON {c, iv, tag}
+  supabaseUrl      String?  // plain text (not secret, just a URL)
+  supabaseKey      String?  // AES-256-GCM encrypted JSON {c, iv, tag}
+  updatedAt        DateTime @updatedAt
+}
+
 // Trading signals — admin creates, clients view
 // status flow: active -> tp1_hit -> tp2_hit -> tp3_hit (win) OR -> sl_hit (loss) OR -> closed
 model Signal {

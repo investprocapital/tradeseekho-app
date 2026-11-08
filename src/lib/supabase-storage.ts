@@ -1,4 +1,5 @@
 import { createClient, SupabaseClient } from "@supabase/supabase-js"
+import { getSupabaseConfig } from "@/lib/api-keys"
 
 /**
  * Supabase Storage Helper
@@ -14,26 +15,41 @@ import { createClient, SupabaseClient } from "@supabase/supabase-js"
  * Cache-Control header is set to 1 year (31536000s) so images are cached
  * in the user's browser. First load = 1 download, subsequent loads = 0 data.
  *
- * Required env vars:
- *   SUPABASE_URL — e.g., https://fgprwlolfswhqjldgdju.supabase.co
- *   SUPABASE_SERVICE_KEY — service role key (server-side only, never expose)
+ * Keys are read from the ApiKeys DB table (admin-managed, encrypted) first,
+ * with fallback to SUPABASE_URL / SUPABASE_SERVICE_KEY env vars. This lets
+ * the admin update keys from the panel without redeploying.
  */
 
+// Cache the client + the key signature used to create it. When admin saves
+// new keys, getSupabaseConfig() returns different values → we recreate the
+// client with the new credentials (no app restart needed).
 let client: SupabaseClient | null = null
+let clientSignature: string = ""
 
-function getClient(): SupabaseClient | null {
-  if (client) return client
-  const url = process.env.SUPABASE_URL
-  const key = process.env.SUPABASE_SERVICE_KEY
+async function getClientAsync(): Promise<SupabaseClient | null> {
+  const { url, key } = await getSupabaseConfig()
   if (!url || !key) return null
+  const sig = `${url}::${key.slice(0, 8)}`
+  if (client && clientSignature === sig) return client
   client = createClient(url, key, {
     auth: { persistSession: false, autoRefreshToken: false },
   })
+  clientSignature = sig
   return client
 }
 
+/**
+ * Sync check — only checks env vars (for backward compat with code that
+ * can't be async). For the real check use isSupabaseConfiguredAsync().
+ */
 export function isSupabaseConfigured(): boolean {
   return !!process.env.SUPABASE_URL && !!process.env.SUPABASE_SERVICE_KEY
+}
+
+/** Async check — checks DB (admin-saved keys) OR env vars. */
+export async function isSupabaseConfiguredAsync(): Promise<boolean> {
+  const { url, key } = await getSupabaseConfig()
+  return !!url && !!key
 }
 
 /**
@@ -49,7 +65,7 @@ export async function uploadToSupabase(
   path: string,
   contentType: string = "image/webp",
 ): Promise<string | null> {
-  const supabase = getClient()
+  const supabase = await getClientAsync()
   if (!supabase) return null
 
   try {
@@ -78,7 +94,7 @@ export async function uploadToSupabase(
  * Delete a file from Supabase Storage by its public URL.
  */
 export async function deleteFromSupabase(url: string): Promise<boolean> {
-  const supabase = getClient()
+  const supabase = await getClientAsync()
   if (!supabase) return false
 
   try {
@@ -108,7 +124,7 @@ export async function getSupabaseStorageUsage(): Promise<{
   fileCount: number
   error: string | null
 }> {
-  const supabase = getClient()
+  const supabase = await getClientAsync()
   if (!supabase) {
     return { used: 0, fileCount: 0, error: "Supabase not configured" }
   }

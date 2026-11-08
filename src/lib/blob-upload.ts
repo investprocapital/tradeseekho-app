@@ -9,24 +9,28 @@
  * only the CDN URL in Neon. This keeps Neon rows tiny (just a URL string ~80
  * bytes vs ~200KB base64).
  *
- * FALLBACK: If BLOB_READ_WRITE_TOKEN is not configured (e.g. local dev, or
- * Vercel project without Blob enabled), we fall back to storing base64 in the
- * DB so the app keeps working. The migration script can move them later once
- * Blob is enabled.
+ * TOKEN SOURCES (priority order):
+ *   1. ApiKeys DB table (admin-managed, encrypted — set from Admin panel)
+ *   2. BLOB_READ_WRITE_TOKEN env var (Vercel dashboard)
+ *   3. OIDC mode (Vercel auto-injects BLOB_STORE_ID + VERCEL_OIDC_TOKEN)
  *
- * SETUP (user): In Vercel dashboard → Storage → Blob → Create store → copy
- * BLOB_READ_WRITE_TOKEN → add to Vercel env vars → redeploy.
+ * FALLBACK: If no token is configured, we fall back to storing base64 in the
+ * DB so the app keeps working.
  */
 
 import { put } from "@vercel/blob"
+import { getVercelBlobToken } from "@/lib/api-keys"
 
+/** Sync check — only checks env vars (fast, for backward compat). */
 export const isBlobConfigured = (): boolean => {
-  // Static token mode (local dev or manual setup)
   if (process.env.BLOB_READ_WRITE_TOKEN) return true
-  // OIDC mode (Vercel auto-configured via `vercel storage connect`)
-  // On Vercel deployments, VERCEL_OIDC_TOKEN + BLOB_STORE_ID are auto-injected
   if (process.env.BLOB_STORE_ID && process.env.VERCEL) return true
   return false
+}
+
+/** Async check — checks DB (admin-saved token) OR env vars. */
+export async function isBlobConfiguredAsync(): Promise<boolean> {
+  return !!(await getVercelBlobToken())
 }
 
 /**
@@ -61,8 +65,11 @@ export async function uploadImage(
     return { url: imageDataUrl, stored: "passthrough" }
   }
 
-  // If Blob not configured → fall back to base64 in DB (keeps app working)
-  if (!isBlobConfigured()) {
+  // Get token from DB (admin-saved) or env. If neither → base64 fallback.
+  const token = await getVercelBlobToken()
+  const oidcMode = !token && process.env.BLOB_STORE_ID && process.env.VERCEL
+
+  if (!token && !oidcMode) {
     return { url: imageDataUrl, stored: "base64" }
   }
 
@@ -83,6 +90,7 @@ export async function uploadImage(
       access: "public",
       contentType: mimeType,
       addRandomSuffix: true, // avoids collisions, still under folder/
+      ...(token ? { token } : {}), // pass admin-saved token (overrides env)
     })
 
     return { url: blob.url, stored: "blob" }
@@ -101,8 +109,11 @@ export async function uploadFile(
   folder: string,
   id: string,
 ): Promise<{ url: string; stored: "blob" | "base64" }> {
-  // If Blob not configured → return base64 data URL
-  if (!isBlobConfigured()) {
+  // Get token from DB (admin-saved) or env. If neither → base64 fallback.
+  const token = await getVercelBlobToken()
+  const oidcMode = !token && process.env.BLOB_STORE_ID && process.env.VERCEL
+
+  if (!token && !oidcMode) {
     const buf = Buffer.from(await file.arrayBuffer())
     const dataUrl = `data:${file.type};base64,${buf.toString("base64")}`
     return { url: dataUrl, stored: "base64" }
@@ -115,6 +126,7 @@ export async function uploadFile(
       access: "public",
       contentType: file.type,
       addRandomSuffix: true,
+      ...(token ? { token } : {}), // pass admin-saved token (overrides env)
     })
     return { url: blob.url, stored: "blob" }
   } catch (e: any) {

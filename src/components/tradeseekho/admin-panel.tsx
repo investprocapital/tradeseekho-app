@@ -1,13 +1,13 @@
 "use client"
 
-import { useState, useRef } from "react"
+import { useState, useRef, useEffect } from "react"
 import { signOut } from "next-auth/react"
 import { motion } from "framer-motion"
 import {
   Download, Users, BookOpen, BarChart3, Shield, Lock, LogOut, Eye,
   Plus, Pencil, Trash2, Save, Send, Megaphone, Check, ChevronRight, ArrowLeft,
   Crown, X, Upload, CreditCard, Search, TrendingUp, MessageSquare, Copy, ExternalLink,
-  Bell, Image as ImageIcon, Link2, LayoutGrid, RefreshCw, UserMinus, Settings, AlertCircle,
+  Bell, Image as ImageIcon, Link2, LayoutGrid, RefreshCw, UserMinus, Settings, AlertCircle, Key,
 } from "lucide-react"
 import {
   Card, CardContent, CardHeader, CardTitle, CardDescription,
@@ -151,6 +151,7 @@ export function AdminPanel() {
             { id: "comments", label: "Comments", icon: MessageSquare, color: "bg-sky-500" },
             { id: "notifications", label: "Notifications", icon: Bell, color: "bg-red-500" },
             { id: "admin-settings", label: "Admin Settings", icon: Settings, color: "bg-slate-500" },
+            { id: "api-keys", label: "API Keys", icon: Key, color: "bg-cyan-500" },
           ].map((tab) => {
             const Icon = tab.icon
             const isActive = adminTab === tab.id
@@ -200,6 +201,7 @@ export function AdminPanel() {
         <TabsContent value="comments" className="mt-5"><ManageCommentsTab /></TabsContent>
         <TabsContent value="notifications" className="mt-5"><NotificationsTab /></TabsContent>
         <TabsContent value="admin-settings" className="mt-5"><AdminSettingsTab /></TabsContent>
+        <TabsContent value="api-keys" className="mt-5"><ApiKeysTab /></TabsContent>
       </Tabs>
     </div>
   )
@@ -3866,5 +3868,288 @@ function StorageUsageMeter() {
         )}
       </CardContent>
     </Card>
+  )
+}
+
+/* ---------------- API Keys (Settings > API Keys) ---------------- */
+function ApiKeysTab() {
+  const qc = useQueryClient()
+  const [revealBlob, setRevealBlob] = useState(false)
+  const [revealSupa, setRevealSupa] = useState(false)
+  const [revealedBlob, setRevealedBlob] = useState("")
+  const [revealedSupa, setRevealedSupa] = useState("")
+  const [blobInput, setBlobInput] = useState("")
+  const [supaUrlInput, setSupaUrlInput] = useState("")
+  const [supaKeyInput, setSupaKeyInput] = useState("")
+  const [saving, setSaving] = useState<"" | "blob" | "supabase" | "all">("")
+
+  // Fetch masked tokens (default)
+  const { data, isLoading, refetch } = useQuery<{
+    vercelBlobToken: string
+    supabaseUrl: string
+    supabaseKey: string
+    vercelBlobConfigured: boolean
+    supabaseConfigured: boolean
+    vercelBlobFromEnv: boolean
+    supabaseFromEnv: boolean
+  }>({
+    queryKey: ["admin-api-keys"],
+    queryFn: async () => {
+      const res = await fetch("/api/admin/api-keys")
+      if (!res.ok) throw new Error("failed")
+      return res.json()
+    },
+  })
+
+  // When Supabase URL loads, prefill the input (it's not secret — editable directly)
+  useEffect(() => {
+    if (data?.supabaseUrl !== undefined) setSupaUrlInput(data.supabaseUrl)
+  }, [data?.supabaseUrl])
+
+  // Reveal full token (admin clicks "Show")
+  const doReveal = async (which: "blob" | "supa") => {
+    try {
+      const res = await fetch("/api/admin/api-keys?reveal=true")
+      if (!res.ok) throw new Error("failed")
+      const j = await res.json()
+      if (which === "blob") {
+        setRevealedBlob(j.vercelBlobToken || "")
+        setRevealBlob(true)
+      } else {
+        setRevealedSupa(j.supabaseKey || "")
+        setRevealSupa(true)
+      }
+    } catch {
+      toast.error("Failed to reveal token")
+    }
+  }
+
+  // Save Vercel Blob token
+  const saveBlob = async () => {
+    if (!blobInput.trim()) {
+      toast.error("Enter a token first")
+      return
+    }
+    setSaving("blob")
+    try {
+      const res = await fetch("/api/admin/api-keys", {
+        method: "PUT",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ vercelBlobToken: blobInput.trim() }),
+      })
+      if (!res.ok) throw new Error("failed")
+      toast.success("Vercel Blob token saved (encrypted)")
+      setBlobInput("")
+      setRevealBlob(false)
+      setRevealedBlob("")
+      qc.invalidateQueries({ queryKey: ["admin-api-keys"] })
+    } catch {
+      toast.error("Failed to save token")
+    } finally {
+      setSaving("")
+    }
+  }
+
+  // Save Supabase URL + Key
+  const saveSupabase = async () => {
+    setSaving("supabase")
+    try {
+      const res = await fetch("/api/admin/api-keys", {
+        method: "PUT",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          supabaseUrl: supaUrlInput.trim(),
+          supabaseKey: supaKeyInput.trim() || undefined,
+        }),
+      })
+      if (!res.ok) throw new Error("failed")
+      toast.success("Supabase keys saved (encrypted)")
+      setSupaKeyInput("")
+      setRevealSupa(false)
+      setRevealedSupa("")
+      qc.invalidateQueries({ queryKey: ["admin-api-keys"] })
+    } catch {
+      toast.error("Failed to save Supabase keys")
+    } finally {
+      setSaving("")
+    }
+  }
+
+  if (isLoading) {
+    return (
+      <Card>
+        <CardContent className="p-5">
+          <p className="text-sm text-muted-foreground">Loading API keys...</p>
+        </CardContent>
+      </Card>
+    )
+  }
+
+  return (
+    <div className="space-y-4">
+      <Card className="border-cyan-500/20">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-base">
+            <Key className="h-5 w-5 text-cyan-500" /> API Keys — Storage
+          </CardTitle>
+          <CardDescription>
+            Vercel Blob + Supabase keys. Tokens are AES-256-GCM encrypted in the database.
+            Saved tokens take effect immediately — no redeploy needed.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          {/* ─── Vercel Blob Token ─── */}
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <Label className="text-sm font-bold">Vercel Blob Token</Label>
+              {data?.vercelBlobConfigured ? (
+                <Badge className="bg-emerald-500/15 text-emerald-600 text-[10px]">
+                  {data.vercelBlobFromEnv ? "ENV" : "DB"} · Configured
+                </Badge>
+              ) : (
+                <Badge variant="outline" className="text-[10px] text-muted-foreground">Not configured</Badge>
+              )}
+            </div>
+            {/* Masked display + Show/Hide */}
+            <div className="flex items-center gap-2">
+              <code className="flex-1 rounded-md bg-muted px-3 py-2 text-xs font-mono text-muted-foreground">
+                {revealBlob ? (revealedBlob || "(empty)") : (data?.vercelBlobToken || "(not set)")}
+              </code>
+              <Button
+                size="sm"
+                variant="outline"
+                className="gap-1.5 shrink-0"
+                onClick={() => {
+                  if (revealBlob) {
+                    setRevealBlob(false)
+                    setRevealedBlob("")
+                  } else {
+                    doReveal("blob")
+                  }
+                }}
+              >
+                {revealBlob ? <><Eye className="h-3.5 w-3.5" /> Hide</> : "Show"}
+              </Button>
+            </div>
+            {/* New token input */}
+            <div className="flex items-center gap-2">
+              <Input
+                type="password"
+                value={blobInput}
+                onChange={(e) => setBlobInput(e.target.value)}
+                placeholder="Paste new Vercel Blob token to update..."
+                className="h-9 font-mono text-xs"
+              />
+              <Button
+                size="sm"
+                className="gap-1.5 shrink-0 bg-cyan-600 text-white hover:bg-cyan-700"
+                disabled={saving === "blob" || !blobInput.trim()}
+                onClick={saveBlob}
+              >
+                {saving === "blob" ? <RefreshCw className="h-3.5 w-3.5 animate-spin" /> : <Save className="h-3.5 w-3.5" />}
+                Save
+              </Button>
+            </div>
+            <p className="text-[10px] text-muted-foreground">
+              Get it from: Vercel Dashboard → Storage → Blob → Copy Token
+            </p>
+          </div>
+
+          <Separator />
+
+          {/* ─── Supabase URL (not secret) ─── */}
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <Label className="text-sm font-bold">Supabase URL</Label>
+              {data?.supabaseConfigured ? (
+                <Badge className="bg-emerald-500/15 text-emerald-600 text-[10px]">
+                  {data.supabaseFromEnv ? "ENV" : "DB"} · Configured
+                </Badge>
+              ) : (
+                <Badge variant="outline" className="text-[10px] text-muted-foreground">Not configured</Badge>
+              )}
+            </div>
+            <Input
+              type="text"
+              value={supaUrlInput}
+              onChange={(e) => setSupaUrlInput(e.target.value)}
+              placeholder="https://xxxx.supabase.co"
+              className="h-9 font-mono text-xs"
+            />
+            <p className="text-[10px] text-muted-foreground">
+              From: Supabase Dashboard → Project Settings → API → Project URL
+            </p>
+          </div>
+
+          {/* ─── Supabase Service Key ─── */}
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <Label className="text-sm font-bold">Supabase Service Role Key</Label>
+            </div>
+            {/* Masked display + Show/Hide */}
+            <div className="flex items-center gap-2">
+              <code className="flex-1 rounded-md bg-muted px-3 py-2 text-xs font-mono text-muted-foreground break-all">
+                {revealSupa ? (revealedSupa || "(empty)") : (data?.supabaseKey || "(not set)")}
+              </code>
+              <Button
+                size="sm"
+                variant="outline"
+                className="gap-1.5 shrink-0"
+                onClick={() => {
+                  if (revealSupa) {
+                    setRevealSupa(false)
+                    setRevealedSupa("")
+                  } else {
+                    doReveal("supa")
+                  }
+                }}
+              >
+                {revealSupa ? <><Eye className="h-3.5 w-3.5" /> Hide</> : "Show"}
+              </Button>
+            </div>
+            {/* New key input */}
+            <div className="flex items-center gap-2">
+              <Input
+                type="password"
+                value={supaKeyInput}
+                onChange={(e) => setSupaKeyInput(e.target.value)}
+                placeholder="Paste new Supabase service key to update..."
+                className="h-9 font-mono text-xs"
+              />
+            </div>
+            <div className="flex items-center gap-2">
+              <Button
+                size="sm"
+                className="gap-1.5 bg-cyan-600 text-white hover:bg-cyan-700"
+                disabled={saving === "supabase"}
+                onClick={saveSupabase}
+              >
+                {saving === "supabase" ? <RefreshCw className="h-3.5 w-3.5 animate-spin" /> : <Save className="h-3.5 w-3.5" />}
+                Save Supabase Settings
+              </Button>
+            </div>
+            <p className="text-[10px] text-muted-foreground">
+              From: Supabase Dashboard → Project Settings → API → service_role key (NOT the anon key)
+            </p>
+          </div>
+
+          <Separator />
+
+          {/* ─── Security note ─── */}
+          <div className="rounded-lg bg-cyan-500/5 border border-cyan-500/20 p-3">
+            <div className="flex items-start gap-2">
+              <Shield className="h-4 w-4 text-cyan-500 shrink-0 mt-0.5" />
+              <div className="text-[11px] text-muted-foreground space-y-1">
+                <p className="font-bold text-cyan-600">Security</p>
+                <p>• Tokens are AES-256-GCM encrypted before saving to the database.</p>
+                <p>• Only masked versions (****1234) are shown by default. Click "Show" to reveal (admin only).</p>
+                <p>• Saved tokens override env vars. Clear the field + Save to revert to env.</p>
+                <p>• Image uploads use the new token immediately — no redeploy needed.</p>
+              </div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
   )
 }

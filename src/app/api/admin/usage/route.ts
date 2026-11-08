@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server"
 import { db } from "@/lib/db"
 import { requireAdmin } from "@/lib/admin-auth"
-import { getSupabaseStorageUsage, isSupabaseConfigured } from "@/lib/supabase-storage"
+import { getSupabaseStorageUsage, isSupabaseConfiguredAsync } from "@/lib/supabase-storage"
 
 export const dynamic = "force-dynamic"
 export const revalidate = 3600 // 1 hour cache
@@ -137,7 +137,7 @@ export async function GET() {
       percentage: storagePct,
       fileCount: storageFileCount,
       error: storageError,
-      configured: isSupabaseConfigured(),
+      configured: await isSupabaseConfiguredAsync(),
     },
     // Postgres DB size (tables, rows)
     supabaseDB: {

@@ -2,7 +2,7 @@ import { NextResponse } from "next/server"
 import { requireAdmin } from "@/lib/admin-auth"
 import { uploadFile } from "@/lib/blob-upload"
 import { compressImage } from "@/lib/image-compress"
-import { uploadToSupabase, isSupabaseConfigured } from "@/lib/supabase-storage"
+import { uploadToSupabase } from "@/lib/supabase-storage"
 
 export const dynamic = "force-dynamic"
 export const maxDuration = 30
@@ -21,6 +21,9 @@ export const maxDuration = 30
  *   1. Supabase Storage (free 1GB, Cache-Control 1 year) ← PRIMARY
  *   2. Vercel Blob (fallback if Supabase not configured)
  *   3. Base64 data URL (last resort fallback)
+ *
+ * Keys are read from the ApiKeys DB table (admin-managed) first, with fallback
+ * to env vars. So admin can update keys from the panel without redeploying.
  *
  * Max 5MB raw input (will be compressed down to ~80-200KB).
  */
@@ -48,17 +51,17 @@ export async function POST(req: Request) {
     let stored: "supabase" | "blob" | "base64" = "base64"
 
     // ─── Priority 1: Supabase Storage ───
-    if (isSupabaseConfigured()) {
-      const supaUrl = await uploadToSupabase(
-        compressed.buffer,
-        "admin-uploads",
-        filename,
-        "image/webp",
-      )
-      if (supaUrl) {
-        url = supaUrl
-        stored = "supabase"
-      }
+    // uploadToSupabase internally checks DB keys (admin-saved) → env fallback.
+    // Returns null if not configured OR upload fails → we fall through to Blob.
+    const supaUrl = await uploadToSupabase(
+      compressed.buffer,
+      "admin-uploads",
+      filename,
+      "image/webp",
+    )
+    if (supaUrl) {
+      url = supaUrl
+      stored = "supabase"
     }
 
     // ─── Priority 2: Vercel Blob (fallback) ───
