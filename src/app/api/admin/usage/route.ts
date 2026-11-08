@@ -1,69 +1,47 @@
 import { NextResponse } from "next/server"
 import { db } from "@/lib/db"
 import { requireAdmin } from "@/lib/admin-auth"
+import { getSupabaseStorageUsage, isSupabaseConfigured } from "@/lib/supabase-storage"
 
 export const dynamic = "force-dynamic"
 export const revalidate = 3600 // 1 hour cache
 
 /**
- * GET /api/admin/usage — returns storage usage for Vercel Blob + Supabase DB.
+ * GET /api/admin/usage — returns storage usage for Supabase Storage (images) + Supabase DB + Vercel Blob.
  *
- * Vercel Blob: Uses Vercel Blob List API to sum all file sizes.
+ * Supabase Storage: Lists all files in known buckets + sums sizes (PRIMARY image storage).
  * Supabase DB: Uses pg_database_size() SQL query.
+ * Vercel Blob: Only fetched if BLOB token configured (fallback image storage).
  *
  * Cached for 1 hour (revalidate=3600) to avoid slow loading.
  * Admin only — normal users get 401.
  */
 
-// Vercel Blob limits (free tier)
-const BLOB_LIMIT_BYTES = 1 * 1024 * 1024 * 1024 // 1 GB
-// Supabase limits (free tier)
+// Supabase Storage limits (free tier — 1 GB total across all buckets)
+const STORAGE_LIMIT_BYTES = 1 * 1024 * 1024 * 1024 // 1 GB
+// Supabase DB limits (free tier — 500 MB)
 const DB_LIMIT_BYTES = 500 * 1024 * 1024 // 500 MB
+// Vercel Blob limits (free tier — 1 GB, only if configured)
+const BLOB_LIMIT_BYTES = 1 * 1024 * 1024 * 1024 // 1 GB
 
 export async function GET() {
   const guard = await requireAdmin()
   if (guard) return guard
 
-  // ─── 1. Vercel Blob Usage ───
-  let blobUsed = 0
-  let blobError: string | null = null
-
+  // ─── 1. Supabase Storage Usage (PRIMARY image storage) ───
+  // Images (lessons, signals, admin-uploads) are stored here. This is the
+  // real image storage the admin needs to monitor.
+  let storageUsed = 0
+  let storageFileCount = 0
+  let storageError: string | null = null
   try {
-    // Use Vercel Blob list API to get all files + sum sizes
-    const blobToken = process.env.BLOB_READ_WRITE_TOKEN || process.env.BLOB_STORE_ID
-    if (blobToken) {
-      let cursor: string | undefined = undefined
-      let hasMore = true
-      while (hasMore) {
-        const url = new URL("https://blob.vercel-storage.com/api/files")
-        url.searchParams.set("limit", "1000")
-        if (cursor) url.searchParams.set("cursor", cursor)
-
-        const res = await fetch(url.toString(), {
-          headers: {
-            "Authorization": `Bearer ${process.env.BLOB_READ_WRITE_TOKEN || ""}`,
-            "x-api-version": "6",
-          },
-        })
-
-        if (!res.ok) {
-          // Fallback: try the store ID approach
-          break
-        }
-
-        const data = await res.json()
-        const blobs = data.blobs || data || []
-        for (const blob of blobs) {
-          blobUsed += blob.size || 0
-        }
-        hasMore = data.hasMore || data.pagination?.hasMore || false
-        cursor = data.cursor || data.pagination?.cursor || undefined
-        if (!hasMore) break
-      }
-    }
+    const usage = await getSupabaseStorageUsage()
+    storageUsed = usage.used
+    storageFileCount = usage.fileCount
+    storageError = usage.error
   } catch (e: any) {
-    blobError = e?.message || "Failed to fetch Blob usage"
-    console.error("[admin/usage] Blob error:", e?.message)
+    storageError = e?.message || "Failed to fetch Supabase Storage usage"
+    console.error("[admin/usage] Supabase Storage error:", e?.message)
   }
 
   // ─── 2. Supabase DB Usage ───
@@ -108,28 +86,73 @@ export async function GET() {
     }
   }
 
+  // ─── 3. Vercel Blob Usage (fallback image storage — only if configured) ───
+  let blobUsed = 0
+  let blobError: string | null = null
+  const blobConfigured = !!(process.env.BLOB_READ_WRITE_TOKEN || process.env.BLOB_STORE_ID)
+
+  if (blobConfigured) {
+    try {
+      let cursor: string | undefined = undefined
+      let hasMore = true
+      while (hasMore) {
+        const url = new URL("https://blob.vercel-storage.com/api/files")
+        url.searchParams.set("limit", "1000")
+        if (cursor) url.searchParams.set("cursor", cursor)
+
+        const res = await fetch(url.toString(), {
+          headers: {
+            "Authorization": `Bearer ${process.env.BLOB_READ_WRITE_TOKEN || ""}`,
+            "x-api-version": "6",
+          },
+        })
+
+        if (!res.ok) break
+
+        const data = await res.json()
+        const blobs = data.blobs || data || []
+        for (const blob of blobs) {
+          blobUsed += blob.size || 0
+        }
+        hasMore = data.hasMore || data.pagination?.hasMore || false
+        cursor = data.cursor || data.pagination?.cursor || undefined
+        if (!hasMore) break
+      }
+    } catch (e: any) {
+      blobError = e?.message || "Failed to fetch Blob usage"
+      console.error("[admin/usage] Blob error:", e?.message)
+    }
+  }
+
   // ─── Build response ───
-  const blobPct = Math.round((blobUsed / BLOB_LIMIT_BYTES) * 100)
+  const storagePct = Math.round((storageUsed / STORAGE_LIMIT_BYTES) * 100)
+  const blobPct = blobConfigured ? Math.round((blobUsed / BLOB_LIMIT_BYTES) * 100) : 0
   const dbPct = Math.round((dbUsed / DB_LIMIT_BYTES) * 100)
 
   const response = NextResponse.json({
-    vercelBlob: {
-      used: blobUsed,
-      limit: BLOB_LIMIT_BYTES,
-      percentage: blobPct,
-      error: blobError,
+    // PRIMARY image storage — Supabase Storage (where lessons/signals/admin images live)
+    supabaseStorage: {
+      used: storageUsed,
+      limit: STORAGE_LIMIT_BYTES,
+      percentage: storagePct,
+      fileCount: storageFileCount,
+      error: storageError,
+      configured: isSupabaseConfigured(),
     },
+    // Postgres DB size (tables, rows)
     supabaseDB: {
       used: dbUsed,
       limit: DB_LIMIT_BYTES,
       percentage: dbPct,
       error: dbError,
     },
-    // Supabase Storage (file storage) — not used (images on Vercel Blob)
-    supabaseStorage: {
-      used: 0,
-      limit: 1 * 1024 * 1024 * 1024, // 1 GB
-      percentage: 0,
+    // Vercel Blob (fallback — only present if BLOB token configured)
+    vercelBlob: {
+      used: blobUsed,
+      limit: BLOB_LIMIT_BYTES,
+      percentage: blobPct,
+      error: blobError,
+      configured: blobConfigured,
     },
     cachedAt: new Date().toISOString(),
   })

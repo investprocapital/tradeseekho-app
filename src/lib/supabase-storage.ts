@@ -94,3 +94,63 @@ export async function deleteFromSupabase(url: string): Promise<boolean> {
     return false
   }
 }
+
+// Known image buckets — sum sizes across all of these for total image storage.
+const KNOWN_BUCKETS = ["lessons", "signals", "admin-uploads"]
+
+/**
+ * Get total bytes used across all known Supabase Storage buckets.
+ * Lists every file in every bucket (paginated, 1000/page) and sums metadata.size.
+ * Returns { used, fileCount, error }.
+ */
+export async function getSupabaseStorageUsage(): Promise<{
+  used: number
+  fileCount: number
+  error: string | null
+}> {
+  const supabase = getClient()
+  if (!supabase) {
+    return { used: 0, fileCount: 0, error: "Supabase not configured" }
+  }
+
+  let totalBytes = 0
+  let fileCount = 0
+  let firstError: string | null = null
+
+  for (const bucket of KNOWN_BUCKETS) {
+    try {
+      let offset = 0
+      const limit = 1000
+      // Safety cap: 10,000 files per bucket (avoid infinite loops)
+      for (let page = 0; page < 10; page++) {
+        const { data, error } = await supabase.storage
+          .from(bucket)
+          .list("", { limit, offset, sortBy: { column: "name", order: "asc" } })
+
+        if (error) {
+          // Bucket doesn't exist or access denied — skip silently
+          if (!firstError) firstError = `${bucket}: ${error.message}`
+          break
+        }
+
+        if (!data || data.length === 0) break
+
+        for (const item of data) {
+          // Skip folders (items without metadata.size or with id null)
+          const size = (item.metadata as any)?.size
+          if (typeof size === "number") {
+            totalBytes += size
+            fileCount++
+          }
+        }
+
+        if (data.length < limit) break // last page
+        offset += limit
+      }
+    } catch (e: any) {
+      if (!firstError) firstError = `${bucket}: ${e?.message}`
+    }
+  }
+
+  return { used: totalBytes, fileCount, error: firstError }
+}

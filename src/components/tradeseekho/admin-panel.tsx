@@ -3766,15 +3766,17 @@ function StorageUsageMeter() {
   }
 
   const cards = [
+    // PRIMARY image storage — Supabase Storage (where lesson/signal/admin images live)
     {
-      title: "Vercel Blob Storage",
+      title: "Supabase Storage (Images)",
       icon: ImageIcon,
-      used: data.vercelBlob?.used ?? 0,
-      limit: data.vercelBlob?.limit ?? 1073741824,
-      pct: data.vercelBlob?.percentage ?? 0,
-      error: data.vercelBlob?.error,
+      used: data.supabaseStorage?.used ?? 0,
+      limit: data.supabaseStorage?.limit ?? 1073741824,
+      pct: data.supabaseStorage?.percentage ?? 0,
+      error: data.supabaseStorage?.configured === false ? "Supabase not configured" : data.supabaseStorage?.error,
       color: "var(--brand)",
     },
+    // Postgres DB size (tables, rows, indexes)
     {
       title: "Supabase Database",
       icon: BarChart3,
@@ -3784,6 +3786,16 @@ function StorageUsageMeter() {
       error: data.supabaseDB?.error,
       color: "#10b981",
     },
+    // Vercel Blob — only show if configured (fallback image storage)
+    ...(data.vercelBlob?.configured ? [{
+      title: "Vercel Blob (Fallback)",
+      icon: ImageIcon,
+      used: data.vercelBlob?.used ?? 0,
+      limit: data.vercelBlob?.limit ?? 1073741824,
+      pct: data.vercelBlob?.percentage ?? 0,
+      error: data.vercelBlob?.error,
+      color: "#6366f1",
+    }] : []),
   ]
 
   return (
@@ -3792,7 +3804,7 @@ function StorageUsageMeter() {
         <CardTitle className="flex items-center gap-2 text-base">
           <Shield className="h-5 w-5 text-brand" /> Storage Usage
         </CardTitle>
-        <CardDescription>Vercel Blob + Supabase DB — refreshes every 1 hour</CardDescription>
+        <CardDescription>Supabase Storage + Database — refreshes every 1 hour</CardDescription>
       </CardHeader>
       <CardContent>
         <div className="grid gap-4 sm:grid-cols-2">
