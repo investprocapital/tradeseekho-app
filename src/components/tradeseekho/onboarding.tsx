@@ -39,7 +39,6 @@ export function Onboarding() {
   const seen = useStore((s) => s.onboardingSeen)
   const hasHydrated = useStore((s) => s.hasHydrated)
   const setSeen = useStore((s) => s.setOnboardingSeen)
-  const setLoginOpen = useStore((s) => s.setLoginOpen)
   const [i, setI] = useState(0)
   const last = i === SLIDES.length - 1
 
@@ -47,14 +46,17 @@ export function Onboarding() {
   if (seen) return null
   if (status === "authenticated") return null
 
-  const goLogin = () => {
+  // Onboarding close — DON'T auto-open login. User can browse lessons without
+  // logging in. Login is optional (only needed for quiz submit, bookmarks, Pro).
+  // Pehle ye login dialog auto-open karta tha isse lesson click pe bhi login
+  // dialog aa jata tha aur lesson detail page open nahi hota tha (bug fix).
+  const finish = () => {
     setSeen(true)
-    setLoginOpen(true)
   }
 
   const next = () => {
     if (last) {
-      goLogin()
+      finish()
     } else {
       setI(i + 1)
     }
@@ -68,7 +70,7 @@ export function Onboarding() {
       {/* Skip button */}
       <button
         type="button"
-        onClick={goLogin}
+        onClick={finish}
         style={{ position: "absolute", right: 16, top: 16, zIndex: 30, display: "inline-flex", height: 36, alignItems: "center", gap: 4, borderRadius: 999, background: "rgba(255,255,255,0.05)", padding: "0 16px", fontSize: 12, fontWeight: 700, color: "rgba(255,255,255,0.6)", border: "none", cursor: "pointer" }}
       >
         Skip <X size={14} />

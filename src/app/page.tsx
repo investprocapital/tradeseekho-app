@@ -109,14 +109,19 @@ export default function Home() {
   // Also creates a DB notification (shows in the bell) + browser notification.
   useAlertChecker()
 
-  // Auth gate: if user is not logged in, show Login dialog automatically.
-  // BUT: don't open if onboarding is still showing (onboarding has its own
-  // "Get Started" button that opens login).
+  // Auth gate: DISABLED — bina login ke bhi app use kar sakte hain (lessons
+  // open hote hain). Login optional hai. User khud "Login" button dabaye
+  // jab login karna ho. Pehle ye auto-open karta tha jab user unauthenticated
+  // tha, lekin isse lesson click pe login dialog aa jata tha aur lesson detail
+  // page open nahi hota tha (bug report: "Lesson Click Not Opening Lesson
+  // Detail Page"). Ab login dialog sirf tab open hota hai jab user khud Login
+  // button dabaye ya jab koi action login require kare (quiz submit, bookmark).
   const onboardingSeen = useStore((s) => s.onboardingSeen)
   useEffect(() => {
-    if (status === "unauthenticated" && !loginOpen && onboardingSeen) {
-      setLoginOpen(true)
-    }
+    // intentionally disabled — see comment above
+    // if (status === "unauthenticated" && !loginOpen && onboardingSeen) {
+    //   setLoginOpen(true)
+    // }
   }, [status, loginOpen, setLoginOpen, onboardingSeen])
 
   // ROLE-GATED ADMIN PANEL: showAdmin is persisted in localStorage, but it
