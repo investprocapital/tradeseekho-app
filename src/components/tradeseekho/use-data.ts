@@ -55,7 +55,7 @@ export function useLessonDetail(id: string | null) {
     enabled: !!id,
     queryKey: ["lesson", id],
     queryFn: () => j(fetch(`/api/lessons/${id}`).then((r) => r)),
-    staleTime: 5 * 60 * 1000, // 5 min cache
+    staleTime: 30 * 1000, // 30s cache (was 5 min — too long, caused stale "locked" after quiz pass)
     refetchOnWindowFocus: false,
   })
 }
@@ -76,9 +76,13 @@ export function useSubmitQuiz() {
         }).then((r) => r),
       ),
     onSuccess: (data) => {
-      // refresh lists + detail so lock/unlock + progress reflect server truth
+      // refresh lists + ALL lesson details so lock/unlock + progress reflect
+      // server truth immediately. We invalidate ALL lesson detail queries (not
+      // just the current one) because passing a quiz unlocks the NEXT lesson —
+      // its cached "locked: true" must be refreshed too. Without this, the next
+      // lesson's quiz button shows "Locked" for up to 5 min (staleTime).
       qc.invalidateQueries({ queryKey: ["lessons"] })
-      qc.invalidateQueries({ queryKey: ["lesson", data.lessonId] })
+      qc.invalidateQueries({ queryKey: ["lesson"] }) // invalidates ALL ["lesson", *] queries
       qc.invalidateQueries({ queryKey: ["bookmarks"] })
     },
   })
