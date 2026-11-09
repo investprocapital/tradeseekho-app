@@ -287,7 +287,7 @@ export default function Home() {
                   <p className="py-8 text-center text-sm text-muted-foreground">No lessons yet.</p>
                 ) : (
                   visibleLessons.map((l, i) => (
-                    <LessonRow key={l.id} lesson={l} lang={lang} isPro={isPro} seqLocked={!isPro && i > 0 && !visibleLessons[i - 1].passed && l.categorySlug !== "beginner"} onOpen={() => openLesson(l.id)} onPro={() => { setProPlan("lessons"); setProOpen(true) }} rewardedLessonsEnabled={rewardedLessonsEnabled} />
+                    <LessonRow key={l.id} lesson={l} lang={lang} isPro={isPro} seqLocked={!isPro && i > 0 && !visibleLessons[i - 1].passed} onOpen={() => openLesson(l.id)} onPro={() => { setProPlan("lessons"); setProOpen(true) }} rewardedLessonsEnabled={rewardedLessonsEnabled} />
                   ))
                 )}
               </div>
@@ -523,12 +523,24 @@ function LessonRow({ lesson, lang, isPro, onOpen, onPro, seqLocked, rewardedLess
   const isLocked = proLocked || seqLocked
 
   // ─── Locked lesson click handler ───
-  // Pro-lesson flow:
-  //   1. Not logged in → Signup popup first (with custom text). After login,
-  //      the Pro payment popup auto-opens (via pendingProAfterLogin flag).
-  //   2. Logged in + rewarded ads enabled → show dialog (Watch Ad / Buy Pro)
-  //   3. Logged in + rewarded ads disabled → directly open Pro buy page
+  // Sequential lock (Free lessons 1-12): if user clicks a lesson whose previous
+  // lesson quiz is NOT passed → show popup "Please complete previous lessons first".
+  // Pro lock (Intermediate/Advanced 2+): not logged in → Signup popup → Pro
+  // payment popup auto-opens after login. Logged in → Pro payment popup directly.
   const onLockedClick = () => {
+    // Sequential lock takes priority — this is for free lessons (Beginner 1-12).
+    if (seqLocked) {
+      toast(
+        lang === "ur" || lang === "ar"
+          ? "براہ کرم پہلے پچھلے سبق مکمل کریں"
+          : lang === "hi"
+            ? "कृपया पिछला पाठ पूर्ण करें"
+            : "Please complete previous lessons first to unlock this lesson.",
+        { duration: 3000 }
+      )
+      return
+    }
+    // Pro lock — only for Intermediate/Advanced lessons 2+.
     if (!session?.user) {
       // Not logged in → open Signup popup first. After login, Pro popup auto-opens.
       setLoginReason("pro_lesson")
@@ -582,7 +594,7 @@ function LessonRow({ lesson, lang, isPro, onOpen, onPro, seqLocked, rewardedLess
           return
         }
         if (seqLocked) {
-          toast(lang === "ur" || lang === "ar" ? "براہ کرم پہلا سبق مکمل کریں" : lang === "hi" ? "कृपया पिछला पाठ पूर्ण करें" : "Please complete the previous lesson first")
+          toast(lang === "ur" || lang === "ar" ? "براہ کرم پہلے پچھلے سبق مکمل کریں" : lang === "hi" ? "कृपया पिछला पाठ पूर्ण करें" : "Please complete previous lessons first to unlock this lesson.", { duration: 3000 })
           return
         }
         onOpen()
