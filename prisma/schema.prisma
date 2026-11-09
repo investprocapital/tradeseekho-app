@@ -311,6 +311,16 @@ model ProSettings {
   payoneerEnabled   Boolean  @default(false)
   payoneerEmail     String   @default("")
   payoneerInstructions String @default("")
+  // ─── QR Code images (admin-uploaded, Supabase/Vercel Blob CDN URLs) ───
+  // Admin uploads their OWN QR from Binance/Bitget/any exchange. If a QR URL
+  // is set, the Pro payment popup shows the uploaded QR image. If null/empty,
+  // the popup shows "QR Not Uploaded" (NOT a generated dummy QR).
+  jazzcashQrUrl   String?
+  easypaisaQrUrl  String?
+  sadapayQrUrl    String?
+  usdtQrUrl       String?  // USDT TRC20 (Binance)
+  bep20QrUrl      String?  // USDT BEP20 (BSC)
+  payoneerQrUrl   String?
   updatedAt       DateTime @updatedAt
 }
 

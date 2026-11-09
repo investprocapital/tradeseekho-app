@@ -82,6 +82,13 @@ export async function GET() {
       payoneerEnabled: s.payoneerEnabled,
       payoneerEmail: s.payoneerEmail,
       payoneerInstructions: s.payoneerInstructions,
+      // QR code image URLs (admin-uploaded). null = "QR Not Uploaded" in popup.
+      jazzcashQrUrl: s.jazzcashQrUrl,
+      easypaisaQrUrl: s.easypaisaQrUrl,
+      sadapayQrUrl: s.sadapayQrUrl,
+      usdtQrUrl: s.usdtQrUrl,
+      bep20QrUrl: s.bep20QrUrl,
+      payoneerQrUrl: s.payoneerQrUrl,
     })
   } catch (e: any) {
     // DB unreachable (Neon sleeping/suspended) — return defaults so the app

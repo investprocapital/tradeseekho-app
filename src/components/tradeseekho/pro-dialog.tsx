@@ -38,6 +38,13 @@ interface ProSettings {
   payoneerEnabled: boolean
   payoneerEmail: string
   payoneerInstructions: string
+  // QR code image URLs (admin-uploaded). null/undefined = "QR Not Uploaded".
+  jazzcashQrUrl?: string | null
+  easypaisaQrUrl?: string | null
+  sadapayQrUrl?: string | null
+  usdtQrUrl?: string | null
+  bep20QrUrl?: string | null
+  payoneerQrUrl?: string | null
 }
 
 async function fetchProSettings(): Promise<ProSettings> {
@@ -119,11 +126,11 @@ export function ProDialog() {
 
   // Resolve which crypto address/network to show based on method
   const cryptoCtx = method === "USDT"
-    ? { address: settings?.usdtAddress || "", network: "TRC20 / Tron", color: "#26A17B", sectionTitle: t("pro.usdtSectionTitle"), warning: t("pro.usdtWarning"), shareLabel: "TradeSeekho PK · USDT TRC20" }
+    ? { address: settings?.usdtAddress || "", network: "TRC20 / Tron", color: "#26A17B", sectionTitle: t("pro.usdtSectionTitle"), warning: t("pro.usdtWarning"), shareLabel: "TradeSeekho PK · USDT TRC20", qrUrl: settings?.usdtQrUrl || null }
     : method === "USDT_BEP20"
-    ? { address: settings?.bep20Address || "0xaa889030e6e69ef3eb55a2e94f1226628a8a19c3", network: t("pro.bep20Network"), color: "#F3BA2F", sectionTitle: t("pro.bep20SectionTitle"), warning: t("pro.bep20Warning"), shareLabel: "TradeSeekho PK · USDT BEP20 (BSC)" }
+    ? { address: settings?.bep20Address || "0xaa889030e6e69ef3eb55a2e94f1226628a8a19c3", network: t("pro.bep20Network"), color: "#F3BA2F", sectionTitle: t("pro.bep20SectionTitle"), warning: t("pro.bep20Warning"), shareLabel: "TradeSeekho PK · USDT BEP20 (BSC)", qrUrl: settings?.bep20QrUrl || null }
     : method === "Payoneer"
-    ? { address: settings?.payoneerEmail || "", network: "Payoneer Email Transfer", color: "#FF4800", sectionTitle: "Payoneer · Email Transfer", warning: "⚠ Only send to this Payoneer Email. After sending, upload screenshot and Payoneer Transaction ID is mandatory.", shareLabel: "TradeSeekho PK · Payoneer" }
+    ? { address: settings?.payoneerEmail || "", network: "Payoneer Email Transfer", color: "#FF4800", sectionTitle: "Payoneer · Email Transfer", warning: "⚠ Only send to this Payoneer Email. After sending, upload screenshot and Payoneer Transaction ID is mandatory.", shareLabel: "TradeSeekho PK · Payoneer", qrUrl: settings?.payoneerQrUrl || null }
     : null
 
   const onFile = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -357,10 +364,19 @@ export function ProDialog() {
                       {/* QR + address block */}
                       <div className="mt-2 flex flex-col items-center gap-3 sm:flex-row sm:items-start">
                         <div className="rounded-lg border-2 border-border bg-white p-2 shadow-sm">
-                          {cryptoCtx.address ? (
-                            <QRCodeSVG value={cryptoCtx.address} size={120} level="M" marginSize={1} fgColor="#0b0f17" bgColor="#ffffff" />
+                          {/* Show admin-uploaded QR image if available.
+                              If no QR uploaded → show "QR Not Uploaded" (NOT a dummy QR). */}
+                          {cryptoCtx.qrUrl ? (
+                            <img
+                              src={cryptoCtx.qrUrl}
+                              alt="Deposit QR"
+                              className="h-[120px] w-[120px] object-contain"
+                            />
                           ) : (
-                            <div className="flex h-[120px] w-[120px] items-center justify-center text-[10px] text-muted-foreground">No address</div>
+                            <div className="flex h-[120px] w-[120px] flex-col items-center justify-center gap-1 text-center">
+                              <span className="text-[9px] font-bold text-muted-foreground">QR Not Uploaded</span>
+                              <span className="text-[8px] text-muted-foreground/60">Use the address below</span>
+                            </div>
                           )}
                         </div>
                         <div className="flex-1 space-y-1.5 self-stretch">
@@ -390,6 +406,26 @@ export function ProDialog() {
                 </div>
               ) : (
                 <div className="rounded-xl border border-dashed border-border bg-muted/30 p-3">
+                  {/* QR code for JazzCash/Easypaisa (admin-uploaded) */}
+                  {(method === "JazzCash" || method === "Easypaisa") && (
+                    (() => {
+                      const qr = method === "JazzCash" ? settings?.jazzcashQrUrl : settings?.easypaisaQrUrl
+                      return (
+                        <div className="mb-3 flex justify-center">
+                          <div className="rounded-lg border-2 border-border bg-white p-2 shadow-sm">
+                            {qr ? (
+                              <img src={qr} alt={`${method} QR`} className="h-[120px] w-[120px] object-contain" />
+                            ) : (
+                              <div className="flex h-[120px] w-[120px] flex-col items-center justify-center gap-1 text-center">
+                                <span className="text-[9px] font-bold text-muted-foreground">QR Not Uploaded</span>
+                                <span className="text-[8px] text-muted-foreground/60">Use the number below</span>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      )
+                    })()
+                  )}
                   <div className="flex items-center justify-between">
                     <div>
                       <div className="text-[11px] uppercase tracking-wide text-muted-foreground">Send Rs {displayAmount} to</div>
@@ -548,17 +584,19 @@ export function ProDialog() {
                       {/* QR + address block */}
                       <div className="mt-2 flex flex-col items-center gap-3 sm:flex-row sm:items-start">
                         <div className="rounded-lg border-2 border-border bg-white p-2 shadow-sm">
-                          {cryptoCtx.address ? (
-                            <QRCodeSVG
-                              value={cryptoCtx.address}
-                              size={120}
-                              level="M"
-                              marginSize={1}
-                              fgColor="#0b0f17"
-                              bgColor="#ffffff"
+                          {/* Show admin-uploaded QR image if available.
+                              If no QR uploaded → show "QR Not Uploaded" (NOT a dummy QR). */}
+                          {cryptoCtx.qrUrl ? (
+                            <img
+                              src={cryptoCtx.qrUrl}
+                              alt="Deposit QR"
+                              className="h-[120px] w-[120px] object-contain"
                             />
                           ) : (
-                            <div className="flex h-[120px] w-[120px] items-center justify-center text-[10px] text-muted-foreground">No address</div>
+                            <div className="flex h-[120px] w-[120px] flex-col items-center justify-center gap-1 text-center">
+                              <span className="text-[9px] font-bold text-muted-foreground">QR Not Uploaded</span>
+                              <span className="text-[8px] text-muted-foreground/60">Use the address below</span>
+                            </div>
                           )}
                         </div>
                         <div className="flex-1 space-y-1.5 self-stretch">
@@ -611,6 +649,26 @@ export function ProDialog() {
                 </div>
               ) : (
                 <div className="rounded-xl border border-dashed border-border bg-muted/30 p-3">
+                  {/* QR code for JazzCash/Easypaisa (admin-uploaded) */}
+                  {(method === "JazzCash" || method === "Easypaisa") && (
+                    (() => {
+                      const qr = method === "JazzCash" ? settings?.jazzcashQrUrl : settings?.easypaisaQrUrl
+                      return (
+                        <div className="mb-3 flex justify-center">
+                          <div className="rounded-lg border-2 border-border bg-white p-2 shadow-sm">
+                            {qr ? (
+                              <img src={qr} alt={`${method} QR`} className="h-[120px] w-[120px] object-contain" />
+                            ) : (
+                              <div className="flex h-[120px] w-[120px] flex-col items-center justify-center gap-1 text-center">
+                                <span className="text-[9px] font-bold text-muted-foreground">QR Not Uploaded</span>
+                                <span className="text-[8px] text-muted-foreground/60">Use the number below</span>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      )
+                    })()
+                  )}
                   <div className="flex items-center justify-between">
                     <div>
                       <div className="text-[11px] uppercase tracking-wide text-muted-foreground">Send Rs {displayAmount} to</div>

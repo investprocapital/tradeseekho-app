@@ -301,6 +301,13 @@ export interface ProSettingsData {
   payoneerEnabled?: boolean
   payoneerEmail?: string
   payoneerInstructions?: string
+  // QR code image URLs (admin-uploaded). null/undefined = not uploaded.
+  jazzcashQrUrl?: string | null
+  easypaisaQrUrl?: string | null
+  sadapayQrUrl?: string | null
+  usdtQrUrl?: string | null
+  bep20QrUrl?: string | null
+  payoneerQrUrl?: string | null
 }
 
 export function useProSettings() {

@@ -34,6 +34,13 @@ export async function GET() {
     payoneerEnabled: s.payoneerEnabled,
     payoneerEmail: s.payoneerEmail,
     payoneerInstructions: s.payoneerInstructions,
+    // QR code image URLs (admin-uploaded from Binance/Bitget/any exchange)
+    jazzcashQrUrl: s.jazzcashQrUrl,
+    easypaisaQrUrl: s.easypaisaQrUrl,
+    sadapayQrUrl: s.sadapayQrUrl,
+    usdtQrUrl: s.usdtQrUrl,
+    bep20QrUrl: s.bep20QrUrl,
+    payoneerQrUrl: s.payoneerQrUrl,
   })
 }
 
@@ -67,6 +74,13 @@ export async function PUT(req: Request) {
   if ("payoneerEnabled" in body) data.payoneerEnabled = !!body.payoneerEnabled
   if ("payoneerEmail" in body) data.payoneerEmail = String(body.payoneerEmail)
   if ("payoneerInstructions" in body) data.payoneerInstructions = String(body.payoneerInstructions)
+  // QR code image URLs (admin-uploaded). Empty string → null (clears QR).
+  if ("jazzcashQrUrl" in body) data.jazzcashQrUrl = body.jazzcashQrUrl || null
+  if ("easypaisaQrUrl" in body) data.easypaisaQrUrl = body.easypaisaQrUrl || null
+  if ("sadapayQrUrl" in body) data.sadapayQrUrl = body.sadapayQrUrl || null
+  if ("usdtQrUrl" in body) data.usdtQrUrl = body.usdtQrUrl || null
+  if ("bep20QrUrl" in body) data.bep20QrUrl = body.bep20QrUrl || null
+  if ("payoneerQrUrl" in body) data.payoneerQrUrl = body.payoneerQrUrl || null
 
   const updated = await db.proSettings.upsert({
     where: { id: "singleton" },
@@ -93,5 +107,11 @@ export async function PUT(req: Request) {
     payoneerEnabled: updated.payoneerEnabled,
     payoneerEmail: updated.payoneerEmail,
     payoneerInstructions: updated.payoneerInstructions,
+    jazzcashQrUrl: updated.jazzcashQrUrl,
+    easypaisaQrUrl: updated.easypaisaQrUrl,
+    sadapayQrUrl: updated.sadapayQrUrl,
+    usdtQrUrl: updated.usdtQrUrl,
+    bep20QrUrl: updated.bep20QrUrl,
+    payoneerQrUrl: updated.payoneerQrUrl,
   })
 }

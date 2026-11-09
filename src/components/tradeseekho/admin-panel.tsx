@@ -46,6 +46,7 @@ import {
   useAffiliateAd, useSaveAffiliateAd,
 } from "./admin-data"
 import { SignalManager } from "./signal-manager"
+import { QrUploader } from "./qr-uploader"
 import { useQueryClient, useQuery, useMutation } from "@tanstack/react-query"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 
@@ -1681,6 +1682,7 @@ function ProRequestsTab() {
 
 /* ---------------- Payment Settings ---------------- */
 function PaymentSettingsTab() {
+  const qc = useQueryClient()
   const { data, isLoading } = useProSettings()
   const save = useSaveProSettings()
 
@@ -1759,6 +1761,20 @@ function PaymentSettingsTab() {
   }
 
   const pkrPrice = Math.round((Number(usdPrice) || 5) * (Number(pkrRate) || 280))
+
+  // ─── QR Code upload helper ───
+  // Saves a single QR URL (or null to delete) via the pro-settings PUT API.
+  // Called by the QrUploader component when admin uploads/changes/deletes a QR.
+  const saveQr = async (field: string, url: string | null) => {
+    const res = await fetch("/api/admin/pro-settings", {
+      method: "PUT",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ [field]: url }),
+    })
+    if (!res.ok) throw new Error("Failed to save QR")
+    qc.invalidateQueries({ queryKey: ["admin-pro-settings"] })
+    qc.invalidateQueries({ queryKey: ["pro-settings"] })
+  }
 
   return (
     <div className="space-y-4">
@@ -1905,6 +1921,29 @@ function PaymentSettingsTab() {
               </div>
             </div>
           )}
+
+          {/* ─── QR Code Images ───
+              Admin uploads their OWN QR from Binance/Bitget/any exchange.
+              Whatever QR admin uploads, same QR shows in App in PRO Payment Popup.
+              If admin deletes it, popup shows "QR Not Uploaded" (no dummy QR). */}
+          <div className="rounded-lg border-2 border-cyan-500/20 bg-cyan-500/5 p-4">
+            <div className="mb-3">
+              <h3 className="flex items-center gap-2 text-sm font-extrabold text-cyan-600">
+                <ImageIcon className="h-4 w-4" /> QR Code Images
+              </h3>
+              <p className="mt-0.5 text-[11px] text-muted-foreground">
+                Upload your OWN QR from Binance / Bitget / Any exchange. Same QR will show in the app's Pro Payment popup. If deleted, popup shows "QR Not Uploaded".
+              </p>
+            </div>
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+              <QrUploader label="JazzCash QR" qrUrl={data?.jazzcashQrUrl} onSave={(url) => saveQr("jazzcashQrUrl", url)} accent="#E60023" />
+              <QrUploader label="Easypaisa QR" qrUrl={data?.easypaisaQrUrl} onSave={(url) => saveQr("easypaisaQrUrl", url)} accent="#0a8a0a" />
+              <QrUploader label="SadaPay QR" qrUrl={data?.sadapayQrUrl} onSave={(url) => saveQr("sadapayQrUrl", url)} accent="#00C853" />
+              <QrUploader label="USDT TRC20 QR (Binance)" qrUrl={data?.usdtQrUrl} onSave={(url) => saveQr("usdtQrUrl", url)} accent="#26A17B" />
+              <QrUploader label="USDT BEP20 QR (BSC)" qrUrl={data?.bep20QrUrl} onSave={(url) => saveQr("bep20QrUrl", url)} accent="#F3BA2F" />
+              <QrUploader label="Payoneer QR" qrUrl={data?.payoneerQrUrl} onSave={(url) => saveQr("payoneerQrUrl", url)} accent="#FF4800" />
+            </div>
+          </div>
 
           <Button className="h-10 w-full gap-2 bg-brand font-bold text-brand-foreground hover:bg-brand/90" onClick={onSave} disabled={save.isPending}>
             {save.isPending ? <Save className="h-4 w-4 animate-pulse" /> : <Save className="h-4 w-4" />}
