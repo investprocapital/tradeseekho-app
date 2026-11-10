@@ -180,7 +180,13 @@ export async function GET(req: Request) {
           const body = `${pair} ${dir} your target ${target} — current: ${live}`
 
           await withDbRetry(() => db.notification.create({
-            data: { type: "signal", title, body, deepLink: "app://price-alert" },
+            data: {
+              type: "price_alert",
+              title,
+              body,
+              deepLink: "app://price-alert",
+              userId: alert.userId, // ← per-user: only the alert owner sees it
+            },
           }))
 
           // Send FCM push (if user has a token + Firebase configured)

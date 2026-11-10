@@ -24,15 +24,25 @@ export async function GET() {
     const userId = await getCurrentUserId()
     const out: Notification[] = []
 
-    // 1) Broadcast signal notifications (TP/SL hits + future system alerts).
-    const broadcasts = await withDbRetry(() => db.notification.findMany({
+    // 1) Notifications visible to THIS user:
+    //    - Per-user notifications where userId == current user (price alerts)
+    //    - Broadcast notifications where userId == null (admin signal TP/SL hits)
+    //    This filter prevents users from seeing other users' price alert
+    //    notifications (bug fix: alerts were previously global/broadcast).
+    const visible = await withDbRetry(() => db.notification.findMany({
+      where: {
+        OR: [
+          { userId },             // per-user: this user's own alerts
+          { userId: null },       // broadcast: admin signal TP/SL hits + system
+        ],
+      },
       orderBy: { createdAt: "desc" },
       take: 15,
     }))
-    for (const b of broadcasts) {
+    for (const b of visible) {
       out.push({
         id: `bc_${b.id}`,
-        type: "signal",
+        type: b.type === "price_alert" ? "signal" : ("signal" as const),
         title: b.title,
         body: b.body,
         deepLink: b.deepLink ?? undefined,

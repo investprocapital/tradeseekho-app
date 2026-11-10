@@ -94,15 +94,18 @@ export async function GET() {
           data: { triggered: true, triggeredAt: new Date() },
         }))
 
-        // Create a notification (shows in the bell)
+        // Create a PER-USER notification — only the alert owner sees it.
+        // userId = alert.userId (NOT null/broadcast). This prevents other users
+        // from seeing someone else's price alert notification (bug fix).
         const pair = pairLabel(alert.symbol)
         const dir = alert.direction === "above" ? "reached above" : "dropped below"
         await withDbRetry(() => db.notification.create({
           data: {
-            type: "signal",
+            type: "price_alert",
             title: `🔔 ${pair} Alert Triggered!`,
             body: `${pair} ${dir} your target ${formatPrice(alert.symbol, alert.targetPrice)} — current price: ${formatPrice(alert.symbol, livePrice)}`,
             deepLink: `app://price-alert`,
+            userId: alert.userId, // ← per-user: only this user sees it
           },
         }))
 

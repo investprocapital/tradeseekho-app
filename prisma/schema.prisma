@@ -385,15 +385,22 @@ model Signal {
 // deepLink follows the app:// scheme, e.g. app://signal/{signalId}
 model Notification {
   id        String   @id @default(cuid())
-  type      String   @default("signal") // signal | system
+  type      String   @default("signal") // signal | system | price_alert
   title     String
   body      String
   deepLink  String?  // app://signal/{id}
+  // ─── Per-user notifications ───
+  // userId = the alert owner → only they see this notification.
+  // userId = null → BROADCAST (admin signal TP/SL hits, system announcements) →
+  // everyone sees it. Price Alerts set userId = the alert creator's id so
+  // other users never see someone else's alert notification.
+  userId    String?
   signalId  String?
   signal    Signal?  @relation(fields: [signalId], references: [id], onDelete: SetNull)
   createdAt DateTime @default(now())
 
   @@index([createdAt])
+  @@index([userId])
 }
 
 // Signal comments — users post text + optional image (chart screenshot) under
