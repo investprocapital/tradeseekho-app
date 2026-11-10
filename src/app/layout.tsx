@@ -3,6 +3,7 @@ import { Poppins, Noto_Nastaliq_Urdu, Noto_Naskh_Arabic } from "next/font/google
 import "./globals.css";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as SonnerToaster } from "@/components/ui/sonner";
+import { getAppUrl } from "@/lib/app-settings";
 import { Providers } from "@/components/providers";
 
 const poppins = Poppins({
@@ -26,12 +27,17 @@ const notoNaskhArabic = Noto_Naskh_Arabic({
   display: "swap",
 });
 
-export const metadata: Metadata = {
-  metadataBase: new URL("https://tradeseekhopk.vercel.app"),
-  title: {
-    default: "TradeSeekho PK - Learn Trading",
-    template: "%s · TradeSeekho PK",
-  },
+// Dynamic metadata — uses the App Settings DB row so metadataBase updates
+// automatically when admin switches App Mode (Vercel → Custom Domain).
+// No code change needed when the domain shifts.
+export async function generateMetadata(): Promise<Metadata> {
+  const appUrl = await getAppUrl()
+  return {
+    metadataBase: new URL(appUrl),
+    title: {
+      default: "TradeSeekho PK - Learn Trading",
+      template: "%s · TradeSeekho PK",
+    },
   manifest: "/manifest.json",
   description:
     "TradeSeekho PK is a free Forex & Crypto learning platform. Structured lessons, instant quizzes, and real trading skills — in Urdu, English, Hindi and Arabic. Beginner to advanced.",
@@ -69,7 +75,8 @@ export const metadata: Metadata = {
     description: "Structured Forex & Crypto lessons with quizzes. Urdu, English, Hindi & Arabic.",
   },
   robots: { index: true, follow: true },
-};
+  }
+}
 
 export const viewport: Viewport = {
   themeColor: [

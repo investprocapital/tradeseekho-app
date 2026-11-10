@@ -37,8 +37,10 @@ export async function POST(req: Request) {
       },
     })
 
-    // Build reset link
-    const baseUrl = process.env.NEXTAUTH_URL || "https://tradeseekhopk.vercel.app"
+    // Build reset link — use dynamic app URL (admin-controlled via App Settings)
+    // so password-reset links work on both Vercel + custom domain.
+    const { getAppUrl } = await import("@/lib/app-settings")
+    const baseUrl = await getAppUrl()
     const resetLink = `${baseUrl}/reset-password?token=${token}`
 
     // Try to send email via Google Identity Toolkit if API key is set

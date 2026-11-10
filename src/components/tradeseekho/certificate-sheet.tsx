@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Award, Copy, Trophy, Sparkles, Download, Share2 } from "lucide-react"
 import { useStore, useT } from "@/lib/store"
-import { useCertificates } from "./use-data"
+import { useCertificates, useAppSettings } from "./use-data"
 import { toast } from "sonner"
 
 export function CertificateSheet() {
@@ -19,6 +19,9 @@ export function CertificateSheet() {
   const setCertOpen = useStore((s) => s.setCertOpen)
   const { data, isLoading } = useCertificates()
   const certs = data?.certificates ?? []
+  // App settings — for dynamic share URL (Vercel link vs custom domain)
+  const { data: appSettings } = useAppSettings()
+  const appUrl = appSettings?.appUrl || "https://tradeseekhopk.vercel.app"
 
   return (
     <Sheet open={certOpen} onOpenChange={setCertOpen}>
@@ -143,7 +146,7 @@ function CertificateCard({
             size="sm"
             variant="outline"
             className="h-9 flex-1 gap-1.5 font-bold"
-            onClick={() => shareOnWhatsApp(cert, pct, date)}
+            onClick={() => shareOnWhatsApp(cert, pct, date, appUrl)}
           >
             <Share2 className="h-3.5 w-3.5" /> Share on WhatsApp
           </Button>
@@ -192,8 +195,8 @@ h1{font-size:24px;margin:10px 0} h2{font-size:20px;color:#00D09C}
   toast.success("Certificate downloaded! Open and print to PDF.")
 }
 
-function shareOnWhatsApp(cert: any, pct: number, date: string) {
-  const text = `🎓 I earned a certificate from TradeSeekho PK!\n\n🏆 ${cert.categorySlug.toUpperCase()} Level Complete\n✅ Score: ${pct}% (${cert.scoreSum}/${cert.scoreTotal} correct)\n📅 Date: ${date}\n🆔 Verification ID: ${cert.verificationId}\n\nJoin TradeSeekho PK to learn Forex & Crypto trading!\n🌐 https://tradeseekhopk.vercel.app`
+function shareOnWhatsApp(cert: any, pct: number, date: string, appUrl: string) {
+  const text = `🎓 I earned a certificate from TradeSeekho PK!\n\n🏆 ${cert.categorySlug.toUpperCase()} Level Complete\n✅ Score: ${pct}% (${cert.scoreSum}/${cert.scoreTotal} correct)\n📅 Date: ${date}\n🆔 Verification ID: ${cert.verificationId}\n\nJoin TradeSeekho PK to learn Forex & Crypto trading!\n🌐 ${appUrl}`
   const url = `https://wa.me/?text=${encodeURIComponent(text)}`
   window.open(url, "_blank")
 }

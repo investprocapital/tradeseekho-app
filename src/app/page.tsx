@@ -8,7 +8,7 @@ import { Sprout, LineChart, Trophy, CheckCircle2, Award, BookOpen, Crown, ArrowR
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog"
 import { useStore } from "@/lib/store"
 import type { Lang } from "@/lib/i18n"
-import { useLessonsBundle, useProMe, useCurrentUser, useAdSettings } from "@/components/tradeseekho/use-data"
+import { useLessonsBundle, useProMe, useCurrentUser, useAdSettings, useAppSettings } from "@/components/tradeseekho/use-data"
 import { useAlertChecker } from "@/components/tradeseekho/use-alert-checker"
 import { Header } from "@/components/tradeseekho/header"
 import { Footer } from "@/components/tradeseekho/footer"
@@ -62,6 +62,8 @@ export default function Home() {
   const setLoginReason = useStore((s) => s.setLoginReason)
   const { data: proMe } = useProMe()
   const { data: adSettings } = useAdSettings()
+  // App settings — for Maintenance Mode banner (admin-controlled, DB-stored)
+  const { data: appSettings } = useAppSettings()
   const shiftBannerToBottom = adSettings?.shiftBannerToBottom ?? false
   const rewardedLessonsEnabled = adSettings?.rewardedEnabled && adSettings?.rewardedLessonsEnabled
   // ─── Plan-specific Pro checks (use 3 explicit booleans, NOT proStatus) ───
@@ -191,6 +193,17 @@ export default function Home() {
   return (
     <div className="flex h-screen flex-col overflow-hidden bg-background">
       <Header />
+
+      {/* ─── Maintenance Mode banner ───
+          When admin enables Maintenance Mode (Admin Panel > Settings), this
+          banner shows to ALL non-admin users. Admin panel always works. */}
+      {appSettings?.maintenanceMode && !showAdmin && (
+        <div className="border-b border-amber-500/30 bg-amber-500/10 px-4 py-2.5 text-center">
+          <p className="text-xs font-bold text-amber-600">
+            🔧 {appSettings.maintenanceMessage || "We're upgrading TradeSeekho PK. Back soon!"}
+          </p>
+        </div>
+      )}
 
       <main className="mx-auto w-full max-w-3xl flex-1 overflow-y-auto overscroll-contain px-3 py-4 sm:px-4" style={{ WebkitOverflowScrolling: "touch", minHeight: 0 }}>
         {showAdmin ? (

@@ -338,6 +338,24 @@ model PageContent {
 // the panel without redeploying. Tokens are AES-256-GCM encrypted; the column
 // holds a JSON string { c, iv, tag } (all base64). supabaseUrl is plain text
 // (not secret). Singleton row (id = "singleton").
+// ─── App Settings (admin-managed, DB-stored — no Vercel env changes) ───
+// Controls the App Mode (Vercel Link vs Custom Domain) + Maintenance Mode.
+// Admin changes these from Admin Panel > Settings tab. Singleton row.
+model AppSettings {
+  id                 String   @id @default("singleton")
+  // App Mode: "vercel" = app runs on vercel.app URL (default), "custom" = app
+  // runs on the custom domain (tradeseekhopk.com). Controls what URL is used
+  // in share links, certificate verification, password-reset emails, etc.
+  appMode            String   @default("vercel") // "vercel" | "custom"
+  vercelUrl          String   @default("https://tradeseekhopk.vercel.app")
+  customDomain       String   @default("https://tradeseekhopk.com")
+  // Maintenance Mode: when true, non-admin users see a maintenance banner +
+  // cannot access lessons/quizzes/signals. Admin panel always works.
+  maintenanceMode    Boolean  @default(false)
+  maintenanceMessage String   @default("We're upgrading TradeSeekho PK. Back soon — Insha'Allah!")
+  updatedAt          DateTime @updatedAt
+}
+
 model ApiKeys {
   id               String   @id @default("singleton")
   vercelBlobToken  String?  // AES-256-GCM encrypted JSON {c, iv, tag}

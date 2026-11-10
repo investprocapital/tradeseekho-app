@@ -3769,7 +3769,168 @@ function AdminSettingsTab() {
           </div>
         </CardContent>
       </Card>
+
+      <AppModeCard />
     </div>
+  )
+}
+
+/* ---------------- App Mode + Maintenance Mode ---------------- */
+function AppModeCard() {
+  const qc = useQueryClient()
+  const { data, isLoading } = useQuery<{
+    appMode: "vercel" | "custom"
+    vercelUrl: string
+    customDomain: string
+    maintenanceMode: boolean
+    maintenanceMessage: string
+  }>({
+    queryKey: ["admin-app-settings"],
+    queryFn: async () => {
+      const res = await fetch("/api/admin/app-settings")
+      if (!res.ok) throw new Error("failed")
+      return res.json()
+    },
+  })
+
+  const [appMode, setAppMode] = useState<"vercel" | "custom">("vercel")
+  const [customDomain, setCustomDomain] = useState("https://tradeseekhopk.com")
+  const [vercelUrl, setVercelUrl] = useState("https://tradeseekhopk.vercel.app")
+  const [maintenanceMode, setMaintenanceMode] = useState(false)
+  const [maintenanceMessage, setMaintenanceMessage] = useState("")
+  const [loaded, setLoaded] = useState(false)
+  const [saving, setSaving] = useState(false)
+
+  if (data && !loaded) {
+    setAppMode(data.appMode)
+    setCustomDomain(data.customDomain || "https://tradeseekhopk.com")
+    setVercelUrl(data.vercelUrl || "https://tradeseekhopk.vercel.app")
+    setMaintenanceMode(data.maintenanceMode)
+    setMaintenanceMessage(data.maintenanceMessage || "")
+    setLoaded(true)
+  }
+
+  const onSave = async () => {
+    setSaving(true)
+    try {
+      const res = await fetch("/api/admin/app-settings", {
+        method: "PUT",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          appMode,
+          customDomain,
+          vercelUrl,
+          maintenanceMode,
+          maintenanceMessage,
+        }),
+      })
+      if (!res.ok) throw new Error("failed")
+      toast.success("App settings saved!")
+      qc.invalidateQueries({ queryKey: ["admin-app-settings"] })
+      qc.invalidateQueries({ queryKey: ["app-settings"] })
+    } catch {
+      toast.error("Failed to save app settings")
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  if (isLoading) {
+    return (
+      <Card>
+        <CardContent className="p-5">
+          <p className="text-sm text-muted-foreground">Loading app settings...</p>
+        </CardContent>
+      </Card>
+    )
+  }
+
+  const effectiveUrl = appMode === "custom" ? customDomain : vercelUrl
+
+  return (
+    <Card className="border-cyan-500/20">
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <Settings className="h-5 w-5 text-cyan-500" /> App Mode + Maintenance
+        </CardTitle>
+        <CardDescription>
+          Control which domain the app uses (Vercel Link vs Custom Domain) + Maintenance Mode.
+          Saved in DB — no Vercel env changes needed.
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-5">
+        {/* ─── App Mode ─── */}
+        <div className="space-y-2">
+          <label className="text-xs font-bold uppercase tracking-wide text-muted-foreground">App Mode</label>
+          <div className="grid grid-cols-2 gap-2">
+            <button
+              onClick={() => setAppMode("vercel")}
+              className={`rounded-xl border-2 p-3 text-left transition ${appMode === "vercel" ? "border-cyan-500 bg-cyan-500/5" : "border-border bg-muted/20"}`}
+            >
+              <div className="flex items-center gap-2">
+                <div className={`h-3 w-3 rounded-full ${appMode === "vercel" ? "bg-cyan-500" : "bg-muted-foreground/30"}`} />
+                <span className="text-sm font-bold">Vercel Link</span>
+              </div>
+              <p className="mt-1 text-[10px] text-muted-foreground">tradeseekhopk.vercel.app</p>
+            </button>
+            <button
+              onClick={() => setAppMode("custom")}
+              className={`rounded-xl border-2 p-3 text-left transition ${appMode === "custom" ? "border-emerald-500 bg-emerald-500/5" : "border-border bg-muted/20"}`}
+            >
+              <div className="flex items-center gap-2">
+                <div className={`h-3 w-3 rounded-full ${appMode === "custom" ? "bg-emerald-500" : "bg-muted-foreground/30"}`} />
+                <span className="text-sm font-bold">Custom Domain</span>
+              </div>
+              <p className="mt-1 text-[10px] text-muted-foreground">tradeseekhopk.com</p>
+            </button>
+          </div>
+          {/* Vercel URL (editable) */}
+          <div className="space-y-1">
+            <label className="text-[10px] font-bold text-muted-foreground">Vercel URL</label>
+            <Input value={vercelUrl} onChange={(e) => setVercelUrl(e.target.value)} className="h-9 text-xs font-mono" placeholder="https://tradeseekhopk.vercel.app" />
+          </div>
+          {/* Custom Domain (editable) */}
+          <div className="space-y-1">
+            <label className="text-[10px] font-bold text-muted-foreground">Custom Domain</label>
+            <Input value={customDomain} onChange={(e) => setCustomDomain(e.target.value)} className="h-9 text-xs font-mono" placeholder="https://tradeseekhopk.com" />
+          </div>
+          {/* Effective URL preview */}
+          <div className="rounded-lg bg-cyan-500/5 border border-cyan-500/20 p-2">
+            <p className="text-[10px] text-muted-foreground">Effective App URL (used in share links, emails, certificates):</p>
+            <p className="mt-0.5 font-mono text-xs font-bold text-cyan-600 break-all">{effectiveUrl}</p>
+          </div>
+        </div>
+
+        <Separator />
+
+        {/* ─── Maintenance Mode ─── */}
+        <div className="space-y-3">
+          <div className="flex items-center justify-between rounded-lg border border-amber-500/30 bg-amber-500/5 p-3">
+            <div>
+              <div className="text-sm font-bold">Maintenance Mode</div>
+              <div className="text-[11px] text-muted-foreground">When ON, non-admin users see a maintenance banner. Admin panel always works.</div>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="text-[10px] font-bold text-muted-foreground">{maintenanceMode ? "ON" : "OFF"}</span>
+              <Switch checked={maintenanceMode} onCheckedChange={setMaintenanceMode} />
+            </div>
+          </div>
+          <div className="space-y-1">
+            <label className="text-[10px] font-bold text-muted-foreground">Maintenance Message</label>
+            <Textarea value={maintenanceMessage} onChange={(e) => setMaintenanceMessage(e.target.value)} rows={2} placeholder="We're upgrading TradeSeekho PK. Back soon!" className="text-sm" />
+          </div>
+        </div>
+
+        <Button
+          className="h-10 w-full gap-2 bg-cyan-600 font-bold text-white hover:bg-cyan-700"
+          onClick={onSave}
+          disabled={saving}
+        >
+          {saving ? <Save className="h-4 w-4 animate-pulse" /> : <Save className="h-4 w-4" />}
+          Save App Settings
+        </Button>
+      </CardContent>
+    </Card>
   )
 }
 

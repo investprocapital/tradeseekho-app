@@ -11,7 +11,7 @@ import { ScrollArea } from "@/components/ui/scroll-area"
 import { toast } from "sonner"
 import { useStore, useT } from "@/lib/store"
 import { pairLabel } from "@/lib/signals"
-import { useProMe } from "./use-data"
+import { useProMe, useAppSettings } from "./use-data"
 import { CommentSection } from "./comment-section"
 import { SignalBottomAd } from "./signal-bottom-ad"
 import { AffiliateAdBanner } from "./affiliate-ad-banner"
@@ -83,6 +83,9 @@ export function SignalList() {
   // Check if user has "signals" Pro plan (for paywall logic)
   const { data: proMe } = useProMe()
   const hasSignalsPro = proMe?.isProSignals ?? false
+  // App settings — for dynamic share URL (Vercel link vs custom domain)
+  const { data: appSettings } = useAppSettings()
+  const appUrl = appSettings?.appUrl || "https://tradeseekhopk.vercel.app"
 
   // Fetch ad settings (includes commentsEnabled + signalsEnabled toggle).
   // When signalsEnabled is OFF, the entire SignalList component returns null
@@ -115,7 +118,7 @@ export function SignalList() {
 
   const shareSignal = (s: Signal) => {
     const entryText = s.entry2 ? `Entry Zone: ${s.entry} - ${s.entry2}` : `Entry: ${s.entry}`
-    const text = `${s.signalType} ${pairLabel(s.symbol)}\n${entryText}\nSL: ${s.stopLoss}${s.tp1 ? `\nTP1: ${s.tp1}` : ""}${s.tp2 ? `\nTP2: ${s.tp2}` : ""}${s.tp3 ? `\nTP3: ${s.tp3}` : ""}\n\n— TradeSeekho PK\nhttps://tradeseekhopk.vercel.app`
+    const text = `${s.signalType} ${pairLabel(s.symbol)}\n${entryText}\nSL: ${s.stopLoss}${s.tp1 ? `\nTP1: ${s.tp1}` : ""}${s.tp2 ? `\nTP2: ${s.tp2}` : ""}${s.tp3 ? `\nTP3: ${s.tp3}` : ""}\n\n— TradeSeekho PK\n${appUrl}`
     window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, "_blank")
   }
 

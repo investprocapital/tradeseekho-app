@@ -121,6 +121,25 @@ export function useAdSettings() {
   })
 }
 
+// ─── App Settings (App Mode + Maintenance Mode) ───
+export interface AppSettingsClient {
+  appMode: "vercel" | "custom"
+  appUrl: string // effective URL based on appMode
+  vercelUrl: string
+  customDomain: string
+  maintenanceMode: boolean
+  maintenanceMessage: string
+}
+
+/** Fetch public app settings (app mode + maintenance). Cached 60s. */
+export function useAppSettings() {
+  return useQuery<AppSettingsClient>({
+    queryKey: ["app-settings"],
+    queryFn: () => j(fetch("/api/app-settings").then((r) => r)),
+    staleTime: 60_000,
+  })
+}
+
 export interface CurrentUser {
   id: string
   email: string | null
