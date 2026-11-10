@@ -2,6 +2,7 @@
   "name": "TradeSeekho PK",
   "short_name": "TradeSeekho PK",
   "description": "Structured Forex & Crypto lessons with quizzes. Urdu, English, Hindi & Arabic.",
+  "id": "/",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
@@ -10,6 +11,9 @@
   "background_color": "#0A1929",
   "theme_color": "#00c853",
   "categories": ["education", "finance"],
+  "lang": "en",
+  "dir": "auto",
+  "prefer_related_applications": false,
   "icons": [
     {
       "src": "/icon-192.png",
@@ -40,6 +44,26 @@
       "sizes": "1024x1024",
       "type": "image/png",
       "purpose": "any"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Lessons",
+      "short_name": "Lessons",
+      "url": "/?tab=lessons",
+      "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Signals",
+      "short_name": "Signals",
+      "url": "/?tab=signals",
+      "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Quiz",
+      "short_name": "Quiz",
+      "url": "/?tab=quiz",
+      "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }]
     }
   ]
 }

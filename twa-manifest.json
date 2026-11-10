@@ -1,0 +1,50 @@
+{
+  "packageId": "com.tradeseekhopk.app",
+  "host": "tradeseekhopk.vercel.app",
+  "name": "TradeSeekho PK",
+  "launcherName": "TradeSeekho PK",
+  "display": "standalone",
+  "orientation": "default",
+  "themeColor": "#00c853",
+  "themeColorDark": "#0A1929",
+  "navigationColor": "#000000",
+  "navigationColorDark": "#000000",
+  "navigationDividerColor": "#000000",
+  "navigationDividerColorDark": "#000000",
+  "backgroundColor": "#0A1929",
+  "enableNotifications": true,
+  "startUrl": "/",
+  "iconUrl": "https://tradeseekhopk.vercel.app/icon-512.png",
+  "maskableIconUrl": "https://tradeseekhopk.vercel.app/icon-512.png",
+  "splashScreenFadeOutDuration": 300,
+  "signingKey": {
+    "path": "/tmp/android.keystore",
+    "alias": "android"
+  },
+  "appVersionName": "1.0.0",
+  "appVersionCode": 1,
+  "shortcuts": [
+    {
+      "name": "Lessons",
+      "shortName": "Lessons",
+      "url": "/?tab=lessons",
+      "iconUrl": "https://tradeseekhopk.vercel.app/icon-192.png"
+    },
+    {
+      "name": "Signals",
+      "shortName": "Signals",
+      "url": "/?tab=signals",
+      "iconUrl": "https://tradeseekhopk.vercel.app/icon-192.png"
+    },
+    {
+      "name": "Quiz",
+      "shortName": "Quiz",
+      "url": "/?tab=quiz",
+      "iconUrl": "https://tradeseekhopk.vercel.app/icon-192.png"
+    }
+  ],
+  "generatorConfig": {
+    "appVersionName": "1.0.0",
+    "appVersionCode": 1
+  }
+}
