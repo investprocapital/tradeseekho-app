@@ -3,6 +3,7 @@
 import { Crown } from "lucide-react"
 import { useStore } from "@/lib/store"
 import { useAdSettings, useProMe } from "./use-data"
+import { DisclaimerBanner } from "./disclaimer-banner"
 
 export function Footer() {
   const setProOpen = useStore((s) => s.setProOpen)
@@ -19,10 +20,14 @@ export function Footer() {
     <footer className="mt-6 border-t border-border bg-card">
       {/* Links + Copyright (ABOVE Pro banner) */}
       <div className="px-3 py-3 text-center border-b border-border">
-        <div className="mb-2 flex items-center justify-center gap-3 text-[10px]">
+        <div className="mb-2 flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-[10px]">
           <a href="/about-us" className="font-bold text-brand hover:underline">About Us</a>
           <span className="text-muted-foreground">|</span>
           <a href="/privacy-policy" className="font-bold text-brand hover:underline">Privacy Policy</a>
+          <span className="text-muted-foreground">|</span>
+          <a href="/terms" className="font-bold text-brand hover:underline">Terms</a>
+          <span className="text-muted-foreground">|</span>
+          <a href="/legal-disclaimer" className="font-bold text-brand hover:underline">Disclaimer</a>
           <span className="text-muted-foreground">|</span>
           <a href="/contact-us" className="font-bold text-brand hover:underline">Contact Us</a>
         </div>
@@ -65,6 +70,10 @@ export function Footer() {
           </button>
         )}
       </div>
+
+      {/* Educational disclaimer — required by Play Store policy.
+          Shows on every screen (footer is global). */}
+      <DisclaimerBanner />
     </footer>
   )
 }

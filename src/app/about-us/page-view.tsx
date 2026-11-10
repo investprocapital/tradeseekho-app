@@ -64,6 +64,8 @@ export function PageView({ title, content, slug }: { title: string; content: str
             <span className="text-muted-foreground">|</span>
             <Link href="/privacy-policy" className="font-bold text-brand hover:underline">Privacy Policy</Link>
             <span className="text-muted-foreground">|</span>
+            <Link href="/terms" className="font-bold text-brand hover:underline">Terms</Link>
+            <span className="text-muted-foreground">|</span>
             <Link href="/contact-us" className="font-bold text-brand hover:underline">Contact Us</Link>
           </div>
           <p className="text-[11px] text-muted-foreground">
@@ -72,6 +74,12 @@ export function PageView({ title, content, slug }: { title: string; content: str
           <p className="mt-1 text-[11px] text-muted-foreground">
             Email: <a href="mailto:tradeseekhopk@gmail.com" className="text-brand hover:underline">tradeseekhopk@gmail.com</a>
           </p>
+          {/* Educational disclaimer — required by Play Store policy */}
+          <div className="mt-4 rounded-lg border border-amber-500/20 bg-amber-500/5 p-3">
+            <p className="text-[10px] font-medium leading-relaxed text-amber-600/90">
+              ⚠️ This app is for educational purpose only. This is not financial advice. Trading involves risk.
+            </p>
+          </div>
         </div>
       </main>
     </div>

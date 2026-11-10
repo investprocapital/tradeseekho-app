@@ -168,6 +168,7 @@ export function SettingsSheet() {
               <Row icon={Info} label="About Us" onClick={() => { setOpen(false); router.replace("/about-us") }} />
               <Row icon={AlertTriangle} label="Disclaimer & Risk Warning" hint="Legal disclaimer" onClick={() => { setOpen(false); router.replace("/legal-disclaimer") }} />
               <Row icon={FileText} label="Privacy Policy" onClick={() => { setOpen(false); router.replace("/privacy-policy") }} />
+              <Row icon={FileText} label="Terms of Service" onClick={() => { setOpen(false); router.replace("/terms") }} />
               <Row icon={Mail} label="Contact Us" onClick={() => { setOpen(false); router.replace("/contact-us") }} />
             </Section>
 
