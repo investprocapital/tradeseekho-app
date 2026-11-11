@@ -45,7 +45,7 @@ export function useLessonsBundle(category: string | "all") {
   return useQuery<LessonsBundle>({
     queryKey: ["lessons", category],
     queryFn: () => j(fetch(`/api/lessons?category=${encodeURIComponent(category)}`).then((r) => r)),
-    staleTime: 5 * 60 * 1000, // 5 min cache (was 0 = always refetch)
+    staleTime: 30 * 1000, // 30s cache (was 5 min — too long, caused stale lock status after quiz pass)
     refetchOnWindowFocus: false, // don't refetch when tab regains focus
   })
 }
@@ -55,7 +55,8 @@ export function useLessonDetail(id: string | null) {
     enabled: !!id,
     queryKey: ["lesson", id],
     queryFn: () => j(fetch(`/api/lessons/${id}`).then((r) => r)),
-    staleTime: 30 * 1000, // 30s cache (was 5 min — too long, caused stale "locked" after quiz pass)
+    staleTime: 0, // Always fetch fresh — prevents stale "locked: true" after quiz pass
+    refetchOnMount: true, // Refetch when lesson reader opens (user may have just passed prev quiz)
     refetchOnWindowFocus: false,
   })
 }
@@ -84,6 +85,10 @@ export function useSubmitQuiz() {
       qc.invalidateQueries({ queryKey: ["lessons"] })
       qc.invalidateQueries({ queryKey: ["lesson"] }) // invalidates ALL ["lesson", *] queries
       qc.invalidateQueries({ queryKey: ["bookmarks"] })
+      // Force-refetch the lessons list so the lock status updates instantly
+      // (invalidate marks stale, but the active list query needs a refetch
+      // trigger to actually fetch new data).
+      qc.refetchQueries({ queryKey: ["lessons"] })
     },
   })
 }
