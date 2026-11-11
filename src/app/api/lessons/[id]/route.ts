@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server"
 import { db } from "@/lib/db"
 import { getCurrentUserId, isUserProForPlan } from "@/lib/auth"
+import { withDbRetry } from "@/lib/db-retry"
 import type { LessonDetailDTO, PublicQuizDTO } from "@/lib/types"
 
 export const dynamic = "force-dynamic"
@@ -14,20 +15,20 @@ export async function GET(
   const userId = await getCurrentUserId()
   const pro = await isUserProForPlan("lessons")
 
-  const lesson = await db.lesson.findUnique({
+  const lesson = await withDbRetry(() => db.lesson.findUnique({
     where: { id },
     include: { category: true, quiz: { include: { questions: { orderBy: { createdAt: "asc" } } } } },
-  })
+  }))
   if (!lesson || !lesson.isPublished) {
     return NextResponse.json({ error: "not_found" }, { status: 404 })
   }
 
   // siblings (same category, published, ordered) for unlock + next
-  const siblings = await db.lesson.findMany({
+  const siblings = await withDbRetry(() => db.lesson.findMany({
     where: { categoryId: lesson.categoryId, isPublished: true },
     orderBy: { order: "asc" },
     select: { id: true, order: true },
-  })
+  }))
   const idx = siblings.findIndex((s) => s.id === lesson.id)
   const prevSibling = idx > 0 ? siblings[idx - 1] : null
   const nextSibling = idx < siblings.length - 1 ? siblings[idx + 1] : null
@@ -36,11 +37,11 @@ export async function GET(
   // Pro users: all lessons unlocked.
   let locked = false
   if (!pro && prevSibling) {
-    const prevQuiz = await db.quiz.findUnique({ where: { lessonId: prevSibling.id } })
+    const prevQuiz = await withDbRetry(() => db.quiz.findUnique({ where: { lessonId: prevSibling.id } }))
     if (prevQuiz) {
-      const prevProg = await db.progress.findUnique({
+      const prevProg = await withDbRetry(() => db.progress.findUnique({
         where: { userId_lessonId: { userId, lessonId: prevSibling.id } },
-      })
+      }))
       if (!prevProg?.passed) locked = true
     }
   }
@@ -58,10 +59,10 @@ export async function GET(
   const isPremiumLocked = (lesson.category.slug === "intermediate" || lesson.category.slug === "advanced") && orderInCategory > 1
   if (isPremiumLocked && !pro) {
     // Check if user has unlocked this lesson via rewarded ad
-    const existingProg = await db.progress.findUnique({
+    const existingProg = await withDbRetry(() => db.progress.findUnique({
       where: { userId_lessonId: { userId, lessonId: lesson.id } },
       select: { passed: true },
-    })
+    }))
     if (!existingProg?.passed) {
       return NextResponse.json(
         { error: "pro_required", message: "Buy the Lessons Pro plan to unlock Intermediate & Advanced lessons 2+." },
@@ -72,12 +73,12 @@ export async function GET(
   }
 
   const [prog, bm] = await Promise.all([
-    db.progress.findUnique({
+    withDbRetry(() => db.progress.findUnique({
       where: { userId_lessonId: { userId, lessonId: lesson.id } },
-    }),
-    db.bookmark.findUnique({
+    })),
+    withDbRetry(() => db.bookmark.findUnique({
       where: { userId_lessonId: { userId, lessonId: lesson.id } },
-    }),
+    })),
   ])
 
   const detail: LessonDetailDTO = {
