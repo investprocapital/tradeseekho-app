@@ -1,6 +1,7 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useRef, useEffect } from "react"
+import { createPortal } from "react-dom"
 import { useTheme } from "next-themes"
 import { useRouter } from "next/navigation"
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet"
@@ -66,6 +67,7 @@ export function SettingsSheet() {
   }
 
   return (
+    <>
     <Sheet open={open} onOpenChange={setOpen}>
       <SheetContent side="right" className="flex h-full w-full flex-col gap-0 p-0 sm:max-w-md">
         <SheetHeader className="border-b border-border p-5">
@@ -255,28 +257,12 @@ export function SettingsSheet() {
               <>
                 <Separator className="my-3" />
                 {/* Delete Account — Play Store mandatory destructive action.
-                    Uses native confirm() because Dialog inside Sheet doesn't
-                    work (Sheet overlay blocks Dialog clicks). */}
+                    Custom popup (NOT browser confirm()) — uses a portal so it
+                    renders above the Sheet overlay without being blocked. */}
                 <Button
                   variant="outline"
                   className="h-11 w-full gap-2 border-red-500/50 font-bold text-red-600 hover:bg-red-500/10 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300"
-                  onClick={async () => {
-                    if (!confirm("Are you sure? All your data — profile, bookmarks, lesson progress, certificates, price alerts, and comments — will be PERMANENTLY DELETED. This action CANNOT be undone.")) return
-                    setDeleting(true)
-                    try {
-                      const res = await fetch("/api/auth/delete-account", { method: "POST" })
-                      const json = await res.json().catch(() => ({}))
-                      if (!res.ok) {
-                        throw new Error(json?.message || json?.error || `HTTP ${res.status}`)
-                      }
-                      toast.success("Account deleted permanently")
-                      setOpen(false)
-                      signOut({ callbackUrl: "/", redirect: true })
-                    } catch (e: any) {
-                      toast.error(e?.message || "Could not delete account. Try again or contact support.")
-                      setDeleting(false)
-                    }
-                  }}
+                  onClick={() => setDeleteOpen(true)}
                   disabled={deleting}
                 >
                   {deleting ? (
@@ -313,6 +299,62 @@ export function SettingsSheet() {
         </div>
       </SheetContent>
     </Sheet>
+
+    {/* ─── Custom Delete Account Confirmation Popup ───
+        Renders via portal at document.body so it appears above the Sheet
+        overlay (browser confirm() was showing "tradeseekhopk.vercel.app says"
+        which looked unprofessional). This is a custom styled popup with
+        Cancel (grey) + Delete Account (red) buttons. */}
+    {deleteOpen && typeof document !== "undefined" && createPortal(
+      <div
+        className="fixed inset-0 z-[200] flex items-center justify-center bg-black/60 p-4"
+        onClick={() => !deleting && setDeleteOpen(false)}
+      >
+        <div
+          className="w-full max-w-sm rounded-2xl border border-border bg-card p-6 shadow-2xl"
+          onClick={(e) => e.stopPropagation()}
+        >
+          {/* Icon */}
+          <div className="mb-4 flex justify-center">
+            <span className="inline-flex h-14 w-14 items-center justify-center rounded-full bg-red-500/10">
+              <AlertTriangle className="h-7 w-7 text-red-500" />
+            </span>
+          </div>
+          {/* Title */}
+          <h2 className="text-center text-xl font-extrabold text-foreground">Delete Account?</h2>
+          {/* Message */}
+          <p className="mt-3 text-center text-sm leading-relaxed text-muted-foreground">
+            Are you sure? All your data — profile, bookmarks, lesson progress, certificates, price alerts, and comments — will be{" "}
+            <span className="font-bold text-red-500">PERMANENTLY DELETED</span>. This action{" "}
+            <span className="font-bold text-red-500">CANNOT</span> be undone.
+          </p>
+          {/* Buttons */}
+          <div className="mt-6 flex gap-3">
+            <Button
+              variant="outline"
+              className="h-11 flex-1 gap-2 font-bold text-muted-foreground"
+              onClick={() => setDeleteOpen(false)}
+              disabled={deleting}
+            >
+              Cancel
+            </Button>
+            <Button
+              className="h-11 flex-1 gap-2 bg-red-500 font-bold text-white hover:bg-red-600"
+              onClick={handleDeleteAccount}
+              disabled={deleting}
+            >
+              {deleting ? (
+                <><span className="h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white" /> Deleting...</>
+              ) : (
+                <><Trash2 className="h-4 w-4" /> Delete Account</>
+              )}
+            </Button>
+          </div>
+        </div>
+      </div>,
+      document.body
+    )}
+    </>
   )
 }
 
