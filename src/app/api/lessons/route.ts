@@ -3,12 +3,13 @@ import { db } from "@/lib/db"
 import { getCurrentUserId, isUserProForPlan } from "@/lib/auth"
 import type { CategoryDTO, LessonListItemDTO } from "@/lib/types"
 
-// ─── EDGE CACHING ───
-// Cache lesson list at Vercel edge for 5 minutes (s-maxage=300).
-// Lessons change rarely (admin adds/edits), so 5 min cache is safe.
-// This reduces Fast Origin Transfer significantly — 51KB response is cached
-// at edge, served to all users without hitting the origin serverless function.
-export const revalidate = 300
+// CRITICAL: This API returns PER-USER data (lesson progress, passed status).
+// It MUST NOT be cached at the CDN edge — otherwise one user's progress gets
+// served to ALL users (Bug 1: "all users see the same progress").
+// force-dynamic + no-store headers ensure every request hits the origin and
+// fetches fresh per-user data from the DB.
+export const dynamic = "force-dynamic"
+export const revalidate = 0
 
 
 // Retry wrapper — Neon free tier sleeps after inactivity. First connection
@@ -103,7 +104,9 @@ export async function GET(req: Request) {
     }))
 
     const res = NextResponse.json({ categories: catDto, lessons: dto })
-    res.headers.set("Cache-Control", "public, s-maxage=300, stale-while-revalidate=600")
+    // NO CDN caching — response contains per-user progress data.
+    // Caching would serve one user's progress to another user.
+    res.headers.set("Cache-Control", "no-store, max-age=0")
     return res
   } catch (e: any) {
     console.error("[lessons] DB unreachable:", e?.message)
