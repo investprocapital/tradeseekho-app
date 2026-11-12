@@ -536,12 +536,30 @@ function LessonRow({ lesson, lang, isPro, onOpen, onPro, seqLocked, rewardedLess
   const isLocked = proLocked || seqLocked
 
   // ─── Locked lesson click handler ───
-  // Sequential lock (Free lessons 1-12): if user clicks a lesson whose previous
-  // lesson quiz is NOT passed → show popup "Please complete previous lessons first".
-  // Pro lock (Intermediate/Advanced 2+): not logged in → Signup popup → Pro
-  // payment popup auto-opens after login. Logged in → Pro payment popup directly.
+  // PRO lock takes PRIORITY over sequential lock. If a lesson is PRO-locked
+  // (Intermediate/Advanced lesson 2+), we show the Pro payment popup directly
+  // — NOT "complete previous lessons" (that's only for FREE sequential locks).
   const onLockedClick = () => {
-    // Sequential lock takes priority — this is for free lessons (Beginner 1-12).
+    // PRO lock — check FIRST (before seqLocked). PRO lessons should always
+    // show the payment/upgrade popup, never the "complete previous" toast.
+    if (proLocked) {
+      if (!session?.user) {
+        // Not logged in → open Signup popup first. After login, Pro popup auto-opens.
+        setLoginReason("pro_lesson")
+        setPendingProAfterLogin(true)
+        setProPlan("lessons")
+        setLoginOpen(true)
+        return
+      }
+      if (rewardedLessonsEnabled) {
+        setUnlockDialogOpen(true)
+      } else {
+        onPro()
+      }
+      return
+    }
+    // Sequential lock — only for FREE lessons (Beginner 1-12) where the
+    // previous lesson's quiz hasn't been passed yet.
     if (seqLocked) {
       toast(
         lang === "ur" || lang === "ar"
@@ -552,20 +570,6 @@ function LessonRow({ lesson, lang, isPro, onOpen, onPro, seqLocked, rewardedLess
         { duration: 3000 }
       )
       return
-    }
-    // Pro lock — only for Intermediate/Advanced lessons 2+.
-    if (!session?.user) {
-      // Not logged in → open Signup popup first. After login, Pro popup auto-opens.
-      setLoginReason("pro_lesson")
-      setPendingProAfterLogin(true)
-      setProPlan("lessons")
-      setLoginOpen(true)
-      return
-    }
-    if (rewardedLessonsEnabled) {
-      setUnlockDialogOpen(true)
-    } else {
-      onPro()
     }
   }
 
@@ -603,10 +607,12 @@ function LessonRow({ lesson, lang, isPro, onOpen, onPro, seqLocked, rewardedLess
     <button
       onClick={() => {
         if (proLocked) {
+          // PRO lesson → show payment popup (NOT "complete previous" toast)
           onLockedClick()
           return
         }
         if (seqLocked) {
+          // FREE lesson sequential lock → show "complete previous" toast
           toast(lang === "ur" || lang === "ar" ? "براہ کرم پہلے پچھلے سبق مکمل کریں" : lang === "hi" ? "कृपया पिछला पाठ पूर्ण करें" : "Please complete previous lessons first to unlock this lesson.", { duration: 3000 })
           return
         }

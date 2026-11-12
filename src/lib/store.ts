@@ -229,7 +229,10 @@ export const useStore = create<AppState>()(
         lang: s.lang,
         onboardingSeen: s.onboardingSeen,
         bookmarks: s.bookmarks,
-        progress: s.progress,
+        // CRITICAL: Do NOT persist 'progress' — it is per-user and comes from
+        // the server API. Persisting it caused Bug 1 where one user's progress
+        // showed on another user's device (shared localStorage). Each user's
+        // progress is fetched fresh from /api/lessons?userId=X on every load.
         adminAuthed: s.adminAuthed,
         showAdmin: s.showAdmin,
         // Persist Pro-lesson flow flags so they survive the post-login reload.
